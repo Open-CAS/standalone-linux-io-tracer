@@ -9,7 +9,7 @@ classification. Extended classification contains information about I/O type
 (direct / filesystem metadata / file) and target file attributes(e.g. file
 size).
 
-iotrace is based on [Open CAS Tracing Framework](https://github.com/Open-CAS/open-cas-telemetry-framework). Collected traces are stored in OCTF trace
+iotrace is based on [Open CAS Telemetry Framework (OCTF)](https://github.com/Open-CAS/open-cas-telemetry-framework). Collected traces are stored in OCTF trace
 location. Traces can later be converted to JSON or CSV format.
 
 iotrace consists of a kernel tracing module (iotrace.ko) and an executable
@@ -59,31 +59,25 @@ cd standalone-linux-io-tracer
 
 ### Prerequisites
 
-* To build and use Standalone Linux IO Tracer, [OCTF](https://github.com/Open-CAS/open-cas-telemetry-framework) needs to be installed.
-OCTF can be installed:
-  * from a source tree submodule:
+* To build and use Standalone Linux IO Tracer, [OCTF](https://github.com/Open-CAS/open-cas-telemetry-framework) needs to be installed in the following way:
 
-    ~~~{.sh}
-    git submodule update --init --recursive
-    ~~~
+  ~~~{.sh}
+  git submodule update --init --recursive
+  ./modules/open-cas-telemetry-framework/setup_dependencies.sh
+  ~~~
 
-    OCTF will then be installed along with iotrace.	This option is preferred
-    when working with the OCTF code. However [OCTF requirements](https://github.com/Open-CAS/open-cas-telemetry-framework/blob/master/README.md#building) still need to
-    be installed.
-  * or from separate repo, using instructions found in it's [README](https://github.com/Open-CAS/open-cas-telemetry-framework/blob/master/README.md) (this option right now only allows building the cli binary, and not the kernel module)
+  OCTF will then be installed along with iotrace in the next step.
 
-* Google Protocol Buffers, version 3.6.1 or higher, please follow this link
-for [C++ Installation Instructions](https://github.com/google/protobuf/blob/master/src/README.md).
+  > **NOTE:**  Alternatively OCTF can also be installed separately, using instructions found in it's [README](https://github.com/Open-CAS/open-cas-telemetry-framework/blob/master/README.md). This option however right now only allows building the cli binary, and not the kernel module
 
 
 ### Installation
 
-Both executable and kernel module are installed with:
+Both executable and kernel module (and OCTF if submodule is present) are installed with:
 ~~~{.sh}
 make
 sudo make install
 ~~~
-
 
 <a id="examples"></a>
 
@@ -140,3 +134,17 @@ modprobe iotrace
 ## Contributing
 
 Please refer to the [OCTF contributing guide](https://github.com/Open-CAS/open-cas-telemetry-framework/blob/master/CONTRIBUTING.md).
+
+<a id="related_projects"></a>
+
+## Related Projects
+Please explore related projects:
+* [Open CAS Telemetry Framework](https://github.com/Open-CAS/open-cas-telemetry-framework) framework containing the building blocks for the development of a telemetry and monitoring environment
+* [Open CAS Framework](https://github.com/Open-CAS/ocf) - high performance block
+storage caching meta-library
+* [Open CAS Linux](https://github.com/Open-CAS/open-cas-linux) - Linux block storage cache
+
+<a id="notice"></a>
+
+## Notice
+[NOTICE](https://github.com/Open-CAS/standalone-linux-io-tracer/blob/master/doc/NOTICE) contains more information
