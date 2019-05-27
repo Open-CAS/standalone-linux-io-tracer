@@ -61,8 +61,7 @@ cd standalone-linux-io-tracer
 
 * To build and use Standalone Linux IO Tracer, [OCTF](https://github.com/Open-CAS/open-cas-telemetry-framework) needs to be installed.
 OCTF can be installed:
-  * from separate repo, using instructions found in it's [README](https://github.com/Open-CAS/open-cas-telemetry-framework/blob/master/README.md),
-  * or from a source tree submodule:
+  * from a source tree submodule:
 
     ~~~{.sh}
     git submodule update --init --recursive
@@ -71,6 +70,7 @@ OCTF can be installed:
     OCTF will then be installed along with iotrace.	This option is preferred
     when working with the OCTF code. However [OCTF requirements](https://github.com/Open-CAS/open-cas-telemetry-framework/blob/master/README.md#building) still need to
     be installed.
+  * or from separate repo, using instructions found in it's [README](https://github.com/Open-CAS/open-cas-telemetry-framework/blob/master/README.md) (this option right now only allows building the cli binary, and not the kernel module)
 
 * Google Protocol Buffers, version 3.6.1 or higher, please follow this link
 for [C++ Installation Instructions](https://github.com/google/protobuf/blob/master/src/README.md).
