@@ -39,7 +39,7 @@ following OSes:
 
 ## Documentation
 
-You can find the Markdown version of the man page for iotracer [here](https://github.com/Open-CAS/standalone-linux-io-tracer/blob/master/doc/man/MAN.md).
+You can find the Markdown version of the man page for iotrace [here](https://github.com/Open-CAS/standalone-linux-io-tracer/blob/master/doc/man/MAN.md).
 The man page is also installed during installation.
 
 <a id="source"></a>
