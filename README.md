@@ -59,7 +59,7 @@ cd standalone-linux-io-tracer
 
 ### Prerequisites
 
-* To build and use Standalone Linux IO Tracer, [OCTF](https://github.com/Open-CAS/open-cas-telemetry-framework) needs to be installed in the following way:
+* To build and use Standalone Linux IO Tracer, [OCTF](https://github.com/Open-CAS/open-cas-telemetry-framework) needs to be set up in the following way:
 
   ~~~{.sh}
   git submodule update --init --recursive
@@ -71,11 +71,17 @@ cd standalone-linux-io-tracer
   > **NOTE:**  Alternatively OCTF can also be installed separately, using instructions found in it's [README](https://github.com/Open-CAS/open-cas-telemetry-framework/blob/master/README.md). This option however right now only allows building the cli binary, and not the kernel module
 
 
+### Build
+
+Both executable and kernel module (and OCTF if submodule is present) are built with:
+~~~{.sh}
+make
+~~~
+
 ### Installation
 
 Both executable and kernel module (and OCTF if submodule is present) are installed with:
 ~~~{.sh}
-make
 sudo make install
 ~~~
 
