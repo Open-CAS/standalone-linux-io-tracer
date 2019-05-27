@@ -1,0 +1,9 @@
+# Copyright(c) 2012-2018 Intel Corporation
+# SPDX-License-Identifier: BSD-3-Clause-Clear
+
+include $(M)/config.mk
+
+obj-m := iotrace.o
+
+iotrace-objs = main.o procfs.o io_trace.o dss.o trace_bdev.o trace.o
+

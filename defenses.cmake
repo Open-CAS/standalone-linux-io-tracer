@@ -1,0 +1,38 @@
+set(
+    DEFENSES_COMPILER_FLAGS
+    "-D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -fpie -fpic"
+)
+
+if (CMAKE_C_COMPILER_VERSION VERSION_LESS 4.9)
+    set(
+        DEFENSES_COMPILER_FLAGS
+        "${DEFENSES_COMPILER_FLAGS} -fstack-protector"
+    )
+else()
+    set(
+        DEFENSES_COMPILER_FLAGS
+        "${DEFENSES_COMPILER_FLAGS} -fstack-protector-strong"
+    )
+endif()
+
+set(
+    CMAKE_CXX_FLAGS_RELEASE
+    "${CMAKE_CXX_FLAGS_RELEASE} ${DEFENSES_COMPILER_FLAGS}"
+)
+set(
+    CMAKE_C_FLAGS_RELEASE
+    "${CMAKE_C_FLAGS_RELEASE} ${DEFENSES_COMPILER_FLAGS}"
+)
+
+set(
+    DEFENSES_LINKER_FLAGS
+    "-Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now -D_FORTIFY_SOURCE=2"
+)
+set(
+    CMAKE_SHARED_LINKER_FLAGS_RELEASE
+    "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} ${DEFENSES_LINKER_FLAGS}"
+)
+set(
+    CMAKE_EXE_LINKER_FLAGS_RELEASE
+    "${CMAKE_EXE_LINKER_FLAGS_RELEASE} ${DEFENSES_LINKER_FLAGS} -pie"
+)

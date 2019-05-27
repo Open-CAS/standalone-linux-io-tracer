@@ -1,0 +1,3 @@
+[submodule "modules/open-cas-telemetry-framework"]
+	path = modules/open-cas-telemetry-framework
+	url = https://github.com/Open-CAS/open-cas-telemetry-framework
