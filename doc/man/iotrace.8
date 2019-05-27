@@ -1,0 +1,83 @@
+.TH IOTRACE 8 2019-05-16
+.SH NAME
+iotrace - collect and manage block I/O traces
+
+.SH SYNOPSIS
+iotrace --start-trace -d \fIdevice\fR [\fIdevice\fR ...] [-b \fIbuffer_size\fR] [-s \fImax_file_size\fR] [-t \fIseconds\fR]
+.br
+iotrace --parse-trace [--format json] --path \fIpath\fR
+.br
+iotrace --get-trace-summary --path \fIpath\fR
+.br
+iotrace --list-traces [--prefix \fIprefix\fR]
+.br
+iotrace --remove-trace --prefix \fIprefix\fR
+
+.SH DESCRIPTION
+iotrace provides block device IO tracing and trace management capabilities. For each IO to target device(s) basic metadata information is captured (IO operation type, address, size), supplemented with extended classification. Extended classification contains information about I/O type (direct / filesystem metadata / file) and target file attributes (e.g. file size). iotrace is based on Open CAS Tracing Framework (OCTF), see https://github.com/Open-CAS/open-cas-telemetry-framework project page for more details. Collected traces are stored in OCTF trace location. Traces can later be converted to human readable form using --parse-trace command.
+
+.SH COMMANDS
+.TP
+--start-trace, -S
+Start collecting IO traces.
+.TP
+--parse-trace, -P
+Convert collected trace to human readable form.
+.TP
+--get-trace-summary, -G
+Display summary of specified trace.
+.TP
+--list-traces, -L
+List collected traces.
+.TP
+--remove-trace, -R
+Remove specified traces.
+.TP
+--version, -V
+Print version info.
+.TP
+--help, -H
+Display command help.
+
+.SH OPTIONS
+.TP
+.B -d, --devices \fIdevice\fR> [<\fIdevice\fR> ...]
+List of one or more block devices
+
+.TP
+.B -b, --buffer \fIbuffer_size\fR
+Size of internal circular buffer for IO traces (in units of MiB). Increasing this parameter reduces risk of dropping traces at the cost of increased memory usage. Default value is 100. Accepted value range is [1..1024].
+
+.TP
+.B -s, --size \fImax_file_size\fR
+Maximum size of trace file (in units of MiB). Tracing is stopped after output file reaches specified maximum size. Default value is 1000. Accepted value range is [1..10^9].
+
+.TP
+.B -t, --time \fIseconds\fR
+Maximum tracing duration (in seconds). Tracing is stopped after specified time elapses. Default value is 1000. Accepted value range is [1..2^32-1].
+
+.TP
+.B --format json
+Parsing output format. Currently the only supported format is json.
+
+.TP
+.B --path  \fIpath\fR
+Trace file path, relative to OCTF trace location.
+
+.TP
+.B --prefix \fIprefix\fR
+Trace file prefix, relative to OCTF trace location. End prefix with asterisk ("*") to match multiple files or provide full relative path for a single trace.
+
+.SH FILES
+Traces are stored in location specified in OCTF configuration file /etc/octf/octf.conf, default is /var/lib/octf/trace.
+
+.SH EXAMPLE
+iotrace --start-trace -d /dev/vda /dev/vdb -b 10 -s 100 -t 20
+.br
+iotrace --manage-trace --list-traces
+.br
+iotrace --parse-trace --path kernel/2019-05-15_18:40:34 --format json
+.br
+iotrace --get-trace-summary --path kernel/2019-05-15_18:40:34
+.br
+iotrace --remove-trace --prefix kernel/2019-05-15_18:40:34

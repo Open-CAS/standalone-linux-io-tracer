@@ -1,0 +1,68 @@
+/*
+ * Copyright(c) 2012-2018 Intel Corporation
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
+syntax = "proto3";
+option cc_generic_services = true;
+import "opts.proto";
+import "traceDefinitions.proto";
+
+package octf.proto;
+
+message StartIoTraceRequest {
+    uint32 maxDuration = 1 [
+        (opts_param).cli_required = false,
+        (opts_param).cli_short_key = "t",
+        (opts_param).cli_long_key = "time",
+        (opts_param).cli_desc = "Max trace duration time (in seconds)",
+
+        (opts_param).cli_num.min = 1,
+        (opts_param).cli_num.max = 4294967295, /* Max uint32 */
+        (opts_param).cli_num.default_value = 4294967295
+    ];
+
+    uint32 maxSize = 2 [
+        (opts_param).cli_required = false,
+        (opts_param).cli_short_key = "s",
+        (opts_param).cli_long_key = "size",
+        (opts_param).cli_desc = "Max size of trace file (in MiB)",
+
+        (opts_param).cli_num.min = 1,
+        (opts_param).cli_num.max = 100000000,     /* 100 TiB */
+        (opts_param).cli_num.default_value = 1000 /* 1 GiB */
+    ];
+
+    repeated string devicePaths = 3 [
+        (opts_param).cli_required = true,
+        (opts_param).cli_short_key = "d",
+        (opts_param).cli_long_key = "devices",
+        (opts_param).cli_desc = "Paths of devices to be traced"
+    ];
+
+    uint32 circBufferSize = 4 [
+        (opts_param).cli_required = false,
+        (opts_param).cli_short_key = "b",
+        (opts_param).cli_long_key = "buffer",
+        (opts_param).cli_desc = "Size of the internal trace buffer (in MiB)",
+
+        (opts_param).cli_num.min = 1,
+        (opts_param).cli_num.max = 1024,
+        (opts_param).cli_num.default_value = 100
+    ];
+}
+
+service InterfaceKernelTraceCreating {
+    option (opts_interface).cli = true;
+
+    option (opts_interface).version = 1;
+
+    rpc StartTracing(StartIoTraceRequest) returns (TraceSummary) {
+        option (opts_command).cli = true;
+
+        option (opts_command).cli_short_key = "S";
+
+        option (opts_command).cli_long_key = "start-trace";
+
+        option (opts_command).cli_desc = "Start IO tracing";
+    }
+}

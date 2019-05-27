@@ -1,0 +1,138 @@
+/*
+ * Copyright(c) 2012-2018 Intel Corporation
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
+
+#include "KernelTraceExecutor.h"
+#include <fcntl.h>
+#include <octf/interface/ITraceExecutor.h>
+#include <octf/interface/TraceConverter.h>
+#include <octf/plugin/NodePlugin.h>
+#include <octf/utils/Log.h>
+#include <octf/utils/SignalHandler.h>
+#include <procfs_files.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <cstdio>
+#include <fstream>
+#include <string>
+#include "InterfaceKernelTraceCreatingImpl.h"
+#include "KernelRingTraceProducer.h"
+
+namespace octf {
+
+KernelTraceExecutor::KernelTraceExecutor(
+        const std::vector<std::string> &devices,
+        uint32_t ringSizeMiB)
+        : m_devices(devices) {
+    if (!isKernelModuleLoaded()) {
+        throw Exception("Kernel tracing module is not loaded.");
+    }
+
+    try {
+        writeSatraceProcfs(IOTRACE_PROCFS_SIZE_FILE_NAME,
+                           std::to_string(ringSizeMiB));
+    } catch (Exception &) {
+        throw Exception("Failed to set ring buffer size \n");
+    }
+
+    // Check if kernel module version is compatible
+    if (!checkModuleCompatibility()) {
+        throw Exception("Kernel module version is incompatible.");
+    }
+}
+
+bool KernelTraceExecutor::startTrace() {
+    for (const auto &dev : m_devices) {
+        writeSatraceProcfs(IOTRACE_PROCFS_ADD_DEVICE_FILE_NAME, dev);
+    }
+    return true;
+}
+
+bool KernelTraceExecutor::stopTrace() {
+    for (const auto &dev : m_devices) {
+        writeSatraceProcfs(IOTRACE_PROCFS_REMOVE_DEVICE_FILE_NAME, dev);
+    }
+
+    SignalHandler::get().sendUserSignal();
+    return true;
+}
+
+uint32_t KernelTraceExecutor::getTraceQueueCount() {
+    return std::thread::hardware_concurrency();
+}
+
+std::unique_ptr<IRingTraceProducer> KernelTraceExecutor::createProducer(
+        uint32_t queue) {
+    return std::unique_ptr<IRingTraceProducer>(
+            new KernelRingTraceProducer(queue));
+}
+
+std::unique_ptr<ITraceConverter> KernelTraceExecutor::createTraceConverter() {
+    return std::unique_ptr<TraceConverter>(new TraceConverter());
+}
+
+bool KernelTraceExecutor::isKernelModuleLoaded() {
+    std::string versionFilePath = std::string(IOTRACE_PROCFS_DIR) +
+                                  "/" IOTRACE_PROCFS_VERSION_FILE_NAME;
+    std::ifstream fileHandle(versionFilePath);
+
+    if (!fileHandle.good()) {
+        return false;
+    }
+    return true;
+}
+
+bool KernelTraceExecutor::checkModuleCompatibility() {
+    std::string filePath = std::string(IOTRACE_PROCFS_DIR) + "/" +
+                           IOTRACE_PROCFS_VERSION_FILE_NAME;
+
+    std::fstream file;
+    file.open(filePath, std::ios_base::in);
+
+    if (file.fail()) {
+        throw Exception("Failed to open kernel module version file: " +
+                        filePath);
+    }
+
+    int major, minor;
+    unsigned long long magic;
+    file >> major;
+    file >> minor;
+    file >> std::hex >> magic;
+
+    file.close();
+
+    if (magic != IOTRACE_MAGIC || major != IOTRACE_EVENT_VERSION_MAJOR) {
+        return false;
+    }
+
+    if (minor != IOTRACE_EVENT_VERSION_MINOR) {
+        log::cout << "Minor version mismatch between kernel module and "
+                     "current binary";
+    }
+
+    return true;
+}
+
+void KernelTraceExecutor::writeSatraceProcfs(std::string file,
+                                             const std::string &text) {
+    std::string path = std::string{IOTRACE_PROCFS_DIR} + "/" + file;
+    std::ofstream fd;
+
+    fd.open(path, std::ios_base::out);
+    if (fd.fail()) {
+        throw Exception("Failed to open file: " + file);
+    }
+
+    fd.write(text.c_str(), text.length() + 1);
+
+    if (fd.fail()) {
+        fd.close();
+        throw Exception("Failed to write to file: " + file);
+    }
+
+    fd.close();
+}
+
+}  // namespace octf
