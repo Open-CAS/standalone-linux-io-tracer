@@ -33,7 +33,7 @@ following OSes:
 
 |OS                            | Version
 |------------------------------|-------------------
-|RHEL/CentOs                   | 7.6
+|RHEL/CentOS                   | 7.6
 
 <a id="documentation"></a>
 
