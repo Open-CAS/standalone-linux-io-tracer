@@ -32,6 +32,8 @@ all: init
 install: all
 	cmake -P $(BUILD_DIR)/cmake_install.cmake
 
+test:
+
 clean:
 	$(info Cleaning $(BUILD_DIR))
 	@if [ -d $(BUILD_DIR) ] ; \
