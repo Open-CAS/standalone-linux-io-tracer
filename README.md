@@ -73,14 +73,14 @@ cd standalone-linux-io-tracer
 
 ### Build
 
-Both executable and kernel module (and OCTF if submodule is present) are built with:
+Both the executable and the kernel module (and OCTF if submodule is present) are built with:
 ~~~{.sh}
 make
 ~~~
 
 ### Installation
 
-Both executable and kernel module (and OCTF if submodule is present) are installed with:
+Both the executable and the kernel module (and OCTF if submodule is present) are installed with:
 ~~~{.sh}
 sudo make install
 ~~~
