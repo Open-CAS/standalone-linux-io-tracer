@@ -30,7 +30,7 @@ all: init
 	$(MAKE) -C $(BUILD_DIR) all
 
 install: all
-	cmake -DCOMPONENT=iotrace-install -P $(BUILD_DIR)/cmake_install.cmake
+	cmake -P $(BUILD_DIR)/cmake_install.cmake
 
 clean:
 	$(info Cleaning $(BUILD_DIR))

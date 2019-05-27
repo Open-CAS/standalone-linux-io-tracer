@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.1)
 set(CMAKE_CXX_STANDARD 11)
 include (GNUInstallDirs)
-include(octf-defenses.cmake)
+include(defenses.cmake)
 include(version.cmake)
 
 project(iotrace VERSION ${IOTRACE_VERSION} LANGUAGES C CXX)
