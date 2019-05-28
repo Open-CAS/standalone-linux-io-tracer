@@ -120,7 +120,7 @@ static inline long env_atomic64_xchg(env_atomic64 *a, long new) {
     return atomic64_xchg(a, new);
 }
 
-    /* *** LOGGING *** */
+/* *** LOGGING *** */
 
 #define ENV_PRIu64 "llu"
 
@@ -140,6 +140,19 @@ static inline void *env_zalloc(size_t size) {
 
 static inline void env_free(const void *ptr) {
     kfree(ptr);
+}
+
+/* *** STRINGS *** */
+static inline void memcpy_s(void *dest,
+                            size_t dmax,
+                            const void *src,
+                            size_t smax) {
+    BUG_ON(smax > dmax);
+    memcpy(dest, src, smax);
+}
+
+static inline void memset_s(void *dest, size_t len, uint8_t value) {
+    memset(dest, value, len);
 }
 
 #endif  // SOURCE_KERNEL_INTERNAL_TRACE_ENV_KERNEL_H
