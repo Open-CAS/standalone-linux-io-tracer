@@ -2,11 +2,11 @@
 set(traceModulePath ${CMAKE_CURRENT_BINARY_DIR}/iotrace.ko)
 
 if(DEFINED ENV{KERNEL_SRCS})
-       set(kernelSourcesPath $ENV{KERNEL_SRCS}/build)
-       message(STATUS "Custom kernel sources path chosen: $ENV{KERNEL_SRCS}")
+		set(kernelSourcesPath $ENV{KERNEL_SRCS}/build)
+		message(STATUS "Custom kernel sources path chosen: $ENV{KERNEL_SRCS}")
 else()
-       execute_process(OUTPUT_VARIABLE kernelName OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND uname -r)
-       set(kernelSourcesPath "/lib/modules/${kernelName}/build")
+		execute_process(OUTPUT_VARIABLE kernelName OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND uname -r)
+		set(kernelSourcesPath "/lib/modules/${kernelName}/build")
 endif()
 
 set(moduleSources
@@ -30,16 +30,15 @@ set(moduleSources
 # Command for building iotrace.ko kernel module
 # Module is built in source tree, and then all build artifacts are copied
 # to binary directory
-mv *(*.jpg|*.png) dir
 add_custom_command(
-    OUTPUT  ${traceModulePath}
-    COMMAND cd ${kernelSourcesPath} && make
-    I=${CMAKE_CURRENT_LIST_DIR}/../includes
-    IOTRACE_VERSION="${IOTRACE_VERSION}"
-    IOTRACE_VERSION_LABEL="${IOTRACE_VERSION_LABEL}"
-    M=${CMAKE_CURRENT_SOURCE_DIR} modules
-    && mv "${CMAKE_CURRENT_LIST_DIR}/*(*.o,*.ko,*order,*symvers,*mod.c)" "${CMAKE_CURRENT_BINARY_DIR}"
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+	OUTPUT  ${traceModulePath}
+	COMMAND cd ${kernelSourcesPath} && make
+	I=${CMAKE_CURRENT_LIST_DIR}/../includes
+	IOTRACE_VERSION="${IOTRACE_VERSION}"
+	IOTRACE_VERSION_LABEL="${IOTRACE_VERSION_LABEL}"
+	M=${CMAKE_CURRENT_SOURCE_DIR} modules
+	&& mv "${CMAKE_CURRENT_LIST_DIR}/*(*.o,*.ko,*order,*symvers,*mod.c)" "${CMAKE_CURRENT_BINARY_DIR}"
+	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 	DEPENDS ${moduleSources}
 )
 
@@ -49,11 +48,11 @@ add_custom_command(
 # or if we have user-specified headers path in KERNEL_SRCS
 # TODO (trybicki): Provide a better way of checking headers
 if (DEFINED ENV{KERNEL_SRCS} OR
-    kernelName MATCHES ".*\.el7\..*")
+	kernelName MATCHES ".*\.el7\..*")
 
-    add_custom_target(traceModule
-        ALL
-        DEPENDS ${traceModulePath}
+	add_custom_target(traceModule
+		ALL
+		DEPENDS ${traceModulePath}
 	)
 
 	# Install kernel module and run depmod
@@ -66,6 +65,6 @@ if (DEFINED ENV{KERNEL_SRCS} OR
 	)
 
 else()
-    message(WARNING "Tracing module is built on EL7 kernel only - skipping target. \
-    Environment variable 'KERNEL_SRCS' can be set to override this behaviour")
+	message(WARNING "Tracing module is built on EL7 kernel only - skipping target. \
+	Environment variable 'KERNEL_SRCS' can be set to override this behaviour")
 endif()
