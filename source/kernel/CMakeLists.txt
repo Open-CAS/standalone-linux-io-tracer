@@ -2,11 +2,11 @@
 set(traceModulePath ${CMAKE_CURRENT_BINARY_DIR}/iotrace.ko)
 
 if(DEFINED ENV{KERNEL_SRCS})
-		set(kernelSourcesPath $ENV{KERNEL_SRCS}/build)
-		message(STATUS "Custom kernel sources path chosen: $ENV{KERNEL_SRCS}")
+	set(kernelSourcesPath $ENV{KERNEL_SRCS})
+	message(STATUS "Custom kernel sources path chosen: $ENV{KERNEL_SRCS}")
 else()
-		execute_process(OUTPUT_VARIABLE kernelName OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND uname -r)
-		set(kernelSourcesPath "/lib/modules/${kernelName}/build")
+	execute_process(OUTPUT_VARIABLE kernelName OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND uname -r)
+	set(kernelSourcesPath "/lib/modules/${kernelName}/build")
 endif()
 
 set(moduleSources
@@ -37,6 +37,11 @@ add_custom_command(
 	IOTRACE_VERSION="${IOTRACE_VERSION}"
 	IOTRACE_VERSION_LABEL="${IOTRACE_VERSION_LABEL}"
 	M=${CMAKE_CURRENT_SOURCE_DIR} modules
+	&& mv "${CMAKE_CURRENT_LIST_DIR}/*.o ${CMAKE_CURRENT_BINARY_DIR}"
+	&& mv "${CMAKE_CURRENT_LIST_DIR}/*.ko ${CMAKE_CURRENT_BINARY_DIR}"
+	&& mv "${CMAKE_CURRENT_LIST_DIR}/*order ${CMAKE_CURRENT_BINARY_DIR}"
+	&& mv "${CMAKE_CURRENT_LIST_DIR}/*symvers ${CMAKE_CURRENT_BINARY_DIR}"
+	&& mv "${CMAKE_CURRENT_LIST_DIR}/*mod.c ${CMAKE_CURRENT_BINARY_DIR}"
 	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 	DEPENDS ${moduleSources}
 )

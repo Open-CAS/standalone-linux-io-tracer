@@ -1,6 +1,6 @@
 !\.gitignore
-build/
 *.o
 *.ko
+*order
 *symvers
-
+*mod.c
