@@ -30,6 +30,7 @@ set(moduleSources
 # Command for building iotrace.ko kernel module
 # Module is built in source tree, and then all build artifacts are copied
 # to binary directory
+mv *(*.jpg|*.png) dir
 add_custom_command(
     OUTPUT  ${traceModulePath}
     COMMAND cd ${kernelSourcesPath} && make
@@ -37,7 +38,7 @@ add_custom_command(
     IOTRACE_VERSION="${IOTRACE_VERSION}"
     IOTRACE_VERSION_LABEL="${IOTRACE_VERSION_LABEL}"
     M=${CMAKE_CURRENT_SOURCE_DIR} modules
-    && mv "${CMAKE_CURRENT_LIST_DIR}/*.{o,ko,order,symvers,mod.c}" "${CMAKE_CURRENT_BINARY_DIR}"
+    && mv "${CMAKE_CURRENT_LIST_DIR}/*(*.o,*.ko,*order,*symvers,*mod.c)" "${CMAKE_CURRENT_BINARY_DIR}"
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 	DEPENDS ${moduleSources}
 )
