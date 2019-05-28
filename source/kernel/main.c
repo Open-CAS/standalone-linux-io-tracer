@@ -51,10 +51,10 @@ static int __init iotrace_init_module(void)
 	if (result)
 		goto free_sa;
 
-    if (VALUE(IOTRACE_VERSION_LABEL)[0] != '\0')
-        printk(KERN_INFO "Module loaded successfully: iotrace version %s (%s)\n", VALUE(IOTRACE_VERSION), VALUE(IOTRACE_VERSION_LABEL));
-    else
-        printk(KERN_INFO "Module loaded successfully: iotrace version %s\n", VALUE(IOTRACE_VERSION));
+	if (VALUE(IOTRACE_VERSION_LABEL)[0] != '\0')
+		printk(KERN_INFO "Module loaded successfully: iotrace version %s (%s)\n", VALUE(IOTRACE_VERSION), VALUE(IOTRACE_VERSION_LABEL));
+	else
+		printk(KERN_INFO "Module loaded successfully: iotrace version %s\n", VALUE(IOTRACE_VERSION));
 
 	return 0;
 
