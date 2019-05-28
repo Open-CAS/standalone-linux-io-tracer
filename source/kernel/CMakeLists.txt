@@ -1,5 +1,5 @@
 # Built kernel module path
-set(traceModulePath ${CMAKE_CURRENT_BINARY_DIR}/iotrace.ko)
+set(traceModulePath ${CMAKE_CURRENT_SOURCE_DIR}/iotrace.ko)
 
 if(DEFINED ENV{KERNEL_SRCS})
 	set(kernelSourcesPath $ENV{KERNEL_SRCS})
