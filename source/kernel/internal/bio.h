@@ -10,6 +10,13 @@
 #include <linux/blkdev.h>
 #include <linux/version.h>
 
+#ifndef SECTOR_SHIFT
+#define SECTOR_SHIFT 9ULL
+#endif
+#ifndef SECTOR_SIZE
+#define SECTOR_SIZE (1ULL << SECTOR_SHIFT)
+#endif
+
 #if LINUX_VERSION_CODE != KERNEL_VERSION(3, 10, 0)
 #error Unsupported Linux Kernel Version
 #endif
