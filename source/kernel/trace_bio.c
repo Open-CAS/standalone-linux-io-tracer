@@ -83,11 +83,11 @@ static inline int _file_size_to_io_class(struct inode *inode)
 }
 
 struct bio_info {
-    struct inode *inode;
-    struct page *page;
+    const struct inode *inode;
+    const struct page *page;
 };
 
-static uint32_t _get_dss_io_class(struct bio *bio, struct bio_info *info)
+static uint32_t _get_dss_io_class(const struct bio *bio, struct bio_info *info)
 {
 	/* Try get inode of block device */
 	struct inode *bio_inode = NULL;
@@ -157,7 +157,7 @@ static void _trace_bio_fs_meta(octf_trace_t trace, log_sid_t sid, log_sid_t ref_
 }
 
 void iotrace_trace_bio(struct iotrace_context *context, unsigned cpu,
-                  uint64_t dev_id, struct bio *bio)
+                  uint64_t dev_id, const struct bio *bio)
 {
     struct iotrace_event ev = {};
     struct iotrace_state *state = &context->trace_state;
