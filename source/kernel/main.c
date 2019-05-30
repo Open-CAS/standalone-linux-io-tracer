@@ -7,10 +7,10 @@
 #include <linux/fs.h>
 #include <linux/vmalloc.h>
 #include <linux/blkdev.h>
-#include "internal/procfs.h"
-#include "internal/io_trace.h"
-#include "internal/trace_bdev.h"
-#include "internal/context.h"
+#include "procfs.h"
+#include "io_trace.h"
+#include "trace_bdev.h"
+#include "context.h"
 #include "trace.h"
 
 #define VALUE_TO_STRING(x) #x

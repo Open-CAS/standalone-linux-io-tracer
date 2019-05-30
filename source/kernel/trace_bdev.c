@@ -7,9 +7,9 @@
 #include <linux/mutex.h>
 #include <linux/smp.h>
 #include <linux/blkdev.h>
-#include "internal/trace_bdev.h"
-#include "internal/io_trace.h"
-#include "internal/context.h"
+#include "trace_bdev.h"
+#include "io_trace.h"
+#include "context.h"
 
 /**
  * @brief Helper structure to aggregate parameters to for_each_cpu callback

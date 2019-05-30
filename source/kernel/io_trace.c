@@ -5,13 +5,13 @@
 
 #include <linux/types.h>
 #include <linux/wait.h>
-#include "internal/trace_bio.h"
+#include "trace_bio.h"
 #include <linux/tracepoint.h>
 #include <trace/events/block.h>
-#include "internal/io_trace.h"
-#include "internal/context.h"
-#include "internal/bio.h"
-#include "internal/procfs.h"
+#include "io_trace.h"
+#include "context.h"
+#include "bio.h"
+#include "procfs.h"
 #include "iotrace_event.h"
 #include "trace.h"
 #include "procfs_files.h"

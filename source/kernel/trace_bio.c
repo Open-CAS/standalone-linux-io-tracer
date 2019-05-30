@@ -6,8 +6,8 @@
 #include <linux/version.h>
 #include <linux/blkdev.h>
 #include <linux/bio.h>
-#include "internal/bio.h"
-#include "internal/context.h"
+#include "bio.h"
+#include "context.h"
 #include "iotrace_event.h"
 
 /**

@@ -10,13 +10,13 @@ else()
 endif()
 
 set(moduleSources
-    "${CMAKE_CURRENT_LIST_DIR}/internal/bio.h"
-    "${CMAKE_CURRENT_LIST_DIR}/internal/context.h"
-    "${CMAKE_CURRENT_LIST_DIR}/internal/io_trace.h"
-    "${CMAKE_CURRENT_LIST_DIR}/internal/procfs.h"
-    "${CMAKE_CURRENT_LIST_DIR}/internal/trace_bdev.h"
-    "${CMAKE_CURRENT_LIST_DIR}/internal/trace_bio.h"
-    "${CMAKE_CURRENT_LIST_DIR}/internal/trace_env_kernel.h"
+    "${CMAKE_CURRENT_LIST_DIR}/bio.h"
+    "${CMAKE_CURRENT_LIST_DIR}/context.h"
+    "${CMAKE_CURRENT_LIST_DIR}/io_trace.h"
+    "${CMAKE_CURRENT_LIST_DIR}/procfs.h"
+    "${CMAKE_CURRENT_LIST_DIR}/trace_bdev.h"
+    "${CMAKE_CURRENT_LIST_DIR}/trace_bio.h"
+    "${CMAKE_CURRENT_LIST_DIR}/trace_env_kernel.h"
     "${CMAKE_CURRENT_LIST_DIR}/io_trace.c"
     "${CMAKE_CURRENT_LIST_DIR}/iotrace_event.h"
     "${CMAKE_CURRENT_LIST_DIR}/main.c"
