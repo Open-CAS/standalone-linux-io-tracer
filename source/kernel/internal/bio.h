@@ -23,16 +23,19 @@
 
 #define IOTRACE_BIO_OP_FLAGS(bio) (bio)->bi_rw
 
-/* bio operation macros (read/write/discard) */
+/* BIO operation macros (read/write/discard) */
 #define IOTRACE_BIO_IS_WRITE(bio) (bio_data_dir(bio) == WRITE)
 #define IOTRACE_BIO_IS_DISCARD(bio) ((IOTRACE_BIO_OP_FLAGS(bio)) & REQ_DISCARD)
 
-/* bio atributes macros (address, size ...) */
+/* BIO attributes macros (address, size ...) */
 #define IOTRACE_BIO_BISIZE(bio) (bio)->bi_size
 #define IOTRACE_BIO_BISECTOR(bio) (bio)->bi_sector
 
-/* bio flags macros (flush, fua, ...) */
+/* BIO flags macros (flush, fua, ...) */
 #define IOTRACE_BIO_IS_FLUSH(bio) ((IOTRACE_BIO_OP_FLAGS(bio)) & REQ_FLUSH)
 #define IOTRACE_BIO_IS_FUA(bio) ((IOTRACE_BIO_OP_FLAGS(bio)) & REQ_FUA)
+
+/* Gets BIO vector  */
+#define IOTRACE_BIO_BVEC(vec) (vec)
 
 #endif  // SOURCE_KERNEL_INTERNAL_BIO_H
