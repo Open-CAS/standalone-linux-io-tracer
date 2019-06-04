@@ -32,6 +32,9 @@ all: init
 install: all
 	cmake -P $(BUILD_DIR)/cmake_install.cmake
 
+uninstall:
+	xargs rm -v -f < $(BUILD_DIR)/install_manifest.txt
+
 test:
 
 clean:
