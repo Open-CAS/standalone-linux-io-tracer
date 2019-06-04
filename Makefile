@@ -30,11 +30,10 @@ all: init
 	$(MAKE) -C $(BUILD_DIR) all
 
 install: all
-	cmake -DCOMPONENT=octf-install -P $(BUILD_DIR)/cmake_install.cmake
-	cmake -DCOMPONENT=iotrace-install -P $(BUILD_DIR)/cmake_install.cmake
+	cmake -P $(BUILD_DIR)/cmake_install.cmake
 
 uninstall:
-	xargs rm -v -f < $(BUILD_DIR)/install_manifest_iotrace-install.txt
+	xargs rm -v -f < $(BUILD_DIR)/install_manifest.txt
 
 test:
 
