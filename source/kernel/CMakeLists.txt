@@ -34,7 +34,6 @@ set(moduleSources
 add_custom_command(
     OUTPUT  ${traceModulePath}
     COMMAND cd ${kernelSourcesPath} && make
-    I=${CMAKE_CURRENT_LIST_DIR}/../includes
     IOTRACE_VERSION="${IOTRACE_VERSION}"
     IOTRACE_VERSION_LABEL="${IOTRACE_VERSION_LABEL}"
     M=${CMAKE_CURRENT_SOURCE_DIR} modules
