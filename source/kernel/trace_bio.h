@@ -20,6 +20,6 @@ struct bio;
 void iotrace_trace_bio(struct iotrace_context *context,
                        unsigned cpu,
                        uint64_t dev_id,
-                       const struct bio *bio);
+                       struct bio *bio);
 
 #endif  // INTERNAL_TRACE_BIO_H_
