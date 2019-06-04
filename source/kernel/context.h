@@ -6,9 +6,9 @@
 #ifndef SOURCE_KERNEL_INTERNAL_CONTEXT_H
 #define SOURCE_KERNEL_INTERNAL_CONTEXT_H
 
-#include "internal/io_trace.h"
-#include "internal/procfs.h"
-#include "internal/trace_bdev.h"
+#include "io_trace.h"
+#include "procfs.h"
+#include "trace_bdev.h"
 #include "trace.h"
 
 /**

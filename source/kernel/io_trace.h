@@ -6,7 +6,6 @@
 #ifndef SOURCE_KERNEL_INTERNAL_IO_TRACE_H
 #define SOURCE_KERNEL_INTERNAL_IO_TRACE_H
 
-#include "internal/dss.h"
 #include "trace.h"
 
 struct iotrace_context;

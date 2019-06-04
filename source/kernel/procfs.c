@@ -13,12 +13,12 @@
 #include <linux/uaccess.h>
 #include <linux/wait.h>
 #include <linux/version.h>
-#include "internal/context.h"
-#include "internal/procfs.h"
-#include "internal/trace_bdev.h"
+#include "context.h"
+#include "procfs.h"
+#include "trace_bdev.h"
 #include "iotrace_event.h"
 #include "procfs_files.h"
-#include "internal/context.h"
+#include "context.h"
 #include "trace.h"
 
 static const char iotrace_subdir[] = IOTRACE_PROCFS_SUBDIR_NAME;

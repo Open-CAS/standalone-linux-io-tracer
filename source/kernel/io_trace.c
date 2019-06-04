@@ -5,18 +5,17 @@
 
 #include <linux/types.h>
 #include <linux/wait.h>
+#include "trace_bio.h"
 #include <linux/tracepoint.h>
 #include <trace/events/block.h>
-#include "internal/dss.h"
-#include "internal/io_trace.h"
-#include "internal/context.h"
-#include "internal/bio.h"
-#include "internal/procfs.h"
+#include "io_trace.h"
+#include "context.h"
+#include "bio.h"
+#include "procfs.h"
 #include "iotrace_event.h"
 #include "trace.h"
 #include "procfs_files.h"
 
-#define SECTOR_SHIFT 9
 /* Maximal length of buffer with version information */
 #define VERSION_BUFFER_MAX_LEN 64
 
@@ -27,49 +26,6 @@ static inline void iotrace_notify_of_new_events(struct iotrace_context *context,
 		&(per_cpu_ptr(context->proc_files, cpu)->poll_wait_queue);
 
 	wake_up(queue);
-}
-
-/**
- * @brief Write I/O information to trace buffer
- *
- * @param state Device trace state
- * @param cpu CPU id
- * @param dev_id Device id
- * @param bio I/O description
- *
- * @retval 0 Information stored successfully in trace buffer
- * @retval non-zero Error code
- */
-static void iotrace_trace_bio(struct iotrace_context *context, unsigned cpu,
-			      uint64_t dev_id, struct bio *bio)
-{
-	struct iotrace_event ev = {};
-	struct iotrace_state *state = &context->trace_state;
-	uint64_t sid = atomic64_inc_return(&state->sid);
-
-	iotrace_event_init_hdr(&ev.hdr, iotrace_event_type_io, sid,
-			  ktime_to_ns(ktime_get()), sizeof(ev));
-
-	if (IOTRACE_BIO_IS_DISCARD(bio))
-		ev.operation = iotrace_event_operation_discard;
-	else if (IOTRACE_BIO_IS_WRITE(bio))
-		ev.operation = iotrace_event_operation_wr;
-	else
-		ev.operation = iotrace_event_operation_rd;
-
-	if (IOTRACE_BIO_IS_FLUSH(bio))
-		ev.flags |= iotrace_event_flag_flush;
-	if (IOTRACE_BIO_IS_FUA(bio))
-		ev.flags |= iotrace_event_flag_fua;
-
-	ev.lba = IOTRACE_BIO_BISECTOR(bio);
-	ev.len = IOTRACE_BIO_BISIZE(bio) >> SECTOR_SHIFT;
-	ev.io_class = iotrace_dss_bio_io_class(bio);
-	ev.dev_id = dev_id;
-
-	octf_trace_push(*per_cpu_ptr(state->traces, cpu), &ev, sizeof(ev));
-
-	iotrace_notify_of_new_events(context, cpu);
 }
 
 /**
@@ -129,6 +85,7 @@ static void bio_queue_event(void *ignore, struct request_queue *q,
 	if (iotrace_bdev_is_added(&iotrace->bdev, cpu, q)) {
 		dev_id = disk_devt(bio->bi_bdev->bd_disk);
 		iotrace_trace_bio(iotrace, cpu, dev_id, bio);
+		iotrace_notify_of_new_events(iotrace, cpu);
 	}
 
 	put_cpu();

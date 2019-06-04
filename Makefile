@@ -42,5 +42,6 @@ clean:
 	@if [ -d $(BUILD_DIR) ] ; \
 	then \
 		$(MAKE) -C $(BUILD_DIR) clean ; \
+		$(MAKE) -C $(BUILD_DIR) clean-module ; \
 		rm -rf $(BUILD_DIR) ; \
 	fi
