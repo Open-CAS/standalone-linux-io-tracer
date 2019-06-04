@@ -56,7 +56,7 @@ if (DEFINED ENV{KERNEL_SRCS} OR
 
 	# Install kernel module and run depmod
 	install(FILES "${traceModulePath}"
-		DESTINATION "/lib/modules/${kernelName}/extra"
+		DESTINATION "lib/modules/${kernelName}/extra"
 		COMPONENT iotrace-install
 	)
 	install(CODE "execute_process(COMMAND depmod)"
