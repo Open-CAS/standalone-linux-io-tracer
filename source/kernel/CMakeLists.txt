@@ -59,15 +59,15 @@ if (DEFINED ENV{KERNEL_SRCS} OR
         COMMAND cd ${kernelSourcesPath} && make M=${CMAKE_CURRENT_SOURCE_DIR} clean
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
-
-    # Install kernel module and run depmod
-    install(FILES "${traceModulePath}"
-        DESTINATION "/lib/modules/${kernelName}/extra"
-        COMPONENT iotrace-install
-    )
-    install(CODE "execute_process(COMMAND depmod)"
-        COMPONENT iotrace-install
-    )
+	
+	# Install kernel module and run depmod
+	install(FILES "${traceModulePath}"
+		DESTINATION "lib/modules/${kernelName}/extra"
+		COMPONENT iotrace-install
+	)
+	install(CODE "execute_process(COMMAND depmod)"
+		COMPONENT iotrace-install
+	)
 
 else()
     message(WARNING "Tracing module is built on EL7 kernel only - skipping target. \
