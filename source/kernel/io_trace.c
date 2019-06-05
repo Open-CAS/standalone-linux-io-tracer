@@ -125,7 +125,7 @@ static void deinit_tracers(struct iotrace_state *state)
 static int init_tracers(struct iotrace_state *state,
 			struct iotrace_proc_file __percpu *proc_files)
 {
-	int result;
+	int result = -EINVAL;
 	unsigned i;
 	octf_trace_t *trace;
 	struct iotrace_proc_file *file;
