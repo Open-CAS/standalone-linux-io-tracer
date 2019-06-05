@@ -324,7 +324,7 @@ static ssize_t list_dev_read(struct file *file, char __user *ubuf, size_t count,
 	dev_count = result;
 
 	for (pos = 0, idx = 0;
-	     idx < dev_count && pos + strlen(devices[idx]) + 1 < count - pos;
+	     idx < dev_count && pos + strnlen(devices[idx], DISK_NAME_LEN) + 1 < count - pos;
 	     idx++) {
 		pos += snprintf(buf + pos, count - pos, "%s\n", devices[idx]);
 	}
