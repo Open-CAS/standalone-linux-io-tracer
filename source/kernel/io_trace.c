@@ -52,7 +52,7 @@ int iotrace_trace_desc(struct iotrace_context *iotrace, unsigned cpu,
 
 	if (strnlen(dev_name, dev_name_size) >= dev_name_size)
 		return -ENOSPC;
-	strcpy(desc.device_name, dev_name);
+	strlcpy(desc.device_name, dev_name, sizeof(desc.device_name));
 
 	iotrace_event_init_hdr(&desc.hdr, iotrace_event_type_device_desc, sid,
 			  ktime_to_ns(ktime_get()), sizeof(desc));

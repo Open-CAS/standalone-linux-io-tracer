@@ -283,7 +283,7 @@ int iotrace_bdev_list(struct iotrace_bdev *trace_bdev,
 			mutex_unlock(&trace_bdev->lock);
 			return -ENOSPC;
 		}
-		strncpy(list[i], name, sizeof(list[i]));
+		strlcpy(list[i], name, sizeof(list[i]));
 	}
 
 	mutex_unlock(&trace_bdev->lock);
