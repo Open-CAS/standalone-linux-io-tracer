@@ -42,7 +42,7 @@ static inline void iotrace_notify_of_new_events(struct iotrace_context *context,
 int iotrace_trace_desc(struct iotrace_context *iotrace, unsigned cpu,
 		       uint32_t dev_id, const char *dev_name, uint64_t dev_size)
 {
-	int result;
+	int result = 0;
 	struct iotrace_state *state = &iotrace->trace_state;
 	octf_trace_t trace = *per_cpu_ptr(state->traces, cpu);
 
@@ -125,7 +125,7 @@ static void deinit_tracers(struct iotrace_state *state)
 static int init_tracers(struct iotrace_state *state,
 			struct iotrace_proc_file __percpu *proc_files)
 {
-	int result;
+	int result = -EINVAL;
 	unsigned i;
 	octf_trace_t *trace;
 	struct iotrace_proc_file *file;
