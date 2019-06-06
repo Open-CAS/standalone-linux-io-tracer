@@ -8,7 +8,7 @@
 
 #include <string>
 #include <vector>
-
+#include <list>
 #include <octf/interface/IRingTraceProducer.h>
 #include <octf/interface/ITraceConverter.h>
 #include <octf/interface/ITraceExecutor.h>
@@ -33,10 +33,6 @@ public:
 
     bool startTrace() override;
 
-    /**
-     * @note This method sends SIGUSR1 to SignalHandler
-     * to indicate end of tracing
-     */
     bool stopTrace() override;
 
     uint32_t getTraceQueueCount() override;
@@ -45,14 +41,22 @@ public:
 
     std::unique_ptr<ITraceConverter> createTraceConverter() override;
 
+    /**
+     * @brief Waits until receiving signal for stopping traces
+     */
+    void waitUntilStopTrace();
+
 private:
     bool isKernelModuleLoaded();
 
     bool checkModuleCompatibility();
 
-    void writeSatraceProcfs(std::string file, const std::string &text);
+    bool writeSatraceProcfs(std::string file, const std::string &text);
+
+    void stopDevices();
 
     std::vector<std::string> m_devices;
+    std::list<std::string> m_startedDevices;
 };
 
 }  // namespace octf
