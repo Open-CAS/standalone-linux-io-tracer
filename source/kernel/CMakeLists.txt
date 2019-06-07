@@ -64,9 +64,12 @@ if (DEFINED ENV{KERNEL_SRCS} OR
 		DESTINATION "lib/modules/${kernelName}/extra"
 		COMPONENT iotrace-install
 	)
-	install(CODE "execute_process(COMMAND depmod)"
-		COMPONENT iotrace-install
-	)
+
+	if (${CMAKE_INSTALL_PREFIX} STREQUAL "/")
+		install(CODE "execute_process(COMMAND depmod)"
+			COMPONENT iotrace-install
+		)
+	endif()
 
 else()
     message(WARNING "Tracing module is built on EL7 kernel only - skipping target. \

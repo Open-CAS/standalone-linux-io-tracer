@@ -63,7 +63,7 @@ cd standalone-linux-io-tracer
 
   ~~~{.sh}
   git submodule update --init --recursive
-  ./modules/open-cas-telemetry-framework/setup_dependencies.sh
+  sudo ./modules/open-cas-telemetry-framework/setup_dependencies.sh
   ~~~
 
   OCTF will then be installed along with iotrace in the next step.
