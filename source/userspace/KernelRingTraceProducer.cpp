@@ -16,7 +16,6 @@
 #include <cstdint>
 #include <fstream>
 #include <string>
-#include <system_error>
 #include "InterfaceKernelTraceCreatingImpl.h"
 
 namespace octf {

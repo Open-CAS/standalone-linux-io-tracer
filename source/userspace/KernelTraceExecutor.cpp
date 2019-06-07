@@ -24,15 +24,14 @@ namespace octf {
 KernelTraceExecutor::KernelTraceExecutor(
         const std::vector<std::string> &devices,
         uint32_t ringSizeMiB)
-        : m_devices(devices) {
+        : m_devices(devices)
+        , m_startedDevices() {
     if (!isKernelModuleLoaded()) {
         throw Exception("Kernel tracing module is not loaded.");
     }
 
-    try {
-        writeSatraceProcfs(IOTRACE_PROCFS_SIZE_FILE_NAME,
-                           std::to_string(ringSizeMiB));
-    } catch (Exception &) {
+    if (!writeSatraceProcfs(IOTRACE_PROCFS_SIZE_FILE_NAME,
+            std::to_string(ringSizeMiB))) {
         throw Exception("Failed to set ring buffer size \n");
     }
 
@@ -44,17 +43,22 @@ KernelTraceExecutor::KernelTraceExecutor(
 
 bool KernelTraceExecutor::startTrace() {
     for (const auto &dev : m_devices) {
-        writeSatraceProcfs(IOTRACE_PROCFS_ADD_DEVICE_FILE_NAME, dev);
+        if (writeSatraceProcfs(IOTRACE_PROCFS_ADD_DEVICE_FILE_NAME, dev)) {
+            m_startedDevices.push_back(dev);
+            log::verbose << "Tracing started, device " << dev << std::endl;
+        } else {
+            stopDevices();
+            SignalHandler::get().sendSignal(SIGTERM);
+            throw Exception("Cannot start tracing, device " + dev);
+        }
     }
+
     return true;
 }
 
 bool KernelTraceExecutor::stopTrace() {
-    for (const auto &dev : m_devices) {
-        writeSatraceProcfs(IOTRACE_PROCFS_REMOVE_DEVICE_FILE_NAME, dev);
-    }
-
-    SignalHandler::get().sendUserSignal();
+    stopDevices();
+    SignalHandler::get().sendSignal(SIGTERM);
     return true;
 }
 
@@ -115,24 +119,44 @@ bool KernelTraceExecutor::checkModuleCompatibility() {
     return true;
 }
 
-void KernelTraceExecutor::writeSatraceProcfs(std::string file,
+bool KernelTraceExecutor::writeSatraceProcfs(std::string file,
                                              const std::string &text) {
     std::string path = std::string{IOTRACE_PROCFS_DIR} + "/" + file;
     std::ofstream fd;
 
     fd.open(path, std::ios_base::out);
     if (fd.fail()) {
-        throw Exception("Failed to open file: " + file);
+        return false;
     }
 
-    fd.write(text.c_str(), text.length() + 1);
+    fd << text << std::endl;
 
     if (fd.fail()) {
         fd.close();
-        throw Exception("Failed to write to file: " + file);
+        return false;
     }
 
     fd.close();
+
+    return true;
+}
+
+void KernelTraceExecutor::waitUntilStopTrace() {
+    // Register signal handler for SIGINT and SIGTERM
+    SignalHandler::get().registerSignal(SIGINT);
+    SignalHandler::get().registerSignal(SIGTERM);
+    SignalHandler::get().wait();
+}
+
+void KernelTraceExecutor::stopDevices() {
+    for (const auto &dev : m_startedDevices) {
+        if (writeSatraceProcfs(IOTRACE_PROCFS_REMOVE_DEVICE_FILE_NAME, dev)) {
+            log::verbose << "Tracing stopped, device " << dev << std::endl;
+        } else {
+            log::cerr << "Cannot stop tracing, device " << dev << std::endl;
+        }
+    }
+    m_startedDevices.clear();
 }
 
 }  // namespace octf

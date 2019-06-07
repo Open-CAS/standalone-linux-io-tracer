@@ -68,27 +68,21 @@ void InterfaceKernelTraceCreatingImpl::StartTracing(
         manager.startJobs(maxDuration, maxSize, circBufferSize,
                           SerializerType::FileSerializer);
 
-        // Register signal handler for SIGINT and SIGTERM
-        SignalHandler::get().registerSignal(SIGINT);
-        SignalHandler::get().registerSignal(SIGTERM);
-
-        // When tracing finishes, Executor sends SIGUSR1 signal
-        SignalHandler::get().registerSignal(SIGUSR1);
-
-        SignalHandler::get().wait();
+        kernelExecutor.waitUntilStopTrace();
 
         manager.stopJobs();
 
         TracingState state = manager.getState();
         manager.fillTraceSummary(response, state);
-        done->Run();
+
+        if (state != TracingState::COMPLETE) {
+            controller->SetFailed("Tracing not completed, trace path " + response->tracepath());
+        }
     } catch (Exception &e) {
         controller->SetFailed(e.what());
-        done->Run();
-    } catch (std::system_error &se) {
-        controller->SetFailed(se.what());
-        done->Run();
     }
+
+    done->Run();
 }
 
 }  // namespace octf

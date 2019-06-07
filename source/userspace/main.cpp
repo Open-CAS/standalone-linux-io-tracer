@@ -74,11 +74,11 @@ int main(int argc, char *argv[]) {
 
     } catch (Exception &e) {
         log::cerr << e.what() << endl;
-        return -EINVAL;
+        return -1;
     } catch (std::exception &e) {
         log::critical << APP_NAME << " execution interrupted: " << e.what()
                       << endl;
-        return -EINVAL;
+        return -1;
     }
 
     return 0;
