@@ -149,17 +149,14 @@ void KernelTraceExecutor::waitUntilStopTrace() {
 }
 
 void KernelTraceExecutor::stopDevices() {
-    auto iter = m_startedDevices.begin();
-
-    while (iter != m_startedDevices.end()) {
-        if (writeSatraceProcfs(IOTRACE_PROCFS_REMOVE_DEVICE_FILE_NAME, *iter)) {
-            log::verbose << "Tracing stopped, device " << *iter << std::endl;
-            iter = m_startedDevices.erase(iter);
+    for (const auto &dev : m_startedDevices) {
+        if (writeSatraceProcfs(IOTRACE_PROCFS_REMOVE_DEVICE_FILE_NAME, dev)) {
+            log::verbose << "Tracing stopped, device " << dev << std::endl;
         } else {
-            log::cerr << "Cannot stop tracing, device " << *iter << std::endl;
-            iter++;
+            log::cerr << "Cannot stop tracing, device " << dev << std::endl;
         }
     }
+    m_startedDevices.clear();
 }
 
 }  // namespace octf
