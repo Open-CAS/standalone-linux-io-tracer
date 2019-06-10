@@ -1,7 +1,7 @@
 # iotrace - collect and manage block I/O traces
 
 ```
-iotrace --start-trace -d device [device ...] [-b buffer_size] [-s max_file_size] [-t seconds]
+iotrace --start-trace -d device[,device,...] [-b buffer_size] [-s max_file_size] [-t seconds]
 iotrace --parse-trace [--format json] --path path
 iotrace --get-trace-summary --path path
 iotrace --list-traces [--prefix prefix]
@@ -36,27 +36,36 @@ iotrace provides block device IO tracing and trace management capabilities. For 
 # Options
 
 
-* **-d, --devices *device*&gt; [&lt;*device*&gt; ...]**
+* **-d, --devices &lt;DEV1*&gt;[,DEV2,...]**
   List of one or more block devices
 
-* **-b, --buffer *buffer_size***
+
+* **-b, --buffer &lt;BUFFER_SIZE&gt;**
   Size of internal circular buffer for IO traces (in units of MiB). Increasing this parameter reduces risk of dropping traces at the cost of increased memory usage. Default value is 100. Accepted value range is [1..1024].
 
-* **-s, --size *max_file_size***
+
+* **-s, --size &lt;SIZE&gt;**
   Maximum size of trace file (in units of MiB). Tracing is stopped after output file reaches specified maximum size. Default value is 1000. Accepted value range is [1..10^9].
 
-* **-t, --time *seconds***
+
+* **-t, --time &lt;SECONDS&gt;**
   Maximum tracing duration (in seconds). Tracing is stopped after specified time elapses. Default value is 1000. Accepted value range is [1..2^32-1].
+
 
 * **--format json**
   Parsing output format. Currently the only supported format is json.
 
-* **--path *path***
+
+* **--path &lt;PATH&gt;**
   Trace file path, relative to OCTF trace location.
 
-* **--prefix *prefix***
+
+* **-p --prefix &lt;PREFIX&gt;**
   Trace file prefix, relative to OCTF trace location. End prefix with asterisk ("*") to match multiple files or provide full relative path for a single trace.
 
+
+* **-f --force**
+  Enforce removing specified trace(s)
 
 # Files
 
@@ -65,8 +74,28 @@ Traces are stored in location specified in OCTF configuration file /etc/octf/oct
 
 # Example
 
-iotrace --start-trace -d /dev/vda /dev/vdb -b 10 -s 100 -t 20
-iotrace --manage-trace --list-traces
+~~~{.sh}
+# Star tracing
+iotrace --start-trace -d /dev/vda,/dev/vdb -b 10 -s 100 -t 20
+
+# List all traces
+iotrace --list-traces
+
+# List traces prefixed by "kernel" 
+iotrace --list-traces --prefix "kernel/*"
+
+# Parse the trace
 iotrace --parse-trace --path kernel/2019-05-15_18:40:34 --format json
+
+# Get the trace summary
 iotrace --get-trace-summary --path kernel/2019-05-15_18:40:34
+
+# Remove the specific trace 
 iotrace --remove-trace --prefix kernel/2019-05-15_18:40:34
+
+# Remove traces prfixed by 'kernel' and created in 2019
+iotrace --remove-trace --prefix "kernel/2019*"
+
+# Removes all traces
+iotrace --remove-trace --prefix "*"
+~~~

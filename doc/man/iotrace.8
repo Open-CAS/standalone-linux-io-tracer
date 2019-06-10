@@ -3,7 +3,7 @@
 iotrace - collect and manage block I/O traces
 
 .SH SYNOPSIS
-iotrace --start-trace -d \fIdevice\fR [\fIdevice\fR ...] [-b \fIbuffer_size\fR] [-s \fImax_file_size\fR] [-t \fIseconds\fR]
+iotrace --start-trace -d \fIdevice\fR[,\fIdevice\fR,...] [-b \fIbuffer_size\fR] [-s \fImax_file_size\fR] [-t \fIseconds\fR]
 .br
 iotrace --parse-trace [--format json] --path \fIpath\fR
 .br
@@ -65,19 +65,47 @@ Parsing output format. Currently the only supported format is json.
 Trace file path, relative to OCTF trace location.
 
 .TP
-.B --prefix \fIprefix\fR
+.B -p, --prefix \fIprefix\fR
 Trace file prefix, relative to OCTF trace location. End prefix with asterisk ("*") to match multiple files or provide full relative path for a single trace.
+
+.TP
+.B -f, --force
+Enforce removing specified trace(s)
+
 
 .SH FILES
 Traces are stored in location specified in OCTF configuration file /etc/octf/octf.conf, default is /var/lib/octf/trace.
 
 .SH EXAMPLE
-iotrace --start-trace -d /dev/vda /dev/vdb -b 10 -s 100 -t 20
+.TP
+.B Star tracing
 .br
-iotrace --manage-trace --list-traces
+iotrace --start-trace -d /dev/vda,/dev/vdb -b 10 -s 100 -t 20
+.TP
+.B List all traces
+.br
+iotrace --list-traces
+.TP
+.B List traces prefixed by "kernel" 
+.br
+iotrace --list-traces --prefix "kernel/*"
+.TP
+.B Parse the trace
 .br
 iotrace --parse-trace --path kernel/2019-05-15_18:40:34 --format json
+.TP
+.B Get the trace summary
 .br
 iotrace --get-trace-summary --path kernel/2019-05-15_18:40:34
+.TP
+.B Remove the specific trace 
 .br
 iotrace --remove-trace --prefix kernel/2019-05-15_18:40:34
+.TP
+.B Remove traces prfixed by 'kernel' and created in 2019
+.br
+iotrace --remove-trace --prefix "kernel/2019*"
+.TP
+.B Removes all traces
+.br
+iotrace --remove-trace --prefix "*"
