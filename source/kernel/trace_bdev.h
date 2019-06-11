@@ -58,9 +58,9 @@ static bool inline iotrace_bdev_is_added(struct iotrace_bdev *trace_bdev,
 int iotrace_bdev_list(struct iotrace_bdev *trace_bdev,
                       char list[SATRACE_MAX_DEVICES][DISK_NAME_LEN]);
 
-int iotrace_bdev_remove(struct iotrace_bdev *trace_bdev, char *path);
+int iotrace_bdev_remove(struct iotrace_bdev *trace_bdev, const char *path);
 
-int iotrace_bdev_add(struct iotrace_bdev *trace_bdev, char *path);
+int iotrace_bdev_add(struct iotrace_bdev *trace_bdev, const char *path);
 
 void iotrace_bdev_remove_all(struct iotrace_bdev *trace_bdev);
 
