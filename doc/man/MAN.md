@@ -5,7 +5,7 @@ iotrace --start-trace -d device[,device,...] [-b buffer_size] [-s max_file_size]
 iotrace --parse-trace [--format json] --path path
 iotrace --get-trace-summary --path path
 iotrace --list-traces [--prefix prefix]
-iotrace --remove-trace --prefix prefix
+iotrace --remove-traces --prefix prefix
 ```
 
 
@@ -25,7 +25,7 @@ iotrace provides block device IO tracing and trace management capabilities. For 
   Display summary of specified trace.
 * --list-traces, -L
   List collected traces.
-* --remove-trace, -R
+* --remove-traces, -R
   Remove specified traces.
 * --version, -V
   Print version info.
@@ -91,11 +91,11 @@ iotrace --parse-trace --path kernel/2019-05-15_18:40:34 --format json
 iotrace --get-trace-summary --path kernel/2019-05-15_18:40:34
 
 # Remove the specific trace 
-iotrace --remove-trace --prefix kernel/2019-05-15_18:40:34
+iotrace --remove-traces --prefix kernel/2019-05-15_18:40:34
 
 # Remove traces prfixed by 'kernel' and created in 2019
-iotrace --remove-trace --prefix "kernel/2019*"
+iotrace --remove-traces --prefix "kernel/2019*"
 
 # Removes all traces
-iotrace --remove-trace --prefix "*"
+iotrace --remove-traces --prefix "*"
 ~~~

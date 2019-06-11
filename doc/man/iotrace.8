@@ -11,7 +11,7 @@ iotrace --get-trace-summary --path \fIpath\fR
 .br
 iotrace --list-traces [--prefix \fIprefix\fR]
 .br
-iotrace --remove-trace --prefix \fIprefix\fR
+iotrace --remove-traces --prefix \fIprefix\fR
 
 .SH DESCRIPTION
 iotrace provides block device IO tracing and trace management capabilities. For each IO to target device(s) basic metadata information is captured (IO operation type, address, size), supplemented with extended classification. Extended classification contains information about I/O type (direct / filesystem metadata / file) and target file attributes (e.g. file size). iotrace is based on Open CAS Tracing Framework (OCTF), see https://github.com/Open-CAS/open-cas-telemetry-framework project page for more details. Collected traces are stored in OCTF trace location. Traces can later be converted to human readable form using --parse-trace command.
@@ -30,7 +30,7 @@ Display summary of specified trace.
 --list-traces, -L
 List collected traces.
 .TP
---remove-trace, -R
+--remove-traces, -R
 Remove specified traces.
 .TP
 --version, -V
@@ -100,12 +100,12 @@ iotrace --get-trace-summary --path kernel/2019-05-15_18:40:34
 .TP
 .B Remove the specific trace 
 .br
-iotrace --remove-trace --prefix kernel/2019-05-15_18:40:34
+iotrace --remove-traces --prefix kernel/2019-05-15_18:40:34
 .TP
 .B Remove traces prfixed by 'kernel' and created in 2019
 .br
-iotrace --remove-trace --prefix "kernel/2019*"
+iotrace --remove-traces --prefix "kernel/2019*"
 .TP
 .B Removes all traces
 .br
-iotrace --remove-trace --prefix "*"
+iotrace --remove-traces --prefix "*"
