@@ -221,7 +221,7 @@ int iotrace_init_buffers(struct iotrace_context *iotrace, uint64_t size)
 	for_each_online_cpu (i) {
 		file = per_cpu_ptr(proc_files, i);
 
-		result = iotrace_procfs_trace_file_alloc(file, iotrace->size);
+		result = iotrace_procfs_trace_file_alloc(file, iotrace->size, i);
 		if (result)
 			break;
 	}

@@ -524,7 +524,7 @@ static int iotrace_procfs_mngt_init(void)
 
 /* Allocate buffer for traces */
 int iotrace_procfs_trace_file_alloc(struct iotrace_proc_file *proc_file,
-				    uint64_t size)
+				    uint64_t size, int cpu)
 {
 	void *buffer;
 
@@ -537,7 +537,7 @@ int iotrace_procfs_trace_file_alloc(struct iotrace_proc_file *proc_file,
 	if (proc_file->trace_ring && proc_file->trace_ring_size == size)
 		return 0;
 
-	buffer = vmalloc_user(size);
+	buffer = vzalloc_node(size, cpu_to_node(cpu));
 	if (!buffer)
 		return -ENOMEM;
 
