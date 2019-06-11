@@ -64,7 +64,7 @@ void static iotrace_bdev_add_oncpu(void *info)
  * @retval 0 device added successfully
  * @retval non-zero Error code
  */
-int iotrace_bdev_add(struct iotrace_bdev *trace_bdev, char *path)
+int iotrace_bdev_add(struct iotrace_bdev *trace_bdev, const char *path)
 {
 	struct block_device *bdev;
 	struct iotrace_bdev_data data = { .trace_bdev = trace_bdev };
@@ -209,7 +209,7 @@ exit:
  * @retval 0 device added successfully
  * @retval non-zero error code
  */
-int iotrace_bdev_remove(struct iotrace_bdev *trace_bdev, char *path)
+int iotrace_bdev_remove(struct iotrace_bdev *trace_bdev, const char *path)
 {
 	struct block_device *bdev;
 	int result;
@@ -272,23 +272,25 @@ int iotrace_bdev_list(struct iotrace_bdev *trace_bdev,
 	size_t len;
 	const char *name;
 	struct block_device **bdev_list;
+	int num;
 
 	mutex_lock(&trace_bdev->lock);
 
 	bdev_list = per_cpu_ptr(trace_bdev->list, smp_processor_id());
 	for (i = 0; i < trace_bdev->num; i++) {
 		name = bdev_list[i]->bd_disk->disk_name;
-		len = strnlen(name, sizeof(list[i]));
-		if (len >= sizeof(list[i])) {
+		len = strnlen(name, DISK_NAME_LEN);
+		if (len >= DISK_NAME_LEN) {
 			mutex_unlock(&trace_bdev->lock);
 			return -ENOSPC;
 		}
 		strlcpy(list[i], name, sizeof(list[i]));
 	}
+	num = trace_bdev->num;
 
 	mutex_unlock(&trace_bdev->lock);
 
-	return trace_bdev->num;
+	return num;
 }
 
 /**
