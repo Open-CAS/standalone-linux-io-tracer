@@ -65,7 +65,8 @@ iotrace provides block device IO tracing and trace management capabilities. For 
 
 
 * **-f --force**
-  Enforce removing specified trace(s)
+  Enforces removing specified traces in any state. Without this flag only
+completed and failed traces can be removed.
 
 # Files
 
