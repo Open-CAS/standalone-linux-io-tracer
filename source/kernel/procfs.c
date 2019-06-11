@@ -13,6 +13,7 @@
 #include <linux/uaccess.h>
 #include <linux/wait.h>
 #include <linux/version.h>
+#include <linux/stat.h>
 #include "context.h"
 #include "procfs.h"
 #include "trace_bdev.h"
@@ -465,14 +466,33 @@ static int iotrace_procfs_mngt_init(void)
 	struct {
 		char *name;
 		struct file_operations *ops;
+		umode_t mode;
 	} entries[] = {
-		{ .name = IOTRACE_PROCFS_DEVICES_FILE_NAME, .ops = &list_dev_ops },
-		{ .name = IOTRACE_PROCFS_ADD_DEVICE_FILE_NAME, .ops = &add_dev_ops },
-		{ .name = IOTRACE_PROCFS_REMOVE_DEVICE_FILE_NAME,
-		  .ops = &del_dev_ops },
-		{ .name = IOTRACE_PROCFS_VERSION_FILE_NAME,
-		  .ops = &get_version_ops },
-		{ .name = IOTRACE_PROCFS_SIZE_FILE_NAME, .ops = &size_ops },
+		{
+		        .name = IOTRACE_PROCFS_DEVICES_FILE_NAME,
+		        .ops = &list_dev_ops,
+		        .mode = S_IRUSR,
+		},
+		{
+		        .name = IOTRACE_PROCFS_ADD_DEVICE_FILE_NAME,
+		        .ops = &add_dev_ops,
+		        .mode = S_IWUSR,
+		},
+		{
+		        .name = IOTRACE_PROCFS_REMOVE_DEVICE_FILE_NAME,
+		        .ops = &del_dev_ops,
+		        .mode = S_IWUSR,
+		},
+		{
+		        .name = IOTRACE_PROCFS_VERSION_FILE_NAME,
+		        .ops = &get_version_ops,
+		        .mode = S_IRUSR,
+		},
+		{
+		        .name = IOTRACE_PROCFS_SIZE_FILE_NAME,
+		        .ops = &size_ops,
+		        .mode = S_IRUSR | S_IWUSR,
+		},
 	};
 	size_t num_entries = sizeof(entries) / sizeof(entries[0]);
 
@@ -485,7 +505,7 @@ static int iotrace_procfs_mngt_init(void)
 
 	/* create iotrace management file interfaces */
 	for (i = 0; i < num_entries; i++) {
-		ent = proc_create(entries[i].name, 0600, dir, entries[i].ops);
+		ent = proc_create(entries[i].name, entries[i].mode, dir, entries[i].ops);
 		if (!ent) {
 			printk(KERN_ERR "Cannot create /proc/%s/%s\n",
 			       iotrace_subdir, entries[i].name);
