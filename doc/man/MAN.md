@@ -76,7 +76,7 @@ Traces are stored in location specified in OCTF configuration file /etc/octf/oct
 # Example
 
 ~~~{.sh}
-# Star tracing
+# Start tracing
 iotrace --start-trace -d /dev/vda,/dev/vdb -b 10 -s 100 -t 20
 
 # List all traces
@@ -94,9 +94,12 @@ iotrace --get-trace-summary --path kernel/2019-05-15_18:40:34
 # Remove the specific trace 
 iotrace --remove-traces --prefix kernel/2019-05-15_18:40:34
 
-# Remove traces prfixed by 'kernel' and created in 2019
+# Remove traces prefixed by 'kernel' and created in 2019
 iotrace --remove-traces --prefix "kernel/2019*"
 
-# Removes all traces
+# Remove all completed and failed traces
 iotrace --remove-traces --prefix "*"
+
+# Remove all traces (including running and inconsistent)
+iotrace --remove-traces --prefix "*" --force
 ~~~
