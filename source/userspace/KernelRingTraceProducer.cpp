@@ -34,7 +34,7 @@ KernelRingTraceProducer::MappedFile::MappedFile(std::string path,
 
     // Verify size *after* openning - just to make sure noone changed it in the
     // meantime.
-    if (stat(path.c_str(), &st) != 0) {
+    if (fstat(this->fd, &st) != 0) {
         close(this->fd);
         throw Exception("Could not stat file: " + path);
     }
