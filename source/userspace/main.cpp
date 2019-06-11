@@ -38,24 +38,25 @@ int main(int argc, char *argv[]) {
     properties.setName(APP_NAME);
     properties.setVersion(IOTRACE_VERSION);
 
-    // Add interfaces as local commands
+    // Create interfaces
+
     // Trace Management Interface
-    InterfaceShRef interfaceTraceManagement =
+    InterfaceShRef iTraceManagement =
             std::make_shared<InterfaceTraceManagementImpl>("");
-    ex.addLocalModule(interfaceTraceManagement);
 
     // Kernel Trace Creating Interface
-    std::vector<NodeId> nodePath{NodeId("kernel")};
-    InterfaceShRef interfaceKernelTarcing =
-            std::make_shared<InterfaceKernelTraceCreatingImpl>(nodePath);
-    ex.addLocalModule(interfaceKernelTarcing);
+    InterfaceShRef iKernelTarcing =
+            std::make_shared<InterfaceKernelTraceCreatingImpl>();
 
     // Trace Parsing Interface
-    InterfaceShRef interfaceTraceParsing =
+    InterfaceShRef iTraceParsing =
             std::make_shared<InterfaceTraceParsingImpl>();
-    ex.addLocalModule(interfaceTraceParsing);
+
+    // Add interfaces to executor
+    ex.addInterfaces({iTraceManagement, iKernelTarcing, iTraceParsing});
+
+    // ex.addLocalModule(iTraceParsing);
 
     // Execute command
     return ex.execute(argc, argv);
-    ;
 }
