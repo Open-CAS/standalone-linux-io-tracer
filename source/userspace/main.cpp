@@ -3,26 +3,10 @@
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
-#include <exception>
 #include <memory>
-#include <string>
-#include <vector>
-#include <octf/cli/CLIList.h>
-#include <octf/cli/CLIProperties.h>
-#include <octf/cli/CLIUtils.h>
-#include <octf/cli/CommandSet.h>
 #include <octf/cli/Executor.h>
-#include <octf/cli/cmd/CmdHelp.h>
-#include <octf/cli/cmd/CmdVersion.h>
-#include <octf/cli/cmd/Command.h>
-#include <octf/cli/cmd/CommandProtobuf.h>
-#include <octf/cli/cmd/ICommand.h>
-#include <octf/cli/param/ParamNumber.h>
 #include <octf/interface/InterfaceTraceManagementImpl.h>
 #include <octf/interface/InterfaceTraceParsingImpl.h>
-#include <octf/node/INode.h>
-#include <octf/utils/Exception.h>
-#include <octf/utils/Log.h>
 #include "InterfaceKernelTraceCreatingImpl.h"
 
 using namespace std;
@@ -54,8 +38,6 @@ int main(int argc, char *argv[]) {
 
     // Add interfaces to executor
     ex.addInterfaces({iTraceManagement, iKernelTarcing, iTraceParsing});
-
-    // ex.addLocalModule(iTraceParsing);
 
     // Execute command
     return ex.execute(argc, argv);
