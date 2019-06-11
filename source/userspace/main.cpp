@@ -11,6 +11,7 @@
 
 using namespace std;
 using namespace octf;
+using namespace octf::cli;
 
 int main(int argc, char *argv[]) {
     // Create executor and local command set
