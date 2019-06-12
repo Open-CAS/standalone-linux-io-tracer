@@ -28,7 +28,7 @@
 using namespace std;
 using namespace octf;
 
-static const char *get_verrsion() {
+static const char *get_version() {
     if (IOTRACE_VERSION_LABEL[0]) {
         return IOTRACE_VERSION "(" IOTRACE_VERSION_LABEL ")";
     } else {
@@ -39,7 +39,7 @@ static const char *get_verrsion() {
 int main(int argc, char *argv[]) {
     const string APP_NAME = "iotrace";
     CLIProperties::getCliProperties().setName(APP_NAME);
-    CLIProperties::getCliProperties().setVersion(get_verrsion());
+    CLIProperties::getCliProperties().setVersion(get_version());
 
     try {
         if (argc > 1) {
