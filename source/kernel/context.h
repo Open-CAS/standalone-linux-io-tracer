@@ -8,8 +8,8 @@
 
 #include "io_trace.h"
 #include "procfs.h"
-#include "trace_bdev.h"
 #include "trace.h"
+#include "trace_bdev.h"
 
 /**
  * @brief Tracing global context
@@ -26,12 +26,6 @@ struct iotrace_context {
 
     /** Log buffer size */
     uint64_t size;
-
-    /** Buffer which holds module version */
-    char *version_buff;
-
-    /** Size of version buffer */
-    int version_buff_size;
 };
 
 struct iotrace_context *iotrace_get_context(void);

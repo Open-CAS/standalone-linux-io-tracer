@@ -5,8 +5,6 @@
 
 #include "KernelRingTraceProducer.h"
 #include <fcntl.h>
-#include <octf/trace/iotrace_event.h>
-#include <octf/utils/Exception.h>
 #include <procfs_files.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -16,6 +14,8 @@
 #include <cstdint>
 #include <fstream>
 #include <string>
+#include <octf/trace/iotrace_event.h>
+#include <octf/utils/Exception.h>
 #include "InterfaceKernelTraceCreatingImpl.h"
 
 namespace octf {
@@ -34,7 +34,7 @@ KernelRingTraceProducer::MappedFile::MappedFile(std::string path,
 
     // Verify size *after* openning - just to make sure noone changed it in the
     // meantime.
-    if (stat(path.c_str(), &st) != 0) {
+    if (fstat(this->fd, &st) != 0) {
         close(this->fd);
         throw Exception("Could not stat file: " + path);
     }

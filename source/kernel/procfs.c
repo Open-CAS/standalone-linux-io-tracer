@@ -13,6 +13,7 @@
 #include <linux/uaccess.h>
 #include <linux/wait.h>
 #include <linux/version.h>
+#include <linux/stat.h>
 #include "context.h"
 #include "procfs.h"
 #include "trace_bdev.h"
@@ -21,7 +22,15 @@
 #include "context.h"
 #include "trace.h"
 
+static inline uint64_t iotrace_page_count(uint64_t size)
+{
+	return (size + PAGE_SIZE - 1) >> PAGE_SHIFT;
+}
+
 static const char iotrace_subdir[] = IOTRACE_PROCFS_SUBDIR_NAME;
+
+/* Maximal length of buffer with version information */
+static const unsigned version_buffer_max_len = 64;
 
 static void _iotrace_free(struct kref *kref)
 {
@@ -35,10 +44,15 @@ static void _iotrace_free(struct kref *kref)
 	proc_file->consumer_hdr = NULL;
 }
 
-static int _iotrace_open(struct inode *inode, struct file *file)
+static int _iotrace_open(struct inode *inode, struct file *file,
+		bool writeable)
+
 {
 	struct iotrace_proc_file *proc_file = PDE_DATA(inode);
 	int result;
+
+	if ((file->f_mode & FMODE_WRITE) && !writeable)
+		return -EACCES;
 
 	result = iotrace_attach_client(iotrace_get_context());
 	if (result)
@@ -47,6 +61,16 @@ static int _iotrace_open(struct inode *inode, struct file *file)
 	kref_get(&proc_file->ref);
 	file->private_data = proc_file;
 	return 0;
+}
+
+static int _iotrace_open_ring(struct inode *inode, struct file *file)
+{
+	return _iotrace_open(inode, file, false);
+}
+
+static int _iotrace_open_consumer_hdr(struct inode *inode, struct file *file)
+{
+	return _iotrace_open(inode, file, true);
 }
 
 static int _iotrace_release(struct inode *inode, struct file *file)
@@ -103,14 +127,18 @@ int _iotrace_fault(struct vm_fault *vmf, bool trace_ring)
 		trace_ring ? proc_file->trace_ring : proc_file->consumer_hdr;
 	size_t buf_size =
 		trace_ring ? proc_file->trace_ring_size : OCTF_TRACE_HDR_SIZE;
-	size_t size = (buf_size + PAGE_SIZE - 1) >> PAGE_SHIFT;
+	size_t page_count = iotrace_page_count(buf_size);
 
-	if (vmf->pgoff >= size)
+	BUILD_BUG_ON(OCTF_TRACE_HDR_SIZE % PAGE_SIZE != 0);
+
+	if (vmf->pgoff >= page_count)
 		return VM_FAULT_SIGBUS;
 
 	vmf->page = vmalloc_to_page(buf + (vmf->pgoff << PAGE_SHIFT));
-	get_page(vmf->page);
+	if (!vmf->page)
+		return -EACCES;
 
+	get_page(vmf->page);
 	return 0;
 }
 
@@ -170,7 +198,7 @@ static int _iotrace_mmap_consumer_hdr(struct file *file,
 
 static const struct file_operations _iotrace_trace_ring_fops = {
 	.owner = THIS_MODULE,
-	.open = _iotrace_open,
+	.open = _iotrace_open_ring,
 	.write = _iotrace_write,
 	.read = _iotrace_read,
 	.llseek = _iotrace_llseek,
@@ -181,7 +209,7 @@ static const struct file_operations _iotrace_trace_ring_fops = {
 
 static const struct file_operations _iotrace_consumer_hdr_fops = {
 	.owner = THIS_MODULE,
-	.open = _iotrace_open,
+	.open = _iotrace_open_consumer_hdr,
 	.write = _iotrace_write,
 	.read = _iotrace_read,
 	.llseek = _iotrace_llseek,
@@ -190,35 +218,44 @@ static const struct file_operations _iotrace_consumer_hdr_fops = {
 	.poll = _iotrace_poll,
 };
 
-/**
- * @brief Internal enumeration to distinguish management operations on device
- *	  list
- */
-enum iotrace_dev_mng_op { iotrace_dev_add, iotrace_dev_remove };
+/* Function writing specific data to buffer with semantics similar to snprintf
+ *  - input size must not be exceeded and output must be NULL - terminated.
+ *  Unlike standard snprintf it can return negative error code and might
+ *  return -ENOSPC instead of truncating the string. */
+typedef int (*iotrace_snprintf_t)(char *buf, size_t size);
+
+/* Function reading specific data from buffer and setting it in io tracer.
+ * Input buffer is guaranteed to be NULL terminated. In case of error nagative
+ * erorr code is returned. */
+typedef int (*iotrace_sscanf_t)(const char *buf);
 
 /**
- * @brief Generic write handler for procfs files used to add/remove device
- *	  from tracer list.
+ * @brief Generic write handler for iotrace management procfs files
  *
  * @param[in] file file object associated with this procfs entry
  * @param[out] ubuf user pointer to input buffer
  * @param[in] count ubuf size
- * @param[out] ppos position in file after write operation is completed
- * @param[in] op operation type (add/remove)
+ * @param[in/out] ppos position in file before/after write operation
+ * @param[in] handler operation handler operating on null-terminated strings
  *
  * @retval number of bytes read from @ubuf
  */
-static ssize_t dev_mng_write(struct file *file, const char __user *ubuf,
-			     size_t count, loff_t *ppos, enum iotrace_dev_mng_op op)
+static ssize_t iotrace_mngt_write(struct file *file, const char __user *ubuf,
+				 size_t count, loff_t *ppos,
+				iotrace_sscanf_t sscanf_handler)
 {
 	char *buf;
 	int result;
 	size_t len;
 
-	if (*ppos > 0 || count > PATH_MAX)
+	if (*ppos > 0 || count >= PATH_MAX)
 		return -EFAULT;
 
-	buf = vzalloc(count);
+	if (!access_ok(VERIFY_READ, ubuf, count))
+		return -EFAULT;
+
+	/* one byte more to put terminating 0 there */
+	buf = vzalloc(count + 1);
 	if (!buf)
 		return -ENOMEM;
 
@@ -227,25 +264,18 @@ static ssize_t dev_mng_write(struct file *file, const char __user *ubuf,
 		return -EFAULT;
 	}
 
-	len = strnlen(buf, PATH_MAX);
-	if (len >= PATH_MAX || len == 0) {
+	len = strnlen(buf, count);
+	if (len == 0) {
 		vfree(buf);
-		return -ENOSPC;
+		return -EINVAL;
 	}
 
 	if (buf[len - 1] == '\n')
 		buf[len - 1] = '\0';
+	else
+		buf[len] = '\0';
 
-	switch (op) {
-	case iotrace_dev_add:
-		result = iotrace_bdev_add(&iotrace_get_context()->bdev, buf);
-		break;
-	case iotrace_dev_remove:
-		result = iotrace_bdev_remove(&iotrace_get_context()->bdev, buf);
-		break;
-	default:
-		BUG();
-	}
+	result = sscanf_handler(buf);
 
 	vfree(buf);
 
@@ -254,6 +284,72 @@ static ssize_t dev_mng_write(struct file *file, const char __user *ubuf,
 
 	*ppos = len;
 	return len;
+}
+
+/**
+ * @brief Generic read handler for iotrace management procfs files.
+ *
+ * @param[in] file file object associated with this procfs entry
+ * @param[out] ubuf user pointer to output buffer
+ * @param[in] ubuf_size ubuf size
+ * @param[in/out] ppos position in file before/after read operation
+ * @param[in] data_size size of internal string representation of requested
+ *			  data, excluding terminating string
+ * @param[in] handler operation handler operating on null-terminated strings
+ *
+ * @retval number of bytes written @ubuf
+ */
+static ssize_t iotrace_mngt_read(struct file *file, char __user *ubuf,
+		size_t ubuf_size, loff_t *ppos, size_t data_size,
+		iotrace_snprintf_t snprintf_handler)
+{
+	size_t count;
+	void *buf;
+	int result;
+
+	if (*ppos > 0)
+		return 0;
+
+	if (!access_ok(VERIFY_WRITE, ubuf, ubuf_size))
+		return -EACCES;
+
+	/* allocate internal buffer on byte larger to contain terminating NULL,
+	 * which is not copied back to user */
+	count = min(data_size, ubuf_size) + 1;
+
+	buf = vzalloc(count);
+	if (!buf)
+		return -ENOMEM;
+
+	result = snprintf_handler(buf, count);
+	if (result < 0) {
+		vfree(buf);
+		return result;
+	}
+	else if (result >= count) {
+		vfree(buf);
+		return -ENOSPC;
+	}
+	count = result;
+
+	BUG_ON(count > ubuf_size);
+
+	/* copy list of devices, excluding terminating NULL */
+	if (count != 0 && copy_to_user(ubuf, buf, count)) {
+		vfree(buf);
+		return -EFAULT;
+	}
+
+	*ppos = count;
+
+	vfree(buf);
+	return count;
+
+}
+
+static int _add_dev_scanf(const char *buf)
+{
+	return iotrace_bdev_add(&iotrace_get_context()->bdev, buf);
 }
 
 /**
@@ -269,7 +365,12 @@ static ssize_t dev_mng_write(struct file *file, const char __user *ubuf,
 static ssize_t add_dev_write(struct file *file, const char __user *ubuf,
 			     size_t count, loff_t *ppos)
 {
-	return dev_mng_write(file, ubuf, count, ppos, iotrace_dev_add);
+	return iotrace_mngt_write(file, ubuf, count, ppos, _add_dev_scanf);
+}
+
+static int _del_dev_scanf(const char *buf)
+{
+	return iotrace_bdev_remove(&iotrace_get_context()->bdev, buf);
 }
 
 /**
@@ -285,8 +386,41 @@ static ssize_t add_dev_write(struct file *file, const char __user *ubuf,
 static ssize_t del_dev_write(struct file *file, const char __user *ubuf,
 			     size_t count, loff_t *ppos)
 {
-	return dev_mng_write(file, ubuf, count, ppos, iotrace_dev_remove);
+	return iotrace_mngt_write(file, ubuf, count, ppos, _del_dev_scanf);
 }
+
+static int _list_dev_snprintf(char *buf, size_t size)
+{
+	char devices[SATRACE_MAX_DEVICES][DISK_NAME_LEN];
+	unsigned dev_count;
+	int result;
+	int pos, idx;
+	size_t bytes_left, bytes_copied;
+
+	result = iotrace_bdev_list(&iotrace_get_context()->bdev, devices);
+	if (result < 0)
+		return result;
+	dev_count = result;
+
+	bytes_left = size;
+	pos = 0;
+	buf[0] = '\0';
+	for (idx = 0; idx < dev_count; idx++) {
+		bytes_copied = snprintf(buf + pos, bytes_left, "%s\n",
+				devices[idx]);
+		bytes_copied = min(bytes_copied, bytes_left);
+
+		bytes_left -= bytes_copied;
+		pos += bytes_copied;
+
+		if (!bytes_left)
+			break;
+	}
+
+	/* return size excluding terminating NULL */
+	return pos;
+}
+
 
 /**
  * @brief Read handler for file used to report list of traced devices
@@ -298,46 +432,19 @@ static ssize_t del_dev_write(struct file *file, const char __user *ubuf,
  *
  * @retval number of bytes written to @ubuf
  */
-static ssize_t list_dev_read(struct file *file, char __user *ubuf, size_t count,
-			     loff_t *ppos)
+static ssize_t list_dev_read(struct file *file, char __user *ubuf,
+		size_t count, loff_t *ppos)
 {
-	char devices[SATRACE_MAX_DEVICES][DISK_NAME_LEN];
-	unsigned dev_count;
-	char *buf;
-	int result;
-	int pos, idx;
+	return iotrace_mngt_read(file, ubuf, count, ppos,
+			SATRACE_MAX_DEVICES * DISK_NAME_LEN, _list_dev_snprintf);
+}
 
-	if (*ppos > 0)
-		return 0;
 
-	count = min(sizeof(devices), count);
-
-	buf = vzalloc(count);
-	if (!buf)
-		return -ENOMEM;
-
-	result = iotrace_bdev_list(&iotrace_get_context()->bdev, devices);
-	if (result < 0) {
-		vfree(buf);
-		return result;
-	}
-	dev_count = result;
-
-	for (pos = 0, idx = 0;
-	     idx < dev_count && pos + strnlen(devices[idx], DISK_NAME_LEN) + 1 < count - pos;
-	     idx++) {
-		pos += snprintf(buf + pos, count - pos, "%s\n", devices[idx]);
-	}
-
-	if (copy_to_user(ubuf, buf, pos + 1)) {
-		vfree(buf);
-		return -EFAULT;
-	}
-
-	*ppos = pos;
-
-	vfree(buf);
-	return pos;
+static int _version_snprintf(char *buf, size_t size)
+{
+	return snprintf(buf, size, "%d\n%d\n%016llX\n",
+			IOTRACE_EVENT_VERSION_MAJOR,
+			IOTRACE_EVENT_VERSION_MINOR, IOTRACE_MAGIC);
 }
 
 /**
@@ -353,83 +460,42 @@ static ssize_t list_dev_read(struct file *file, char __user *ubuf, size_t count,
 static ssize_t get_version(struct file *file, char __user *ubuf, size_t count,
 			   loff_t *ppos)
 {
-	int pos;
-	struct iotrace_context *context;
-
-	if (*ppos > 0)
-		return 0;
-
-	context = iotrace_get_context();
-	pos = min(context->version_buff_size, (int)count);
-
-	if (copy_to_user(ubuf, context->version_buff, pos)) {
-		return -EFAULT;
-	}
-
-	*ppos = pos;
-	return pos;
+	return iotrace_mngt_read(file, ubuf, count, ppos,
+			 version_buffer_max_len, _version_snprintf);
 }
 
 static const size_t size_file_max_count = 10;
 
+static int _size_snprintf(char *buf, size_t buf_size)
+{
+	uint64_t size = iotrace_get_buffer_size(iotrace_get_context());
+
+	return snprintf(buf, buf_size, "%llu", size);
+}
+
 static ssize_t size_read(struct file *file, char __user *ubuf, size_t count,
 			 loff_t *ppos)
 {
-	int pos;
-	char buf[size_file_max_count];
-	uint64_t size = iotrace_get_buffer_size(iotrace_get_context());
-
-	if (*ppos > 0)
-		return 0;
-
-	pos = snprintf(buf, sizeof(buf), "%llu", size);
-	if (pos < 0 || pos >= sizeof(buf))
-		return pos < 0 ? pos : -ENOSPC;
-
-	if (copy_to_user(ubuf, buf, pos + 1))
-		return -EFAULT;
-
-	*ppos = pos + 1;
-	return pos + 1;
+	return iotrace_mngt_read(file, ubuf, count, ppos, size_file_max_count,
+			_size_snprintf);
 }
+
+static int _buffer_size_sscanf(const char* buf)
+{
+	int result;
+	uint64_t size;
+
+	result = kstrtou64(buf, 10, &size);
+	if (result)
+		return result;
+
+	return iotrace_init_buffers(iotrace_get_context(), size);
+}
+
 static ssize_t size_write(struct file *file, const char __user *ubuf,
 			  size_t count, loff_t *ppos)
 {
-	char *buf;
-	int result;
-	size_t len;
-	unsigned long long size;
-
-	if (*ppos > 0 || count > size_file_max_count)
-		return -EFAULT;
-
-	buf = vzalloc(count);
-	if (!buf)
-		return -ENOMEM;
-
-	if (copy_from_user(buf, ubuf, count)) {
-		vfree(buf);
-		return -EFAULT;
-	}
-
-	len = strnlen(buf, size_file_max_count);
-	if (len == size_file_max_count || len == 0) {
-		vfree(buf);
-		return -ENOSPC;
-	}
-
-	result = kstrtou64(buf, 10, &size);
-
-	vfree(buf);
-
-	if (result)
-		return result;
-
-	result = iotrace_init_buffers(iotrace_get_context(), size);
-	if (result)
-		return result;
-
-	return len;
+	return iotrace_mngt_write(file, ubuf, count, ppos, _buffer_size_sscanf);
 }
 
 /* device management files ops */
@@ -465,14 +531,33 @@ static int iotrace_procfs_mngt_init(void)
 	struct {
 		char *name;
 		struct file_operations *ops;
+		umode_t mode;
 	} entries[] = {
-		{ .name = IOTRACE_PROCFS_DEVICES_FILE_NAME, .ops = &list_dev_ops },
-		{ .name = IOTRACE_PROCFS_ADD_DEVICE_FILE_NAME, .ops = &add_dev_ops },
-		{ .name = IOTRACE_PROCFS_REMOVE_DEVICE_FILE_NAME,
-		  .ops = &del_dev_ops },
-		{ .name = IOTRACE_PROCFS_VERSION_FILE_NAME,
-		  .ops = &get_version_ops },
-		{ .name = IOTRACE_PROCFS_SIZE_FILE_NAME, .ops = &size_ops },
+		{
+		        .name = IOTRACE_PROCFS_DEVICES_FILE_NAME,
+		        .ops = &list_dev_ops,
+		        .mode = S_IRUSR,
+		},
+		{
+		        .name = IOTRACE_PROCFS_ADD_DEVICE_FILE_NAME,
+		        .ops = &add_dev_ops,
+		        .mode = S_IWUSR,
+		},
+		{
+		        .name = IOTRACE_PROCFS_REMOVE_DEVICE_FILE_NAME,
+		        .ops = &del_dev_ops,
+		        .mode = S_IWUSR,
+		},
+		{
+		        .name = IOTRACE_PROCFS_VERSION_FILE_NAME,
+		        .ops = &get_version_ops,
+		        .mode = S_IRUSR,
+		},
+		{
+		        .name = IOTRACE_PROCFS_SIZE_FILE_NAME,
+		        .ops = &size_ops,
+		        .mode = S_IRUSR | S_IWUSR,
+		},
 	};
 	size_t num_entries = sizeof(entries) / sizeof(entries[0]);
 
@@ -485,7 +570,7 @@ static int iotrace_procfs_mngt_init(void)
 
 	/* create iotrace management file interfaces */
 	for (i = 0; i < num_entries; i++) {
-		ent = proc_create(entries[i].name, 0600, dir, entries[i].ops);
+		ent = proc_create(entries[i].name, entries[i].mode, dir, entries[i].ops);
 		if (!ent) {
 			printk(KERN_ERR "Cannot create /proc/%s/%s\n",
 			       iotrace_subdir, entries[i].name);
@@ -504,20 +589,22 @@ static int iotrace_procfs_mngt_init(void)
 
 /* Allocate buffer for traces */
 int iotrace_procfs_trace_file_alloc(struct iotrace_proc_file *proc_file,
-				    uint64_t size)
+				    uint64_t size, int cpu)
 {
 	void *buffer;
+	uint64_t allocation_size;
 
 	if (size < OCTF_TRACE_HDR_SIZE)
 		return -ENOSPC;
 
 	/* make consumer_hdr and trace ring buffer sizes add up to requested total */
 	size -= OCTF_TRACE_HDR_SIZE;
+	allocation_size = iotrace_page_count(size) << PAGE_SHIFT;
 
 	if (proc_file->trace_ring && proc_file->trace_ring_size == size)
 		return 0;
 
-	buffer = vmalloc_user(size);
+	buffer = vzalloc_node(allocation_size, cpu_to_node(cpu));
 	if (!buffer)
 		return -ENOMEM;
 

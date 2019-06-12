@@ -16,9 +16,6 @@
 #include "trace.h"
 #include "procfs_files.h"
 
-/* Maximal length of buffer with version information */
-#define VERSION_BUFFER_MAX_LEN 64
-
 static inline void iotrace_notify_of_new_events(struct iotrace_context *context,
 						unsigned int cpu)
 {
@@ -221,7 +218,7 @@ int iotrace_init_buffers(struct iotrace_context *iotrace, uint64_t size)
 	for_each_online_cpu (i) {
 		file = per_cpu_ptr(proc_files, i);
 
-		result = iotrace_procfs_trace_file_alloc(file, iotrace->size);
+		result = iotrace_procfs_trace_file_alloc(file, iotrace->size, i);
 		if (result)
 			break;
 	}
@@ -307,22 +304,9 @@ void iotrace_detach_client(struct iotrace_context *iotrace)
  */
 int iotrace_trace_init(struct iotrace_context *iotrace)
 {
-	int result;
-
 	struct iotrace_state *state = &iotrace->trace_state;
+
 	mutex_init(&state->client_mutex);
-
-	/* Initialize buffer with version information */
-	iotrace->version_buff_size = VERSION_BUFFER_MAX_LEN;
-	iotrace->version_buff = vzalloc(iotrace->version_buff_size);
-	if (!iotrace->version_buff) {
-		iotrace->version_buff_size = 0;
-		return -ENOMEM;
-	}
-
-	result = snprintf(iotrace->version_buff, iotrace->version_buff_size,
-			  "%d\n%d\n%016llX\n", IOTRACE_EVENT_VERSION_MAJOR,
-			  IOTRACE_EVENT_VERSION_MINOR, IOTRACE_MAGIC);
 
 	return 0;
 }
@@ -334,9 +318,4 @@ int iotrace_trace_init(struct iotrace_context *iotrace)
  */
 void iotrace_trace_deinit(struct iotrace_context *iotrace)
 {
-	if (iotrace->version_buff) {
-		vfree(iotrace->version_buff);
-		iotrace->version_buff = NULL;
-		iotrace->version_buff_size = 0;
-	}
 }

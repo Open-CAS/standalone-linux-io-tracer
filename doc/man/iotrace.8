@@ -3,7 +3,7 @@
 iotrace - collect and manage block I/O traces
 
 .SH SYNOPSIS
-iotrace --start-trace -d \fIdevice\fR [\fIdevice\fR ...] [-b \fIbuffer_size\fR] [-s \fImax_file_size\fR] [-t \fIseconds\fR]
+iotrace --start-trace -d \fIdevice\fR[,\fIdevice\fR,...] [-b \fIbuffer_size\fR] [-s \fImax_file_size\fR] [-t \fIseconds\fR]
 .br
 iotrace --parse-trace [--format json] --path \fIpath\fR
 .br
@@ -11,7 +11,7 @@ iotrace --get-trace-summary --path \fIpath\fR
 .br
 iotrace --list-traces [--prefix \fIprefix\fR]
 .br
-iotrace --remove-trace --prefix \fIprefix\fR
+iotrace --remove-traces --prefix \fIprefix\fR
 
 .SH DESCRIPTION
 iotrace provides block device IO tracing and trace management capabilities. For each IO to target device(s) basic metadata information is captured (IO operation type, address, size), supplemented with extended classification. Extended classification contains information about I/O type (direct / filesystem metadata / file) and target file attributes (e.g. file size). iotrace is based on Open CAS Tracing Framework (OCTF), see https://github.com/Open-CAS/open-cas-telemetry-framework project page for more details. Collected traces are stored in OCTF trace location. Traces can later be converted to human readable form using --parse-trace command.
@@ -30,7 +30,7 @@ Display summary of specified trace.
 --list-traces, -L
 List collected traces.
 .TP
---remove-trace, -R
+--remove-traces, -R
 Remove specified traces.
 .TP
 --version, -V
@@ -65,19 +65,51 @@ Parsing output format. Currently the only supported format is json.
 Trace file path, relative to OCTF trace location.
 
 .TP
-.B --prefix \fIprefix\fR
+.B -p, --prefix \fIprefix\fR
 Trace file prefix, relative to OCTF trace location. End prefix with asterisk ("*") to match multiple files or provide full relative path for a single trace.
+
+.TP
+.B -f, --force
+Enforces removing specified traces in any state. Without this flag only completed and failed traces can be removed.
+
 
 .SH FILES
 Traces are stored in location specified in OCTF configuration file /etc/octf/octf.conf, default is /var/lib/octf/trace.
 
 .SH EXAMPLE
-iotrace --start-trace -d /dev/vda /dev/vdb -b 10 -s 100 -t 20
+.TP
+.B Start tracing
 .br
-iotrace --manage-trace --list-traces
+iotrace --start-trace -d /dev/vda,/dev/vdb -b 10 -s 100 -t 20
+.TP
+.B List all traces
+.br
+iotrace --list-traces
+.TP
+.B List traces prefixed by "kernel" 
+.br
+iotrace --list-traces --prefix "kernel/*"
+.TP
+.B Parse the trace
 .br
 iotrace --parse-trace --path kernel/2019-05-15_18:40:34 --format json
+.TP
+.B Get the trace summary
 .br
 iotrace --get-trace-summary --path kernel/2019-05-15_18:40:34
+.TP
+.B Remove the specific trace 
 .br
-iotrace --remove-trace --prefix kernel/2019-05-15_18:40:34
+iotrace --remove-traces --prefix kernel/2019-05-15_18:40:34
+.TP
+.B Remove traces prefixed by 'kernel' and created in 2019
+.br
+iotrace --remove-traces --prefix "kernel/2019*"
+.TP
+.B Remove all completed and failed traces
+.br
+iotrace --remove-traces --prefix "*"
+.TP
+.B Remove all traces (including running and inconsistent)
+.br
+iotrace --remove-traces --prefix "*" --force
