@@ -3,6 +3,10 @@
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
+#include <exception>
+#include <memory>
+#include <string>
+#include <vector>
 #include <octf/cli/CLIList.h>
 #include <octf/cli/CLIProperties.h>
 #include <octf/cli/CLIUtils.h>
@@ -19,19 +23,23 @@
 #include <octf/node/INode.h>
 #include <octf/utils/Exception.h>
 #include <octf/utils/Log.h>
-#include <exception>
-#include <memory>
-#include <string>
-#include <vector>
 #include "InterfaceKernelTraceCreatingImpl.h"
 
 using namespace std;
 using namespace octf;
 
+static const char *get_verrsion() {
+    if (IOTRACE_VERSION_LABEL[0]) {
+        return IOTRACE_VERSION "(" IOTRACE_VERSION_LABEL ")";
+    } else {
+        return IOTRACE_VERSION;
+    }
+}
+
 int main(int argc, char *argv[]) {
     const string APP_NAME = "iotrace";
     CLIProperties::getCliProperties().setName(APP_NAME);
-    CLIProperties::getCliProperties().setVersion(IOTRACE_VERSION);
+    CLIProperties::getCliProperties().setVersion(get_verrsion());
 
     try {
         if (argc > 1) {
