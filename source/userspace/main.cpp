@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
             std::make_shared<InterfaceTraceParsingImpl>();
 
     // Add interfaces to executor
-    ex.addInterfaces({iTraceManagement, iKernelTarcing, iTraceParsing});
+    ex.addModules(iTraceManagement, iKernelTarcing, iTraceParsing);
 
     // Execute command
     return ex.execute(argc, argv);
