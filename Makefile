@@ -7,18 +7,18 @@ CMAKE_FILE=CMakeLists.txt
 
 ifdef DEBUG
 	BUILD_DIR=build/debug
+	BUILD_TYPE=DEBUG
 	ifndef PREFIX
 		PREFIX=build/debug/rootfs
 	endif
 else
 	BUILD_DIR=build/release
+	BUILD_TYPE=RELEASE
 	ifndef PREFIX
 		PREFIX=/
-		RUN_LD_CONFIG=1
 	endif
 endif
 SOURCE_PATH:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-
 
 .PHONY: init all clean
 
@@ -26,7 +26,7 @@ init:
 	mkdir -p $(BUILD_DIR)
 
 all: init
-	cd $(BUILD_DIR) && cmake $(SOURCE_PATH) -DCMAKE_INSTALL_PREFIX=$(PREFIX)
+	cd $(BUILD_DIR) && cmake $(SOURCE_PATH) -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) -DCMAKE_INSTALL_PREFIX=$(PREFIX)
 	$(MAKE) -C $(BUILD_DIR) all
 
 install: all
