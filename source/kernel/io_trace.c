@@ -37,7 +37,7 @@ static inline void iotrace_notify_of_new_events(struct iotrace_context *context,
  * @retval non-zero Error code
  */
 int iotrace_trace_desc(struct iotrace_context *iotrace, unsigned cpu,
-		       uint32_t dev_id, const char *dev_name, uint64_t dev_size)
+				uint32_t dev_id, const char *dev_name, uint64_t dev_size)
 {
 	int result = 0;
 	struct iotrace_state *state = &iotrace->trace_state;
@@ -59,7 +59,9 @@ int iotrace_trace_desc(struct iotrace_context *iotrace, unsigned cpu,
 
 	result = octf_trace_push(trace, &desc, sizeof(desc));
 
-	iotrace_notify_of_new_events(iotrace, cpu);
+	/* If process is waiting for traces, notify the process */
+	if (env_atomic_read(iotrace->waiting_for_trace) != 0)
+		iotrace_notify_of_new_events(iotrace, cpu);
 
 	return result;
 }
@@ -73,7 +75,7 @@ int iotrace_trace_desc(struct iotrace_context *iotrace, unsigned cpu,
  *
  */
 static void bio_queue_event(void *ignore, struct request_queue *q,
-			    struct bio *bio)
+				struct bio *bio)
 {
 	uint32_t dev_id;
 	unsigned cpu = get_cpu();
@@ -82,7 +84,10 @@ static void bio_queue_event(void *ignore, struct request_queue *q,
 	if (iotrace_bdev_is_added(&iotrace->bdev, cpu, q)) {
 		dev_id = disk_devt(bio->bi_bdev->bd_disk);
 		iotrace_trace_bio(iotrace, cpu, dev_id, bio);
-		iotrace_notify_of_new_events(iotrace, cpu);
+
+		/* If process is waiting for traces, notify the process */
+		if (env_atomic_read(iotrace->waiting_for_trace) != 0)
+			iotrace_notify_of_new_events(iotrace, cpu);
 	}
 
 	put_cpu();
@@ -184,7 +189,7 @@ static int iotrace_set_buffer_size(struct iotrace_context *iotrace, uint64_t siz
 uint64_t iotrace_get_buffer_size(struct iotrace_context *iotrace)
 {
 	return iotrace_get_context()->size * num_online_cpus() / 1024ULL /
-	       1024ULL;
+		   1024ULL;
 }
 
 /**
@@ -250,7 +255,7 @@ int iotrace_attach_client(struct iotrace_context *iotrace)
 		result = register_trace_block_bio_queue(bio_queue_event, NULL);
 		if (result) {
 			printk(KERN_ERR "Failed to register trace probe: %d\n",
-			       result);
+				   result);
 			deinit_tracers(state);
 			goto exit;
 		}
