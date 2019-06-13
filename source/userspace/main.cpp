@@ -3,6 +3,10 @@
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
+#include <exception>
+#include <memory>
+#include <string>
+#include <vector>
 #include <octf/cli/CLIList.h>
 #include <octf/cli/CLIProperties.h>
 #include <octf/cli/CLIUtils.h>
@@ -19,10 +23,6 @@
 #include <octf/node/INode.h>
 #include <octf/utils/Exception.h>
 #include <octf/utils/Log.h>
-#include <exception>
-#include <memory>
-#include <string>
-#include <vector>
 #include "InterfaceKernelTraceCreatingImpl.h"
 
 using namespace std;
@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
 
             // Execute command
             if (ex.execute(cliList) == false) {
-                return -1;
+                return 1;
             }
 
         } else {
@@ -76,11 +76,11 @@ int main(int argc, char *argv[]) {
 
     } catch (Exception &e) {
         log::cerr << e.what() << endl;
-        return -1;
+        return 1;
     } catch (std::exception &e) {
         log::critical << APP_NAME << " execution interrupted: " << e.what()
                       << endl;
-        return -1;
+        return 1;
     }
 
     return 0;
