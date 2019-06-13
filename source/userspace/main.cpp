@@ -71,7 +71,9 @@ int main(int argc, char *argv[]) {
             cliList.create(arguments);
 
             // Execute command
-            ex.execute(cliList);
+            if (ex.execute(cliList) == false) {
+                return 1;
+            }
 
         } else {
             throw InvalidParameterException(
