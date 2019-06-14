@@ -110,13 +110,18 @@ static unsigned int _iotrace_poll(struct file *file, poll_table *wait)
 	/* Traces are present, report readiness */
 	if (!octf_trace_is_empty(handle)) {
 		/* No one is waiting for trace now */
-		env_atomic_set(iotrace_get_context()->waiting_for_trace, 0);
+		env_atomic_set(
+				per_cpu_ptr(iotrace_get_context()->waiting_for_trace,
+						smp_processor_id()), 0);
 		return POLLIN | POLLRDNORM;
 	}
 
 	/* No events ready - set flag which informs that there is a process
 	 *  waiting for traces */
-	env_atomic_set(iotrace_get_context()->waiting_for_trace, 1);
+	env_atomic_set(
+			per_cpu_ptr(iotrace_get_context()->waiting_for_trace
+					, smp_processor_id()), 1);
+
 	return 0;
 }
 
@@ -758,8 +763,10 @@ int iotrace_procfs_init(struct iotrace_context *iotrace)
 
 	/* For each cpu (and thus trace file) allocate atomic flag */
 	iotrace->waiting_for_trace = alloc_percpu(env_atomic);
-	if (!iotrace->waiting_for_trace)
-		return -ENOMEM;
+	if (!iotrace->waiting_for_trace) {
+		result = -ENOMEM;
+		goto error;
+	}
 
 	result = iotrace_procfs_mngt_init();
 	if (result)
@@ -788,6 +795,7 @@ int iotrace_procfs_init(struct iotrace_context *iotrace)
 
 error:
 	free_percpu(iotrace->proc_files);
+	free_percpu(iotrace->waiting_for_trace);
 	return result;
 }
 

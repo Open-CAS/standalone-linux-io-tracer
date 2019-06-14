@@ -5,9 +5,10 @@
 
 #include <linux/types.h>
 #include <linux/wait.h>
-#include "trace_bio.h"
+#include <linux/atomic.h>
 #include <linux/tracepoint.h>
 #include <trace/events/block.h>
+#include "trace_bio.h"
 #include "io_trace.h"
 #include "context.h"
 #include "bio.h"
@@ -19,10 +20,15 @@
 static inline void iotrace_notify_of_new_events(struct iotrace_context *context,
 						unsigned int cpu)
 {
-	wait_queue_head_t *queue =
-		&(per_cpu_ptr(context->proc_files, cpu)->poll_wait_queue);
+	/* If process is waiting for traces, reset the flag, notify the process */
+	if (env_atomic_cmpxchg(
+			per_cpu_ptr(context->waiting_for_trace, cpu), 1, 0)) {
 
-	wake_up(queue);
+		wait_queue_head_t *queue =
+			&(per_cpu_ptr(context->proc_files, cpu)->poll_wait_queue);
+
+		wake_up(queue);
+	}
 }
 
 /**
@@ -59,9 +65,7 @@ int iotrace_trace_desc(struct iotrace_context *iotrace, unsigned cpu,
 
 	result = octf_trace_push(trace, &desc, sizeof(desc));
 
-	/* If process is waiting for traces, notify the process */
-	if (env_atomic_read(iotrace->waiting_for_trace) != 0)
-		iotrace_notify_of_new_events(iotrace, cpu);
+	iotrace_notify_of_new_events(iotrace, cpu);
 
 	return result;
 }
@@ -85,9 +89,7 @@ static void bio_queue_event(void *ignore, struct request_queue *q,
 		dev_id = disk_devt(bio->bi_bdev->bd_disk);
 		iotrace_trace_bio(iotrace, cpu, dev_id, bio);
 
-		/* If process is waiting for traces, notify the process */
-		if (env_atomic_read(iotrace->waiting_for_trace) != 0)
-			iotrace_notify_of_new_events(iotrace, cpu);
+		iotrace_notify_of_new_events(iotrace, cpu);
 	}
 
 	put_cpu();
