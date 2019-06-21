@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
+#include <asm/atomic.h>
 #include <linux/poll.h>
 #include <linux/fs.h>
 #include <linux/kref.h>
@@ -82,13 +83,24 @@ static int _iotrace_release(struct inode *inode, struct file *file)
 }
 
 static ssize_t _iotrace_read(struct file *file, char __user *data, size_t size,
-			      loff_t *off)
+				  loff_t *off)
 {
 	return -ENOTSUPP;
 }
 
+/* This function is called after a process calls select() or poll() on given
+ * file to wait for it's readiness. The process then blocks and waits until we
+ * return non-zero value in _iotrace_poll. The 'poll_wait' function used here is
+ * nonblocking despite it's name, and only registers this function.
+ * _iotrace_poll can later be invoked again when the supplied wait_queue is
+ * triggered. This means that one call to select()/poll() can correspond to many
+ * calls of _iotrace_poll.
+ * Note also that select()/poll() can be used to watch many files at once, and
+ * if any of them returns non-zero value, it could trigger this function at any
+ * time. */
 static unsigned int _iotrace_poll(struct file *file, poll_table *wait)
 {
+	/* Get file and trace handle */
 	struct iotrace_proc_file *proc_file = file->private_data;
 	octf_trace_t handle = *per_cpu_ptr(
 		iotrace_get_context()->trace_state.traces, smp_processor_id());
@@ -96,15 +108,26 @@ static unsigned int _iotrace_poll(struct file *file, poll_table *wait)
 	/* Register in poll wait_queue */
 	poll_wait(file, &proc_file->poll_wait_queue, wait);
 
-	if (!octf_trace_is_empty(handle))
+	/* Traces are present, report readiness */
+	if (!octf_trace_is_empty(handle)) {
+		/* No one is waiting for trace now */
+		atomic_set(
+				per_cpu_ptr(iotrace_get_context()->waiting_for_trace,
+						smp_processor_id()), 0);
 		return POLLIN | POLLRDNORM;
+	}
 
-	/* No events ready */
+	/* No events ready - set flag which informs that there is a process
+	 *  waiting for traces */
+	atomic_set(
+			per_cpu_ptr(iotrace_get_context()->waiting_for_trace
+					, smp_processor_id()), 1);
+
 	return 0;
 }
 
 static ssize_t _iotrace_write(struct file *file, const char __user *data,
-			       size_t size, loff_t *off)
+				   size_t size, loff_t *off)
 {
 	return -ENOTSUPP;
 }
@@ -116,7 +139,7 @@ static loff_t _iotrace_llseek(struct file *file, loff_t offset, int whence)
 
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 10, 0)
 int _iotrace_fault(struct vm_area_struct *vma, struct vm_fault *vmf,
-		    bool trace_ring)
+			bool trace_ring)
 #else
 int _iotrace_fault(struct vm_fault *vmf, bool trace_ring)
 #endif
@@ -173,7 +196,7 @@ static const struct vm_operations_struct _iotrace_vm_ops_consumer_hdr = {
 };
 
 static int _iotrace_mmap_trace_ring(struct file *file,
-				     struct vm_area_struct *vma)
+					 struct vm_area_struct *vma)
 {
 	/* do not allow write-mapping */
 	if (vma->vm_flags & VM_WRITE)
@@ -190,7 +213,7 @@ static int _iotrace_mmap_trace_ring(struct file *file,
 }
 
 static int _iotrace_mmap_consumer_hdr(struct file *file,
-				       struct vm_area_struct *vma)
+					   struct vm_area_struct *vma)
 {
 	vma->vm_ops = &_iotrace_vm_ops_consumer_hdr;
 	return 0;
@@ -363,7 +386,7 @@ static int _add_dev_scanf(const char *buf)
  * @retval number of bytes read from @ubuf
  */
 static ssize_t add_dev_write(struct file *file, const char __user *ubuf,
-			     size_t count, loff_t *ppos)
+				 size_t count, loff_t *ppos)
 {
 	return iotrace_mngt_write(file, ubuf, count, ppos, _add_dev_scanf);
 }
@@ -384,7 +407,7 @@ static int _del_dev_scanf(const char *buf)
  * @retval number of bytes read from @ubuf
  */
 static ssize_t del_dev_write(struct file *file, const char __user *ubuf,
-			     size_t count, loff_t *ppos)
+				 size_t count, loff_t *ppos)
 {
 	return iotrace_mngt_write(file, ubuf, count, ppos, _del_dev_scanf);
 }
@@ -500,9 +523,9 @@ static ssize_t size_write(struct file *file, const char __user *ubuf,
 
 /* device management files ops */
 static struct file_operations add_dev_ops = { .owner = THIS_MODULE,
-					      .write = add_dev_write };
+						  .write = add_dev_write };
 static struct file_operations del_dev_ops = { .owner = THIS_MODULE,
-					      .write = del_dev_write };
+						  .write = del_dev_write };
 static struct file_operations list_dev_ops = {
 	.owner = THIS_MODULE,
 	.read = list_dev_read,
@@ -534,29 +557,29 @@ static int iotrace_procfs_mngt_init(void)
 		umode_t mode;
 	} entries[] = {
 		{
-		        .name = IOTRACE_PROCFS_DEVICES_FILE_NAME,
-		        .ops = &list_dev_ops,
-		        .mode = S_IRUSR,
+				.name = IOTRACE_PROCFS_DEVICES_FILE_NAME,
+				.ops = &list_dev_ops,
+				.mode = S_IRUSR,
 		},
 		{
-		        .name = IOTRACE_PROCFS_ADD_DEVICE_FILE_NAME,
-		        .ops = &add_dev_ops,
-		        .mode = S_IWUSR,
+				.name = IOTRACE_PROCFS_ADD_DEVICE_FILE_NAME,
+				.ops = &add_dev_ops,
+				.mode = S_IWUSR,
 		},
 		{
-		        .name = IOTRACE_PROCFS_REMOVE_DEVICE_FILE_NAME,
-		        .ops = &del_dev_ops,
-		        .mode = S_IWUSR,
+				.name = IOTRACE_PROCFS_REMOVE_DEVICE_FILE_NAME,
+				.ops = &del_dev_ops,
+				.mode = S_IWUSR,
 		},
 		{
-		        .name = IOTRACE_PROCFS_VERSION_FILE_NAME,
-		        .ops = &get_version_ops,
-		        .mode = S_IRUSR,
+				.name = IOTRACE_PROCFS_VERSION_FILE_NAME,
+				.ops = &get_version_ops,
+				.mode = S_IRUSR,
 		},
 		{
-		        .name = IOTRACE_PROCFS_SIZE_FILE_NAME,
-		        .ops = &size_ops,
-		        .mode = S_IRUSR | S_IWUSR,
+				.name = IOTRACE_PROCFS_SIZE_FILE_NAME,
+				.ops = &size_ops,
+				.mode = S_IRUSR | S_IWUSR,
 		},
 	};
 	size_t num_entries = sizeof(entries) / sizeof(entries[0]);
@@ -573,7 +596,7 @@ static int iotrace_procfs_mngt_init(void)
 		ent = proc_create(entries[i].name, entries[i].mode, dir, entries[i].ops);
 		if (!ent) {
 			printk(KERN_ERR "Cannot create /proc/%s/%s\n",
-			       iotrace_subdir, entries[i].name);
+				   iotrace_subdir, entries[i].name);
 			break;
 		}
 	}
@@ -589,7 +612,7 @@ static int iotrace_procfs_mngt_init(void)
 
 /* Allocate buffer for traces */
 int iotrace_procfs_trace_file_alloc(struct iotrace_proc_file *proc_file,
-				    uint64_t size, int cpu)
+					uint64_t size, int cpu)
 {
 	void *buffer;
 	uint64_t allocation_size;
@@ -739,6 +762,13 @@ int iotrace_procfs_init(struct iotrace_context *iotrace)
 	if (!iotrace->proc_files)
 		return -ENOMEM;
 
+	/* For each cpu (and thus trace file) allocate atomic flag */
+	iotrace->waiting_for_trace = alloc_percpu(atomic_t);
+	if (!iotrace->waiting_for_trace) {
+		result = -ENOMEM;
+		goto error;
+	}
+
 	result = iotrace_procfs_mngt_init();
 	if (result)
 		goto error;
@@ -766,6 +796,7 @@ int iotrace_procfs_init(struct iotrace_context *iotrace)
 
 error:
 	free_percpu(iotrace->proc_files);
+	free_percpu(iotrace->waiting_for_trace);
 	return result;
 }
 
@@ -784,6 +815,7 @@ void iotrace_procfs_deinit(struct iotrace_context *iotrace)
 			per_cpu_ptr(iotrace->proc_files, i));
 
 	free_percpu(iotrace->proc_files);
+	free_percpu(iotrace->waiting_for_trace);
 
 	iotrace_procfs_mngt_deinit();
 }
