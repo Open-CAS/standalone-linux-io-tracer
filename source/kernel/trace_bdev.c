@@ -112,7 +112,15 @@ int iotrace_bdev_add(struct iotrace_bdev *trace_bdev, const char *path)
 	 * to synchronize with I/O
 	 */
 	data.bdev = bdev;
+
+	/**
+	 * Because adding device will push device description event into trace log,
+	 * we demand all trace log structures to be initialized, thus we acquire
+	 * lock responsible for protecting this resource.
+	 */
+	mutex_lock(&iotrace_get_context()->trace_state.client_mutex);
 	on_each_cpu(iotrace_bdev_add_oncpu, &data, true);
+	mutex_unlock(&iotrace_get_context()->trace_state.client_mutex);
 
 	trace_bdev->num++;
 
