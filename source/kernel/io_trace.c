@@ -21,7 +21,7 @@ static inline void iotrace_notify_of_new_events(struct iotrace_context *context,
 						unsigned int cpu)
 {
 	/* If process is waiting for traces, reset the flag, notify the process */
-	if (env_atomic_cmpxchg(
+	if (atomic_cmpxchg(
 			per_cpu_ptr(context->waiting_for_trace, cpu), 1, 0)) {
 
 		wait_queue_head_t *queue =

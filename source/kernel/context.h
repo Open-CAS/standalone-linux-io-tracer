@@ -6,6 +6,7 @@
 #ifndef SOURCE_KERNEL_INTERNAL_CONTEXT_H
 #define SOURCE_KERNEL_INTERNAL_CONTEXT_H
 
+#include <asm/atomic.h>
 #include "io_trace.h"
 #include "procfs.h"
 #include "trace.h"
@@ -26,7 +27,7 @@ struct iotrace_context {
     struct iotrace_state trace_state;
 
     /** Is there a process waiting for traces flag */
-    env_atomic __percpu *waiting_for_trace;
+    atomic_t __percpu *waiting_for_trace;
 
     /** Log buffer size */
     uint64_t size;
