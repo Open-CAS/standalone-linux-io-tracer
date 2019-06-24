@@ -8,17 +8,15 @@
 
 #include <linux/bio.h>
 #include <linux/blkdev.h>
+#include <linux/kallsyms.h>
 #include <linux/version.h>
+#include <trace/events/block.h>
 
 #ifndef SECTOR_SHIFT
 #define SECTOR_SHIFT 9ULL
 #endif
 #ifndef SECTOR_SIZE
 #define SECTOR_SIZE (1ULL << SECTOR_SHIFT)
-#endif
-
-#if LINUX_VERSION_CODE != KERNEL_VERSION(3, 10, 0)
-#error Unsupported Linux Kernel Version
 #endif
 
 #define IOTRACE_BIO_OP_FLAGS(bio) (bio)->bi_rw
@@ -37,5 +35,18 @@
 
 /* Gets BIO vector  */
 #define IOTRACE_BIO_BVEC(vec) (vec)
+#define IOTRACE_BIO_GET_DEV(bio) bio->bi_bdev->bd_disk
+
+#define IOTRACE_LOOKUP_BDEV(path) lookup_bdev(path)
+
+static inline int iotrace_register_trace_block_bio_queue(
+        void (*fn)(void *ignore, struct request_queue *, struct bio *)) {
+    return register_trace_block_bio_queue(fn, NULL);
+}
+
+static inline int iotrace_unregister_trace_block_bio_queue(
+        void (*fn)(void *ignore, struct request_queue *, struct bio *)) {
+    return unregister_trace_block_bio_queue(fn, NULL);
+}
 
 #endif  // SOURCE_KERNEL_INTERNAL_BIO_H

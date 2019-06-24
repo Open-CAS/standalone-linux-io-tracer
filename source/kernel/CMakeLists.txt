@@ -10,7 +10,8 @@ else()
 endif()
 
 set(moduleSources
-    "${CMAKE_CURRENT_LIST_DIR}/bio.h"
+    "${CMAKE_CURRENT_LIST_DIR}/config-ubuntu.h"
+    "${CMAKE_CURRENT_LIST_DIR}/config-epel.h"
     "${CMAKE_CURRENT_LIST_DIR}/context.h"
     "${CMAKE_CURRENT_LIST_DIR}/io_trace.h"
     "${CMAKE_CURRENT_LIST_DIR}/procfs.h"
@@ -41,13 +42,11 @@ add_custom_command(
     DEPENDS ${moduleSources}
 )
 
-# Kernel module build target, depends on EL7 kernel headers
-# NOTE: Checking if EL7 headers are installed is complicated
-# so right now we check only if the running kernel is EL7
-# or if we have user-specified headers path in KERNEL_SRCS
+# Make sure we have the supported headers by checking current kernel version
 # TODO (trybicki): Provide a better way of checking headers
 if (DEFINED ENV{KERNEL_SRCS} OR
-    kernelName MATCHES ".*\.el7\..*")
+    kernelName MATCHES ".*\.el7\..*" OR
+    kernelName MATCHES ".*4\.15\..*")
 
     add_custom_target(traceModule
         ALL
@@ -58,7 +57,7 @@ if (DEFINED ENV{KERNEL_SRCS} OR
         COMMAND cd ${kernelSourcesPath} && make M=${CMAKE_CURRENT_SOURCE_DIR} clean
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
-	
+
 	# Install kernel module and run depmod
 	install(FILES "${traceModulePath}"
 		DESTINATION "lib/modules/${kernelName}/extra"
@@ -72,7 +71,7 @@ if (DEFINED ENV{KERNEL_SRCS} OR
 	endif()
 
 else()
-    message(WARNING "Tracing module is built on EL7 kernel only - skipping target. \
+    message(WARNING "Tracing module is built on EL7 or Ubuntu 18 kernel only - skipping target. \
     Environment variable 'KERNEL_SRCS' can be set to override this behaviour")
 
     add_custom_target(clean-module)
