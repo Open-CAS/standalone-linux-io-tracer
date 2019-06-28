@@ -17,12 +17,7 @@
 #include "trace.h"
 #include "procfs_files.h"
 
-/* Include code specific to kernel version */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0)
-#include "config-ubuntu.h"
-#else
-#include "config-epel.h"
-#endif
+#include "config.h"
 
 static inline void iotrace_notify_of_new_events(struct iotrace_context *context,
 						unsigned int cpu)

@@ -10,8 +10,7 @@ else()
 endif()
 
 set(moduleSources
-    "${CMAKE_CURRENT_LIST_DIR}/config-ubuntu.h"
-    "${CMAKE_CURRENT_LIST_DIR}/config-epel.h"
+    "${CMAKE_CURRENT_LIST_DIR}/config.h"
     "${CMAKE_CURRENT_LIST_DIR}/context.h"
     "${CMAKE_CURRENT_LIST_DIR}/io_trace.h"
     "${CMAKE_CURRENT_LIST_DIR}/procfs.h"

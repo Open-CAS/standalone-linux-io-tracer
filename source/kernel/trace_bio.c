@@ -3,18 +3,11 @@
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
-#include <linux/version.h>
 #include <linux/blkdev.h>
 #include <linux/bio.h>
 #include "context.h"
 #include "iotrace_event.h"
-
-/* Include code specific to kernel version */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0)
-#include "config-ubuntu.h"
-#else
-#include "config-epel.h"
-#endif
+#include "config.h"
 
 /**
  * @note IO classification defined by Differentiated Storage Services (DSS)

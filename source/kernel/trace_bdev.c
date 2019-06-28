@@ -11,13 +11,7 @@
 #include "trace_bdev.h"
 #include "io_trace.h"
 #include "context.h"
-
-/* Include code specific to kernel version */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0)
-#include "config-ubuntu.h"
-#else
-#include "config-epel.h"
-#endif
+#include "config.h"
 
 /**
  * @brief Helper structure to aggregate parameters to for_each_cpu callback
