@@ -13,7 +13,7 @@ using namespace std;
 using namespace octf;
 using namespace octf::cli;
 
-static const char *get_verrsion() {
+static const char *get_version() {
     if (IOTRACE_VERSION_LABEL[0]) {
         return IOTRACE_VERSION " (" IOTRACE_VERSION_LABEL ")";
     } else {
@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
 
     const string APP_NAME = "iotrace";
     properties.setName(APP_NAME);
-    properties.setVersion(get_verrsion());
+    properties.setVersion(get_version());
 
     // Create interfaces
 
