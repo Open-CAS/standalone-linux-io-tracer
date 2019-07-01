@@ -31,9 +31,10 @@ iotrace consists of a kernel tracing module (iotrace.ko) and an executable
 Right now the compilation of Standalone Linux IO Tracer is tested on the
 following OSes:
 
-|OS                            | Version
-|------------------------------|-------------------
-|RHEL/CentOS                   | 7.6
+|OS                            | Version           | Comment           
+|------------------------------|-------------------|-------------------
+|RHEL/CentOS                   | 7.6               |               
+|Ubuntu                        | 18.04             | Experimental             
 
 <a id="documentation"></a>
 
@@ -56,6 +57,15 @@ cd standalone-linux-io-tracer
 <a id="deployment"></a>
 
 ## Deployment
+
+### Checkout
+To get stable version of iotrace checkout latest release:
+  
+~~~{.sh} 
+git checkout $(git tag | grep "^v[[:digit:]]*.[[:digit:]]*.[[:digit:]]*$" | tail -1)
+~~~
+
+But if you are going to develop iotrace, it is ok to checkout master branch.
 
 ### Prerequisites
 
