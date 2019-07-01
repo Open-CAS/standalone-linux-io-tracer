@@ -15,7 +15,7 @@ using namespace octf::cli;
 
 static const char *get_verrsion() {
     if (IOTRACE_VERSION_LABEL[0]) {
-        return IOTRACE_VERSION "(" IOTRACE_VERSION_LABEL ")";
+        return IOTRACE_VERSION " (" IOTRACE_VERSION_LABEL ")";
     } else {
         return IOTRACE_VERSION;
     }
