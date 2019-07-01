@@ -56,7 +56,7 @@ iotrace provides block device IO tracing and trace management capabilities. For 
   Parsing output format. Currently the only supported format is json.
 
 
-* **--path &lt;PATH&gt;**
+* **-p --path &lt;PATH&gt;**
   Trace file path, relative to OCTF trace location.
 
 

@@ -5,24 +5,32 @@
 
 #include <linux/types.h>
 #include <linux/wait.h>
-#include "trace_bio.h"
+#include <linux/atomic.h>
 #include <linux/tracepoint.h>
 #include <trace/events/block.h>
+#include <linux/version.h>
+#include "trace_bio.h"
 #include "io_trace.h"
 #include "context.h"
-#include "bio.h"
 #include "procfs.h"
 #include "iotrace_event.h"
 #include "trace.h"
 #include "procfs_files.h"
 
+#include "config.h"
+
 static inline void iotrace_notify_of_new_events(struct iotrace_context *context,
 						unsigned int cpu)
 {
-	wait_queue_head_t *queue =
-		&(per_cpu_ptr(context->proc_files, cpu)->poll_wait_queue);
+	/* If process is waiting for traces, reset the flag, notify the process */
+	if (atomic_cmpxchg(
+			per_cpu_ptr(context->waiting_for_trace, cpu), 1, 0)) {
 
-	wake_up(queue);
+		wait_queue_head_t *queue =
+			&(per_cpu_ptr(context->proc_files, cpu)->poll_wait_queue);
+
+		wake_up(queue);
+	}
 }
 
 /**
@@ -37,7 +45,7 @@ static inline void iotrace_notify_of_new_events(struct iotrace_context *context,
  * @retval non-zero Error code
  */
 int iotrace_trace_desc(struct iotrace_context *iotrace, unsigned cpu,
-		       uint32_t dev_id, const char *dev_name, uint64_t dev_size)
+				uint32_t dev_id, const char *dev_name, uint64_t dev_size)
 {
 	int result = 0;
 	struct iotrace_state *state = &iotrace->trace_state;
@@ -73,15 +81,17 @@ int iotrace_trace_desc(struct iotrace_context *iotrace, unsigned cpu,
  *
  */
 static void bio_queue_event(void *ignore, struct request_queue *q,
-			    struct bio *bio)
+				struct bio *bio)
 {
 	uint32_t dev_id;
 	unsigned cpu = get_cpu();
 	struct iotrace_context *iotrace = iotrace_get_context();
 
 	if (iotrace_bdev_is_added(&iotrace->bdev, cpu, q)) {
-		dev_id = disk_devt(bio->bi_bdev->bd_disk);
+		dev_id = disk_devt(IOTRACE_BIO_GET_DEV(bio));
+
 		iotrace_trace_bio(iotrace, cpu, dev_id, bio);
+
 		iotrace_notify_of_new_events(iotrace, cpu);
 	}
 
@@ -184,7 +194,7 @@ static int iotrace_set_buffer_size(struct iotrace_context *iotrace, uint64_t siz
 uint64_t iotrace_get_buffer_size(struct iotrace_context *iotrace)
 {
 	return iotrace_get_context()->size * num_online_cpus() / 1024ULL /
-	       1024ULL;
+		   1024ULL;
 }
 
 /**
@@ -247,10 +257,10 @@ int iotrace_attach_client(struct iotrace_context *iotrace)
 		if (result)
 			goto exit;
 
-		result = register_trace_block_bio_queue(bio_queue_event, NULL);
+		result = iotrace_register_trace_block_bio_queue(bio_queue_event);
 		if (result) {
 			printk(KERN_ERR "Failed to register trace probe: %d\n",
-			       result);
+				   result);
 			deinit_tracers(state);
 			goto exit;
 		}
@@ -282,7 +292,7 @@ void iotrace_detach_client(struct iotrace_context *iotrace)
 	}
 
 	/* unregister callback */
-	unregister_trace_block_bio_queue(bio_queue_event, NULL);
+	iotrace_unregister_trace_block_bio_queue(bio_queue_event);
 	printk(KERN_INFO "Unregistered tracing callback\n");
 
 	/* remove all devices from trace list */

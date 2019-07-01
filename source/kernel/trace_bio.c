@@ -3,12 +3,11 @@
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
-#include <linux/version.h>
 #include <linux/blkdev.h>
 #include <linux/bio.h>
-#include "bio.h"
 #include "context.h"
 #include "iotrace_event.h"
+#include "config.h"
 
 /**
  * @note IO classification defined by Differentiated Storage Services (DSS)
@@ -96,10 +95,6 @@ static uint32_t _get_dss_io_class(const struct bio *bio, struct bio_info *info)
 	if (!bio)
 		return DSS_UNCLASSIFIED;
 
-	/* Check if BIO carries data */
-	if (!IOTRACE_BIO_BVEC(bio_iovec(bio)))
-		return DSS_UNCLASSIFIED;
-
 	page = bio_page(bio);
 
 	if (!page)
@@ -182,8 +177,11 @@ void iotrace_trace_bio(struct iotrace_context *context, unsigned cpu,
 
     ev.lba = IOTRACE_BIO_BISECTOR(bio);
     ev.len = IOTRACE_BIO_BISIZE(bio) >> SECTOR_SHIFT;
-    ev.io_class = _get_dss_io_class(bio, &info);
     ev.dev_id = dev_id;
+    if (!bio_has_data(bio))
+        ev.io_class = DSS_UNCLASSIFIED;
+    else
+        ev.io_class = _get_dss_io_class(bio, &info);
 
     octf_trace_push(trace, &ev, sizeof(ev));
 
