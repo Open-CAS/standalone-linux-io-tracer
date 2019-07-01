@@ -5,8 +5,6 @@
 
 #include "KernelRingTraceProducer.h"
 #include <fcntl.h>
-#include <octf/trace/iotrace_event.h>
-#include <octf/utils/Exception.h>
 #include <procfs_files.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -16,6 +14,8 @@
 #include <cstdint>
 #include <fstream>
 #include <string>
+#include <octf/trace/iotrace_event.h>
+#include <octf/utils/Exception.h>
 #include "InterfaceKernelTraceCreatingImpl.h"
 
 namespace octf {

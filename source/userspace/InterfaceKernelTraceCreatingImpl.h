@@ -21,7 +21,7 @@ public:
     /**
      * @param nodePath Path to owner node
      */
-    InterfaceKernelTraceCreatingImpl(const NodePath &nodePath);
+    InterfaceKernelTraceCreatingImpl();
     virtual ~InterfaceKernelTraceCreatingImpl() = default;
 
     virtual void StartTracing(::google::protobuf::RpcController *controller,
@@ -35,7 +35,7 @@ private:
             const std::string &fieldName,
             const ::google::protobuf::Descriptor *messageDescriptor);
 
-    const NodePath &m_nodePath;
+    const NodePath m_nodePath;
 };
 
 }  // namespace octf

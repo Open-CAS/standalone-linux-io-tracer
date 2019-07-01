@@ -26,6 +26,7 @@ int iotrace_procfs_init(struct iotrace_context *iotrace);
 void iotrace_procfs_deinit(struct iotrace_context *iotrace);
 
 int iotrace_procfs_trace_file_alloc(struct iotrace_proc_file *proc_file,
-                                    uint64_t size, int cpu);
+                                    uint64_t size,
+                                    int cpu);
 
 #endif  // SOURCE_KERNEL_INTERNAL_PROCFS_H

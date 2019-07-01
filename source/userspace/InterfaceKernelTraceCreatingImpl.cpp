@@ -4,22 +4,21 @@
  */
 
 #include "InterfaceKernelTraceCreatingImpl.h"
+#include <sys/types.h>
+#include <cstdio>
+#include <string>
 #include <octf/interface/TraceManager.h>
 #include <octf/plugin/NodePlugin.h>
 #include <octf/proto/trace.pb.h>
 #include <octf/trace/iotrace_event.h>
 #include <octf/utils/Exception.h>
 #include <octf/utils/SignalHandler.h>
-#include <sys/types.h>
-#include <cstdio>
-#include <string>
 #include "KernelTraceExecutor.h"
 
 namespace octf {
 
-InterfaceKernelTraceCreatingImpl::InterfaceKernelTraceCreatingImpl(
-        const NodePath &nodePath)
-        : m_nodePath(nodePath) {}
+InterfaceKernelTraceCreatingImpl::InterfaceKernelTraceCreatingImpl()
+        : m_nodePath{NodeId("kernel")} {}
 
 bool InterfaceKernelTraceCreatingImpl::checkIntegerParameters(
         const uint32_t value,
@@ -76,7 +75,8 @@ void InterfaceKernelTraceCreatingImpl::StartTracing(
         manager.fillTraceSummary(response, state);
 
         if (state != TracingState::COMPLETE) {
-            controller->SetFailed("Tracing not completed, trace path " + response->tracepath());
+            controller->SetFailed("Tracing not completed, trace path " +
+                                  response->tracepath());
         }
     } catch (Exception &e) {
         controller->SetFailed(e.what());
