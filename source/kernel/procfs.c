@@ -140,11 +140,13 @@ static loff_t _iotrace_llseek(struct file *file, loff_t offset, int whence)
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 10, 0)
 int _iotrace_fault(struct vm_area_struct *vma, struct vm_fault *vmf,
 			bool trace_ring)
-#else
-int _iotrace_fault(struct vm_fault *vmf, bool trace_ring)
-#endif
 {
 	struct file *file = vma->vm_file;
+#else
+int _iotrace_fault(struct vm_fault *vmf, bool trace_ring)
+{
+	struct file *file = vmf->vma->vm_file;
+#endif
 	struct iotrace_proc_file *proc_file = file->private_data;
 	void *buf =
 		trace_ring ? proc_file->trace_ring : proc_file->consumer_hdr;

@@ -8,14 +8,16 @@
 #include <linux/atomic.h>
 #include <linux/tracepoint.h>
 #include <trace/events/block.h>
+#include <linux/version.h>
 #include "trace_bio.h"
 #include "io_trace.h"
 #include "context.h"
-#include "bio.h"
 #include "procfs.h"
 #include "iotrace_event.h"
 #include "trace.h"
 #include "procfs_files.h"
+
+#include "config.h"
 
 static inline void iotrace_notify_of_new_events(struct iotrace_context *context,
 						unsigned int cpu)
@@ -86,7 +88,8 @@ static void bio_queue_event(void *ignore, struct request_queue *q,
 	struct iotrace_context *iotrace = iotrace_get_context();
 
 	if (iotrace_bdev_is_added(&iotrace->bdev, cpu, q)) {
-		dev_id = disk_devt(bio->bi_bdev->bd_disk);
+		dev_id = disk_devt(IOTRACE_BIO_GET_DEV(bio));
+
 		iotrace_trace_bio(iotrace, cpu, dev_id, bio);
 
 		iotrace_notify_of_new_events(iotrace, cpu);
@@ -254,7 +257,7 @@ int iotrace_attach_client(struct iotrace_context *iotrace)
 		if (result)
 			goto exit;
 
-		result = register_trace_block_bio_queue(bio_queue_event, NULL);
+		result = iotrace_register_trace_block_bio_queue(bio_queue_event);
 		if (result) {
 			printk(KERN_ERR "Failed to register trace probe: %d\n",
 				   result);
@@ -289,7 +292,7 @@ void iotrace_detach_client(struct iotrace_context *iotrace)
 	}
 
 	/* unregister callback */
-	unregister_trace_block_bio_queue(bio_queue_event, NULL);
+	iotrace_unregister_trace_block_bio_queue(bio_queue_event);
 	printk(KERN_INFO "Unregistered tracing callback\n");
 
 	/* remove all devices from trace list */

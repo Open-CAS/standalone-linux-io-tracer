@@ -7,13 +7,15 @@
 #include <linux/mutex.h>
 #include <linux/smp.h>
 #include <linux/blkdev.h>
+#include <linux/version.h>
 #include "trace_bdev.h"
 #include "io_trace.h"
 #include "context.h"
+#include "config.h"
 
 /**
  * @brief Helper structure to aggregate parameters to for_each_cpu callback
- *	  used to add/remove device from list.
+ *	used to add/remove device from list.
  */
 struct iotrace_bdev_data {
 	/** iotrace traced devices info */
@@ -30,9 +32,9 @@ struct iotrace_bdev_data {
  * @brief Add block device pointer to per-cpu @trace_bdev array
  *
  * @usage This function is designed to be called using on_each_cpu macro,
- *	  pinned to fixed CPU in order to ensure that trace_bdev->list is not
- *	  modified concurrently. Also management lock should be held by
- *	  the caller to avoid re-entrance in management path.
+ *	pinned to fixed CPU in order to ensure that trace_bdev->list is not
+ *	modified concurrently. Also management lock should be held by
+ *	the caller to avoid re-entrance in management path.
  *
  * @param info Input data structure (iotrace device list and bdev)
  */
@@ -46,8 +48,8 @@ void static iotrace_bdev_add_oncpu(void *info)
 	uint64_t bdev_size = 0;
 
 	bdev_size = (data->bdev->bd_contains == data->bdev) ?
-			    get_capacity(data->bdev->bd_disk) :
-			    data->bdev->bd_part->nr_sects;
+				get_capacity(data->bdev->bd_disk) :
+				data->bdev->bd_part->nr_sects;
 
 	BUG_ON(trace_bdev->num >= SATRACE_MAX_DEVICES);
 	per_cpu_ptr(trace_bdev->list, cpu)[trace_bdev->num] = data->bdev;
@@ -140,12 +142,12 @@ exit:
  * @brief Remove block device pointer from per-cpu @trace_bdev array
  *
  * @usage This function is designed to be called using on_each_cpu macro,
- *	  pinned to fixed CPU in order to ensure that trace_bdev->list is not
- *	  modified concurrently. Also management lock should be held by
- *	  the caller to avoid re-entrance in management path.
+ *	pinned to fixed CPU in order to ensure that trace_bdev->list is not
+ *	modified concurrently. Also management lock should be held by
+ *	the caller to avoid re-entrance in management path.
  *
  * @param info Input data structure (iotrace device list and index to remove bdev
- *	  at)
+ *	at)
  *
  */
 void static iotrace_bdev_remove_oncpu(void *info)
@@ -172,7 +174,7 @@ void static iotrace_bdev_remove_oncpu(void *info)
  * @retval non-zero error code
  */
 static int iotrace_bdev_remove_locked(struct iotrace_bdev *trace_bdev,
-				      struct block_device *bdev)
+					  struct block_device *bdev)
 {
 	struct iotrace_bdev_data data = { .trace_bdev = trace_bdev };
 	unsigned cpu = smp_processor_id();
@@ -228,7 +230,7 @@ int iotrace_bdev_remove(struct iotrace_bdev *trace_bdev, const char *path)
 		goto error;
 	}
 
-	bdev = lookup_bdev(path);
+	bdev = IOTRACE_LOOKUP_BDEV(path);
 	if (IS_ERR(bdev)) {
 		result = PTR_ERR(bdev);
 		goto error;
@@ -274,7 +276,7 @@ void iotrace_bdev_remove_all(struct iotrace_bdev *trace_bdev)
  * @retval <0 error code (negation)
  */
 int iotrace_bdev_list(struct iotrace_bdev *trace_bdev,
-		      char list[SATRACE_MAX_DEVICES][DISK_NAME_LEN])
+			  char list[SATRACE_MAX_DEVICES][DISK_NAME_LEN])
 {
 	unsigned i;
 	size_t len;
