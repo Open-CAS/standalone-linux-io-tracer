@@ -7,10 +7,23 @@
 #define SOURCE_KERNEL_INTERNAL_CONFIG_H
 
 #include <linux/bio.h>
+#include <linux/blk_types.h>
 #include <linux/blkdev.h>
 #include <linux/kallsyms.h>
 #include <linux/version.h>
 #include <trace/events/block.h>
+
+/*
+ * Common declarations
+ */
+
+/*
+ * BIO completion trace function
+ */
+typedef void (*iotrace_bio_complete_fn)(void *ignore,
+                                        struct request_queue *q,
+                                        struct bio *bio,
+                                        int error);
 
 #ifndef SECTOR_SHIFT
 #define SECTOR_SHIFT 9ULL
@@ -39,6 +52,7 @@
 #define IOTRACE_BIO_IS_FLUSH(bio) ((IOTRACE_BIO_OP_FLAGS(bio)) & REQ_FLUSH)
 /* Gets BIO device  */
 #define IOTRACE_BIO_GET_DEV(bio) bio->bi_bdev->bd_disk
+#define IOTRACE_BIO_TRACE_COMPLETION(bio) true
 #define IOTRACE_LOOKUP_BDEV(path) lookup_bdev(path)
 
 static inline int iotrace_register_trace_block_bio_queue(
@@ -49,6 +63,49 @@ static inline int iotrace_register_trace_block_bio_queue(
 static inline int iotrace_unregister_trace_block_bio_queue(
         void (*fn)(void *ignore, struct request_queue *, struct bio *)) {
     return unregister_trace_block_bio_queue(fn, NULL);
+}
+
+void iotrace_block_rq_complete(void *data,
+                               struct request_queue *q,
+                               struct request *rq,
+                               unsigned int nr_bytes);
+
+static inline int iotrace_register_trace_block_bio_complete(
+        iotrace_bio_complete_fn fn) {
+    int result;
+
+    result = register_trace_block_bio_complete(fn, NULL);
+    WARN_ON(result);
+    if (result) {
+        goto ERROR;
+    }
+
+    result = register_trace_block_rq_complete(iotrace_block_rq_complete, fn);
+    WARN_ON(result);
+    if (result) {
+        goto BIO_COMPLETE;
+    }
+
+    return 0;
+
+BIO_COMPLETE:
+    unregister_trace_block_bio_complete(fn, NULL);
+
+ERROR:
+    return result;
+}
+
+static inline int iotrace_unregister_trace_block_bio_complete(
+        iotrace_bio_complete_fn fn) {
+    int result = 0;
+
+    result |= unregister_trace_block_bio_complete(fn, NULL);
+    WARN_ON(result);
+
+    result |= unregister_trace_block_rq_complete(iotrace_block_rq_complete, fn);
+    WARN_ON(result);
+
+    return result;
 }
 
 /* Defines for Ubuntu 18.04 (4.15 kernel) */
@@ -64,7 +121,9 @@ static inline int iotrace_unregister_trace_block_bio_queue(
 #define IOTRACE_BIO_IS_FLUSH(bio) ((IOTRACE_BIO_OP_FLAGS(bio)) & REQ_OP_FLUSH)
 /* Gets BIO vector  */
 #define IOTRACE_BIO_GET_DEV(bio) bio->bi_disk
+#define IOTRACE_BIO_TRACE_COMPLETION(bio) bio_flagged(bio, BIO_TRACE_COMPLETION)
 #define IOTRACE_LOOKUP_BDEV(path) lookup_bdev(path, 0)
+/* Check if BIO completion has been already traced */
 
 static inline int iotrace_register_trace_block_bio_queue(
         void (*fn)(void *ignore, struct request_queue *, struct bio *)) {
@@ -80,6 +139,57 @@ static inline int iotrace_unregister_trace_block_bio_queue(
     typeof(&__tracepoint_block_bio_queue) tracepoint =
             (void *) kallsyms_lookup_name(sym_name);
     return tracepoint_probe_unregister((void *) tracepoint, fn, NULL);
+}
+
+void iotrace_block_rq_complete(void *data,
+                               struct request *rq,
+                               int error,
+                               unsigned int nr_bytes);
+
+static inline int iotrace_register_trace_block_bio_complete(
+        iotrace_bio_complete_fn fn) {
+    int result;
+    char *sym_name = "__tracepoint_block_rq_complete";
+    typeof(&__tracepoint_block_rq_complete) tracepoint =
+            (void *) kallsyms_lookup_name(sym_name);
+
+    result = register_trace_block_bio_complete(fn, NULL);
+    WARN_ON(result);
+    if (result) {
+        goto ERROR;
+    }
+
+    result = tracepoint_probe_register((void *) tracepoint,
+                                       iotrace_block_rq_complete, fn);
+    WARN_ON(result);
+    if (result) {
+        goto BIO_COMPLETE;
+    }
+
+    return 0;
+
+BIO_COMPLETE:
+    unregister_trace_block_bio_complete(fn, NULL);
+
+ERROR:
+    return result;
+}
+
+static inline int iotrace_unregister_trace_block_bio_complete(
+        iotrace_bio_complete_fn fn) {
+    int result = 0;
+    char *sym_name = "__tracepoint_block_rq_complete";
+    typeof(&__tracepoint_block_rq_complete) tracepoint =
+            (void *) kallsyms_lookup_name(sym_name);
+
+    result |= unregister_trace_block_bio_complete(fn, NULL);
+    WARN_ON(result);
+
+    result |= tracepoint_probe_unregister((void *) tracepoint,
+                                          iotrace_block_rq_complete, fn);
+    WARN_ON(result);
+
+    return result;
 }
 
 #endif

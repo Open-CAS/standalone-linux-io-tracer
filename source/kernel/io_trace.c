@@ -101,6 +101,38 @@ static void bio_queue_event(void *ignore, struct request_queue *q,
 }
 
 /**
+ * @brief Function registered to be called each time BIO is completed
+ *
+ * @param ignore Not used
+ * @param q Associated request queue
+ * @param bio Completed BIO
+ * @param error result of BIO
+ */
+static void bio_complete_event(void *ignore, struct request_queue *q,
+        struct bio *bio, int error)
+{
+    uint32_t dev_id;
+    unsigned cpu = get_cpu();
+    struct iotrace_context *iotrace = iotrace_get_context();
+
+    if (!IOTRACE_BIO_TRACE_COMPLETION(bio)) {
+        return;
+    }
+
+    if (iotrace_bdev_is_added(&iotrace->bdev, cpu, q)) {
+        dev_id = disk_devt(IOTRACE_BIO_GET_DEV(bio));
+
+        iotrace_trace_bio_completion(iotrace, cpu, dev_id, bio, error);
+
+        iotrace_notify_of_new_events(iotrace, cpu);
+    }
+
+    put_cpu();
+
+    return;
+}
+
+/**
  * @brief Deinitialize iotrace tracers
  *
  * Close all iotrace objects
@@ -238,6 +270,34 @@ exit:
 	return result;
 }
 
+static int _register_trace_points(void)
+{
+    int result;
+
+    result = iotrace_register_trace_block_bio_queue(bio_queue_event);
+    if (result) {
+        goto ERROR;
+    }
+
+    result = iotrace_register_trace_block_bio_complete(bio_complete_event);
+    if (result) {
+        goto BIO_COMPLETE;
+    }
+
+    return 0;
+
+BIO_COMPLETE:
+    iotrace_unregister_trace_block_bio_queue(bio_queue_event);
+ERROR:
+    return result;
+}
+
+static void _unregister_trace_points(void)
+{
+    iotrace_unregister_trace_block_bio_queue(bio_queue_event);
+    iotrace_unregister_trace_block_bio_complete(bio_complete_event);
+}
+
 /**
  * @brief Initialize tracing for new consumer
  *
@@ -257,7 +317,7 @@ int iotrace_attach_client(struct iotrace_context *iotrace)
 		if (result)
 			goto exit;
 
-		result = iotrace_register_trace_block_bio_queue(bio_queue_event);
+		result = _register_trace_points();
 		if (result) {
 			printk(KERN_ERR "Failed to register trace probe: %d\n",
 				   result);
@@ -292,7 +352,7 @@ void iotrace_detach_client(struct iotrace_context *iotrace)
 	}
 
 	/* unregister callback */
-	iotrace_unregister_trace_block_bio_queue(bio_queue_event);
+	_unregister_trace_points();
 	printk(KERN_INFO "Unregistered tracing callback\n");
 
 	/* remove all devices from trace list */
