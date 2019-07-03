@@ -91,7 +91,6 @@ static void bio_queue_event(void *ignore, struct request_queue *q,
 		dev_id = disk_devt(IOTRACE_BIO_GET_DEV(bio));
 
 		iotrace_trace_bio(iotrace, cpu, dev_id, bio);
-
 		iotrace_notify_of_new_events(iotrace, cpu);
 	}
 
@@ -115,15 +114,10 @@ static void bio_complete_event(void *ignore, struct request_queue *q,
     unsigned cpu = get_cpu();
     struct iotrace_context *iotrace = iotrace_get_context();
 
-    if (!IOTRACE_BIO_TRACE_COMPLETION(bio)) {
-        return;
-    }
-
     if (iotrace_bdev_is_added(&iotrace->bdev, cpu, q)) {
         dev_id = disk_devt(IOTRACE_BIO_GET_DEV(bio));
 
         iotrace_trace_bio_completion(iotrace, cpu, dev_id, bio, error);
-
         iotrace_notify_of_new_events(iotrace, cpu);
     }
 

@@ -52,7 +52,6 @@ typedef void (*iotrace_bio_complete_fn)(void *ignore,
 #define IOTRACE_BIO_IS_FLUSH(bio) ((IOTRACE_BIO_OP_FLAGS(bio)) & REQ_FLUSH)
 /* Gets BIO device  */
 #define IOTRACE_BIO_GET_DEV(bio) bio->bi_bdev->bd_disk
-#define IOTRACE_BIO_TRACE_COMPLETION(bio) true
 #define IOTRACE_LOOKUP_BDEV(path) lookup_bdev(path)
 
 static inline int iotrace_register_trace_block_bio_queue(
@@ -121,7 +120,6 @@ static inline int iotrace_unregister_trace_block_bio_complete(
 #define IOTRACE_BIO_IS_FLUSH(bio) ((IOTRACE_BIO_OP_FLAGS(bio)) & REQ_OP_FLUSH)
 /* Gets BIO vector  */
 #define IOTRACE_BIO_GET_DEV(bio) bio->bi_disk
-#define IOTRACE_BIO_TRACE_COMPLETION(bio) bio_flagged(bio, BIO_TRACE_COMPLETION)
 #define IOTRACE_LOOKUP_BDEV(path) lookup_bdev(path, 0)
 /* Check if BIO completion has been already traced */
 
