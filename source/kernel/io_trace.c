@@ -270,19 +270,19 @@ static int _register_trace_points(void)
 
     result = iotrace_register_trace_block_bio_queue(bio_queue_event);
     if (result) {
-        goto ERROR;
+        goto REG_BIO_QUEUE_ERROR;
     }
 
     result = iotrace_register_trace_block_bio_complete(bio_complete_event);
     if (result) {
-        goto BIO_COMPLETE;
+        goto REG_BIO_COMPLETE_ERROR;
     }
 
     return 0;
 
-BIO_COMPLETE:
+REG_BIO_COMPLETE_ERROR:
     iotrace_unregister_trace_block_bio_queue(bio_queue_event);
-ERROR:
+REG_BIO_QUEUE_ERROR:
     return result;
 }
 

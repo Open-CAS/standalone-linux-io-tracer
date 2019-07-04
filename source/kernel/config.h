@@ -76,21 +76,21 @@ static inline int iotrace_register_trace_block_bio_complete(
     result = register_trace_block_bio_complete(fn, NULL);
     WARN_ON(result);
     if (result) {
-        goto ERROR;
+        goto REG_BIO_COMPLETE_ERROR;
     }
 
     result = register_trace_block_rq_complete(iotrace_block_rq_complete, fn);
     WARN_ON(result);
     if (result) {
-        goto BIO_COMPLETE;
+        goto REG_RQ_COMPLETE_ERROR;
     }
 
     return 0;
 
-BIO_COMPLETE:
+REG_RQ_COMPLETE_ERROR:
     unregister_trace_block_bio_complete(fn, NULL);
 
-ERROR:
+REG_BIO_COMPLETE_ERROR:
     return result;
 }
 
@@ -154,22 +154,22 @@ static inline int iotrace_register_trace_block_bio_complete(
     result = register_trace_block_bio_complete(fn, NULL);
     WARN_ON(result);
     if (result) {
-        goto ERROR;
+        goto REG_BIO_COMPLETE_ERROR;
     }
 
     result = tracepoint_probe_register((void *) tracepoint,
                                        iotrace_block_rq_complete, fn);
     WARN_ON(result);
     if (result) {
-        goto BIO_COMPLETE;
+        goto REG_RQ_COMPLETE_ERROR;
     }
 
     return 0;
 
-BIO_COMPLETE:
+REG_RQ_COMPLETE_ERROR:
     unregister_trace_block_bio_complete(fn, NULL);
 
-ERROR:
+REG_BIO_COMPLETE_ERROR:
     return result;
 }
 
