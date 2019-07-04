@@ -188,3 +188,22 @@ void iotrace_trace_bio(struct iotrace_context *context, unsigned cpu,
     if (ev.io_class >= DSS_DATA_FILE_4KB && ev.io_class <= DSS_DATA_FILE_BULK)
         _trace_bio_fs_meta(trace, atomic64_inc_return(&state->sid), sid, &info);
 }
+
+void iotrace_trace_bio_completion(struct iotrace_context *context, unsigned cpu,
+        uint64_t dev_id, struct bio *bio, int error)
+{
+    struct iotrace_event_completion cmpl = {};
+    struct iotrace_state *state = &context->trace_state;
+    uint64_t sid = atomic64_inc_return(&state->sid);
+    octf_trace_t trace = *per_cpu_ptr(state->traces, cpu);
+
+    iotrace_event_init_hdr(&cmpl.hdr, iotrace_event_type_io_cmpl, sid,
+              ktime_to_ns(ktime_get()), sizeof(cmpl));
+
+
+    cmpl.lba = IOTRACE_BIO_BISECTOR(bio);
+    cmpl.len = IOTRACE_BIO_BISIZE(bio) >> SECTOR_SHIFT;
+    cmpl.error = error;
+
+    octf_trace_push(trace, &cmpl, sizeof(cmpl));
+}
