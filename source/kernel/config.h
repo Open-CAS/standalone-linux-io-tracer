@@ -121,7 +121,6 @@ static inline int iotrace_unregister_trace_block_bio_complete(
 /* Gets BIO vector  */
 #define IOTRACE_BIO_GET_DEV(bio) bio->bi_disk
 #define IOTRACE_LOOKUP_BDEV(path) lookup_bdev(path, 0)
-/* Check if BIO completion has been already traced */
 
 static inline int iotrace_register_trace_block_bio_queue(
         void (*fn)(void *ignore, struct request_queue *, struct bio *)) {
