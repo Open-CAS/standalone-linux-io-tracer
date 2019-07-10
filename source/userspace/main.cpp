@@ -5,6 +5,7 @@
 
 #include <memory>
 #include <octf/cli/Executor.h>
+#include <octf/interface/InterfaceConfigurationImpl.h>
 #include <octf/interface/InterfaceTraceManagementImpl.h>
 #include <octf/interface/InterfaceTraceParsingImpl.h>
 #include "InterfaceKernelTraceCreatingImpl.h"
@@ -45,8 +46,13 @@ int main(int argc, char *argv[]) {
     InterfaceShRef iTraceParsing =
             std::make_shared<InterfaceTraceParsingImpl>();
 
+    // Configuration Interface for setting trace repository path
+    InterfaceShRef iConfiguration =
+            std::make_shared<InterfaceConfigurationImpl>();
+
     // Add interfaces to executor
-    ex.addModules(iTraceManagement, iKernelTarcing, iTraceParsing);
+    ex.addModules(iTraceManagement, iKernelTarcing, iTraceParsing,
+                  iConfiguration);
 
     // Execute command
     return ex.execute(argc, argv);
