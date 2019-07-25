@@ -7,11 +7,13 @@
 #define SOURCE_KERNEL_INTERNAL_PROCFS_H
 
 #include <linux/kref.h>
+#include <linux/wait.h>
 #include "trace.h"
 
 struct iotrace_context;
 
 struct iotrace_proc_file {
+    int cpu;
     struct proc_dir_entry *trace_ring_entry, *consumer_hdr_entry;
     struct kref ref;
     void *trace_ring;

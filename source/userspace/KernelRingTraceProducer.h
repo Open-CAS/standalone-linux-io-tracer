@@ -6,13 +6,9 @@
 #ifndef SOURCE_USERSPACE_KERNELRINGTRACEPRODUCER_H
 #define SOURCE_USERSPACE_KERNELRINGTRACEPRODUCER_H
 
-#include <octf/interface/IRingTraceProducer.h>
-#include <octf/trace/iotrace_event.h>
-#include <sys/types.h>
 #include <atomic>
-#include <chrono>
 #include <memory>
-#include <string>
+#include <octf/interface/IRingTraceProducer.h>
 
 namespace octf {
 

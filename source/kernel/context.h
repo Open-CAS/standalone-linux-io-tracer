@@ -14,20 +14,31 @@
 #include "trace_env_kernel.h"
 
 /**
+ * Per CPU iotrace context
+ */
+struct iotrace_cpu_context {
+    /** Is there a process waiting for traces flag */
+    atomic_t waiting_for_trace;
+
+    /** Wait queue to wake up waiting processes for traces */
+    wait_queue_head_t wait_queue;
+
+    /** Procfs file per CPU descriptions */
+    struct iotrace_proc_file proc_files;
+};
+
+/**
  * @brief Tracing global context
  */
 struct iotrace_context {
     /** Traced block devices info */
     struct iotrace_bdev bdev;
 
-    /** Procfs file per CPU descriptions */
-    struct iotrace_proc_file __percpu *proc_files;
-
     /** Tracing state (seq no etc) */
     struct iotrace_state trace_state;
 
-    /** Is there a process waiting for traces flag */
-    atomic_t __percpu *waiting_for_trace;
+    /** Per CPU context */
+    struct iotrace_cpu_context __percpu *cpu_context;
 
     /** Log buffer size */
     uint64_t size;
