@@ -3,15 +3,15 @@
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
-#include <linux/module.h>
-#include <linux/fs.h>
-#include <linux/vmalloc.h>
 #include <linux/blkdev.h>
-#include "procfs.h"
-#include "io_trace.h"
-#include "trace_bdev.h"
+#include <linux/fs.h>
+#include <linux/module.h>
+#include <linux/vmalloc.h>
 #include "context.h"
+#include "io_trace.h"
+#include "procfs.h"
 #include "trace.h"
+#include "trace_bdev.h"
 
 #define VALUE_TO_STRING(x) #x
 #define VALUE(x) VALUE_TO_STRING(x)
@@ -25,9 +25,21 @@ MODULE_VERSION(VALUE(IOTRACE_VERSION));
  */
 static struct iotrace_context _sa = {}, *iotrace = &_sa;
 
-struct iotrace_context *iotrace_get_context(void)
-{
-	return iotrace;
+struct iotrace_context *iotrace_get_context(void) {
+    return iotrace;
+}
+
+static const char *get_version(void) {
+    static char label[] = VALUE(IOTRACE_VERSION_LABEL);
+
+    if (label[0]) {
+        static const char version[] =
+                VALUE(IOTRACE_VERSION) " (" VALUE(IOTRACE_VERSION_LABEL) ")";
+        return version;
+    } else {
+        static const char version[] = VALUE(IOTRACE_VERSION);
+        return version;
+    }
 }
 
 /**
@@ -36,33 +48,29 @@ struct iotrace_context *iotrace_get_context(void)
  * @retval 0 Module initialized successfully
  * @retval non-zero Error code
  */
-static int __init iotrace_init_module(void)
-{
-	int result = 0;
+static int __init iotrace_init_module(void) {
+    int result = 0;
 
-	if (iotrace_trace_init(iotrace))
-		goto free_context;
+    if (iotrace_trace_init(iotrace))
+        goto free_context;
 
-	result = iotrace_bdev_init(&iotrace->bdev);
-	if (result)
-		goto free_context;
+    result = iotrace_bdev_init(&iotrace->bdev);
+    if (result)
+        goto free_context;
 
-	result = iotrace_procfs_init(iotrace);
-	if (result)
-		goto free_sa;
+    result = iotrace_procfs_init(iotrace);
+    if (result)
+        goto free_sa;
 
-	if (VALUE(IOTRACE_VERSION_LABEL)[0] != '\0')
-		printk(KERN_INFO "Module loaded successfully: iotrace version %s (%s)\n", VALUE(IOTRACE_VERSION), VALUE(IOTRACE_VERSION_LABEL));
-	else
-		printk(KERN_INFO "Module loaded successfully: iotrace version %s\n", VALUE(IOTRACE_VERSION));
+    printk(KERN_INFO "iotrace module loaded, version %s\n", get_version());
 
-	return 0;
+    return 0;
 
 free_sa:
-	iotrace_bdev_deinit(&iotrace->bdev);
+    iotrace_bdev_deinit(&iotrace->bdev);
 free_context:
-	iotrace_trace_deinit(iotrace);
-	return result;
+    iotrace_trace_deinit(iotrace);
+    return result;
 }
 
 module_init(iotrace_init_module);
@@ -70,14 +78,15 @@ module_init(iotrace_init_module);
 /**
  * @brief Module deinitialization routine
  */
-static void __exit iotrace_exit_module(void)
-{
-	/* remove procfs files */
-	iotrace_procfs_deinit(iotrace);
-	/* deinitialize devices list */
-	iotrace_bdev_deinit(&iotrace->bdev);
-	/* deinitialize tracing context */
-	iotrace_trace_deinit(iotrace);
+static void __exit iotrace_exit_module(void) {
+    /* remove procfs files */
+    iotrace_procfs_deinit(iotrace);
+    /* deinitialize devices list */
+    iotrace_bdev_deinit(&iotrace->bdev);
+    /* deinitialize tracing context */
+    iotrace_trace_deinit(iotrace);
+
+    printk(KERN_INFO "iotrace module unloaded, version %s\n", get_version());
 }
 
 module_exit(iotrace_exit_module);
