@@ -24,7 +24,7 @@ static inline void iotrace_notify_of_new_events(struct iotrace_context *context,
             per_cpu_ptr(context->cpu_context, cpu);
     octf_trace_t handle = *per_cpu_ptr(context->trace_state.traces, cpu);
 
-    if (1 != octf_trace_is_half(handle)) {
+    if (1 != octf_trace_is_almost_full(handle)) {
         return;
     }
 
@@ -55,7 +55,7 @@ int iotrace_trace_desc(struct iotrace_context *iotrace,
     octf_trace_t trace = *per_cpu_ptr(state->traces, cpu);
 
     struct iotrace_event_device_desc desc;
-    uint64_t sid = 0;  // atomic64_inc_return(&state->sid);
+    uint64_t sid = atomic64_inc_return(&state->sid);
     const size_t dev_name_size = sizeof(desc.device_name);
 
     if (strnlen(dev_name, dev_name_size) >= dev_name_size)

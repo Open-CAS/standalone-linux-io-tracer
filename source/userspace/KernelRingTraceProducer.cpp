@@ -86,7 +86,7 @@ octf_trace_hdr_t *KernelRingTraceProducer::getConsumerHeader(void) {
 }
 
 bool KernelRingTraceProducer::wait(
-        std::chrono::time_point<std::chrono::steady_clock> &endTime) {
+        std::chrono::time_point<std::chrono::steady_clock> &) {
     if (!m_stopped) {
         return ::ioctl(m_ring->fd, IOTRACE_IOCTL_WAIT_FOR_TRACES) == 0;
     } else {
