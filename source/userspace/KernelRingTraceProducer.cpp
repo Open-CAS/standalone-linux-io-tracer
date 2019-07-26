@@ -4,19 +4,14 @@
  */
 
 #include "KernelRingTraceProducer.h"
+
 #include <fcntl.h>
 #include <procfs_files.h>
+#include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <sys/time.h>
 #include <unistd.h>
-#include <chrono>
-#include <cstdint>
-#include <fstream>
-#include <string>
-#include <octf/trace/iotrace_event.h>
 #include <octf/utils/Exception.h>
-#include "InterfaceKernelTraceCreatingImpl.h"
 
 namespace octf {
 
@@ -91,47 +86,18 @@ octf_trace_hdr_t *KernelRingTraceProducer::getConsumerHeader(void) {
 }
 
 bool KernelRingTraceProducer::wait(
-        std::chrono::time_point<std::chrono::steady_clock> &endTime) {
-    fd_set readFileDescriptors;
-    struct timeval tv;
-    int result;
-
-    while (!m_stopped) {
-        if (std::chrono::steady_clock::now() >= endTime) {
-            return false;
-        }
-
-        // Poll trace file for possible reads
-        FD_ZERO(&readFileDescriptors);
-        FD_SET(m_ring->fd, &readFileDescriptors);
-
-        // Timeout - 0.5s
-        tv.tv_sec = 0;
-        tv.tv_usec = 500000;
-
-        result = select(m_ring->fd + 1, &readFileDescriptors, nullptr, nullptr,
-                        &tv);
-
-        if (result < 0) {
-            // Error
-            throw Exception("select() failed with: " + std::to_string(result));
-
-        } else if (result == 0) {
-            // Timeout - no events, poll until producer is stopped
-            continue;
-
-        } else if (FD_ISSET(m_ring->fd, &readFileDescriptors)) {
-            // Events are ready to be read
-            return true;
-        }
+        std::chrono::time_point<std::chrono::steady_clock> &) {
+    if (!m_stopped) {
+        return ::ioctl(m_ring->fd, IOTRACE_IOCTL_WAIT_FOR_TRACES) == 0;
+    } else {
+        return false;
     }
-
-    return false;
 }
 
 // force wait routine exit with false
 void KernelRingTraceProducer::stop(void) {
     m_stopped = true;
+    ::ioctl(m_ring->fd, IOTRACE_IOCTL_INTERRUPT_WAIT_FOR_TRACES);
 }
 
 void KernelRingTraceProducer::initRing(uint32_t memoryPoolSize) {

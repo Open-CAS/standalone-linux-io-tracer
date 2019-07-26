@@ -4,19 +4,15 @@
  */
 
 #include "KernelTraceExecutor.h"
-#include <fcntl.h>
-#include <octf/interface/ITraceExecutor.h>
+
+#include <procfs_files.h>
+#include <fstream>
+#include <thread>
 #include <octf/interface/TraceConverter.h>
-#include <octf/plugin/NodePlugin.h>
+#include <octf/trace/iotrace_event.h>
+#include <octf/utils/Exception.h>
 #include <octf/utils/Log.h>
 #include <octf/utils/SignalHandler.h>
-#include <procfs_files.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <cstdio>
-#include <fstream>
-#include <string>
-#include "InterfaceKernelTraceCreatingImpl.h"
 #include "KernelRingTraceProducer.h"
 
 namespace octf {
@@ -31,7 +27,7 @@ KernelTraceExecutor::KernelTraceExecutor(
     }
 
     if (!writeSatraceProcfs(IOTRACE_PROCFS_SIZE_FILE_NAME,
-            std::to_string(ringSizeMiB))) {
+                            std::to_string(ringSizeMiB))) {
         throw Exception("Failed to set ring buffer size \n");
     }
 

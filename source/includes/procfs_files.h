@@ -6,6 +6,8 @@
 #ifndef SOURCE_INCLUDES_PROCFS_FILES_H
 #define SOURCE_INCLUDES_PROCFS_FILES_H
 
+#include <linux/ioctl.h>
+
 #define IOTRACE_PROCFS_DIR "/proc/iotrace/"
 #define IOTRACE_PROCFS_SUBDIR_NAME "iotrace"
 
@@ -25,5 +27,9 @@
 
 static const uint64_t iotrace_procfs_max_buffer_size_mb =
         4096; /** 4GiB max for all cpus */
+
+#define IOTRACE_IOCTL_MAGIC 0x77
+#define IOTRACE_IOCTL_WAIT_FOR_TRACES _IO(IOTRACE_IOCTL_MAGIC, 1)
+#define IOTRACE_IOCTL_INTERRUPT_WAIT_FOR_TRACES _IO(IOTRACE_IOCTL_MAGIC, 2)
 
 #endif  // SOURCE_INCLUDES_PROCFS_FILES_H

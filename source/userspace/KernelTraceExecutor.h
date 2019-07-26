@@ -6,11 +6,9 @@
 #ifndef SOURCE_USERSPACE_KERNELTRACEEXECUTOR_H
 #define SOURCE_USERSPACE_KERNELTRACEEXECUTOR_H
 
+#include <list>
 #include <string>
 #include <vector>
-#include <list>
-#include <octf/interface/IRingTraceProducer.h>
-#include <octf/interface/ITraceConverter.h>
 #include <octf/interface/ITraceExecutor.h>
 
 namespace octf {
