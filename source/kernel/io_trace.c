@@ -22,6 +22,11 @@ static inline void iotrace_notify_of_new_events(struct iotrace_context *context,
                                                 unsigned int cpu) {
     struct iotrace_cpu_context *cpu_context =
             per_cpu_ptr(context->cpu_context, cpu);
+    octf_trace_t handle = *per_cpu_ptr(context->trace_state.traces, cpu);
+
+    if (1 != octf_trace_is_half(handle)) {
+        return;
+    }
 
     /* If process is waiting for traces, reset the flag, notify the process */
     if (atomic_cmpxchg(&cpu_context->waiting_for_trace, 1, 0)) {

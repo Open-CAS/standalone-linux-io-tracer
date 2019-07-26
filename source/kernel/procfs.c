@@ -91,7 +91,7 @@ static long _iotrace_ioctl(struct file *file,
 
         result = wait_event_interruptible(
                 cpu_context->wait_queue,
-                !octf_trace_is_empty(handle) ||
+                (1 == octf_trace_is_almost_full(handle)) ||
                         !atomic_read(&cpu_context->waiting_for_trace));
 
         atomic_set(&cpu_context->waiting_for_trace, 0);
