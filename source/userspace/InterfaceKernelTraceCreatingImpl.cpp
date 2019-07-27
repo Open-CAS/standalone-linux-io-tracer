@@ -65,7 +65,7 @@ void InterfaceKernelTraceCreatingImpl::StartTracing(
         TraceManager manager(m_nodePath, &kernelExecutor);
 
         manager.startJobs(maxDuration, maxSize, circBufferSize,
-                          SerializerType::FileSerializer);
+                          request->label(), SerializerType::FileSerializer);
 
         kernelExecutor.waitUntilStopTrace();
 

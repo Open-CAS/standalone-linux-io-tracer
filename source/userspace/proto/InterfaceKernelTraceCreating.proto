@@ -49,6 +49,13 @@ message StartIoTraceRequest {
         (opts_param).cli_num.max = 1024,
         (opts_param).cli_num.default_value = 100
     ];
+
+    string label = 5 [
+        (opts_param).cli_required = false,
+        (opts_param).cli_short_key = "l",
+        (opts_param).cli_long_key = "label",
+        (opts_param).cli_desc = "User defined label"
+    ];
 }
 
 service InterfaceKernelTraceCreating {
