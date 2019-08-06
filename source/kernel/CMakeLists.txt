@@ -45,7 +45,7 @@ add_custom_command(
 # TODO (trybicki): Provide a better way of checking headers
 if (DEFINED ENV{KERNEL_SRCS} OR
     kernelName MATCHES ".*\.el7\..*" OR
-    kernelName MATCHES ".*4\.15\..*")
+    kernelName MATCHES ".*4\.15\..*" OR TRUE)
 
     add_custom_target(traceModule
         ALL
