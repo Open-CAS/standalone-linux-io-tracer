@@ -154,7 +154,7 @@ void iotrace_trace_bio(struct iotrace_context *context,
                        unsigned cpu,
                        uint64_t dev_id,
                        struct bio *bio) {
-    struct iotrace_event ev;
+    struct iotrace_event ev = {};
     struct iotrace_state *state = &context->trace_state;
     uint64_t sid = atomic64_inc_return(&state->sid);
     struct bio_info info;
@@ -178,6 +178,8 @@ void iotrace_trace_bio(struct iotrace_context *context,
     ev.lba = IOTRACE_BIO_BISECTOR(bio);
     ev.len = IOTRACE_BIO_BISIZE(bio) >> SECTOR_SHIFT;
     ev.dev_id = dev_id;
+    ev.write_hint = IOTRACE_GET_WRITE_HINT(bio);
+
     if (!bio_has_data(bio))
         ev.io_class = DSS_UNCLASSIFIED;
     else
@@ -194,7 +196,7 @@ void iotrace_trace_bio_completion(struct iotrace_context *context,
                                   uint64_t dev_id,
                                   struct bio *bio,
                                   int error) {
-    struct iotrace_event_completion cmpl;
+    struct iotrace_event_completion cmpl = {};
     struct iotrace_state *state = &context->trace_state;
     uint64_t sid = atomic64_inc_return(&state->sid);
     octf_trace_t trace = *per_cpu_ptr(state->traces, cpu);

@@ -9,6 +9,7 @@
 #include <linux/bio.h>
 #include <linux/blk_types.h>
 #include <linux/blkdev.h>
+#include <linux/fcntl.h>
 #include <linux/kallsyms.h>
 #include <linux/version.h>
 #include <trace/events/block.h>
@@ -190,4 +191,12 @@ static inline int iotrace_unregister_trace_block_bio_complete(
 }
 
 #endif
+
+/* Write hint getter */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 13, 0)
+#define IOTRACE_GET_WRITE_HINT(bio) (bio->bi_write_hint)
+#else
+#define IOTRACE_GET_WRITE_HINT(bio) (0)
+#endif
+
 #endif  // SOURCE_KERNEL_INTERNAL_CONFIG_H
