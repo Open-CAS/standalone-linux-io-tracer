@@ -290,16 +290,16 @@ The JSON output as following:
 If you wish you can print CSV output as well. In future we plan to provide more
 advanced statistics like: histograms, percentiles, heat maps, timeseries graphs. 
 
-### Other Analytics
+### Analytics Examples
 
 #### Open-CAS Analytics
 
 [Open CAS Linux](https://github.com/Open-CAS/open-cas-linux) based on
 [Open CAS Framework](https://github.com/Open-CAS/ocf) is the high performance
 block storage caching. It accelerates Linux applications by caching active (hot)
-data to a local flash device inside servers. This project built a cache
-emulator. Then it utilizes [OCTF](https://github.com/Open-CAS/open-cas-telemetry-framework)
-to parse captured IO traces and feeds the emulator with IO. Thus allows to
+data to a local flash device inside servers. We successfully built a cache
+emulator which utilizes [OCTF](https://github.com/Open-CAS/open-cas-telemetry-framework)
+to parse captured IO traces and feeds them to the emulator. Thus allows to
 perform various analysis.
 Those could be:
 - Cache size recommendation
@@ -313,7 +313,6 @@ is for various cache size. Then user can see recommendation for cache size.
 The output of such procedure is following:
 
 ~~~{.sh}
-{
 {
  "hitRatio": [
   {
