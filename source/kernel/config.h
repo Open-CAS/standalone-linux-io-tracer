@@ -53,7 +53,6 @@ typedef void (*iotrace_bio_complete_fn)(void *ignore,
 #define IOTRACE_BIO_IS_FLUSH(bio) ((IOTRACE_BIO_OP_FLAGS(bio)) & REQ_FLUSH)
 /* Gets BIO device  */
 #define IOTRACE_BIO_GET_DEV(bio) bio->bi_bdev->bd_disk
-#define IOTRACE_LOOKUP_BDEV(path) lookup_bdev(path)
 
 static inline int iotrace_register_trace_block_bio_queue(
         void (*fn)(void *ignore, struct request_queue *, struct bio *)) {
@@ -121,7 +120,6 @@ static inline int iotrace_unregister_trace_block_bio_complete(
 #define IOTRACE_BIO_IS_FLUSH(bio) ((IOTRACE_BIO_OP_FLAGS(bio)) & REQ_OP_FLUSH)
 /* Gets BIO vector  */
 #define IOTRACE_BIO_GET_DEV(bio) bio->bi_disk
-#define IOTRACE_LOOKUP_BDEV(path) lookup_bdev(path)
 
 static inline int iotrace_register_trace_block_bio_queue(
         void (*fn)(void *ignore, struct request_queue *, struct bio *)) {
@@ -189,7 +187,6 @@ static inline int iotrace_unregister_trace_block_bio_complete(
 
     return result;
 }
-
 #endif
 
 /* Write hint getter */
@@ -197,6 +194,29 @@ static inline int iotrace_unregister_trace_block_bio_complete(
 #define IOTRACE_GET_WRITE_HINT(bio) (bio->bi_write_hint)
 #else
 #define IOTRACE_GET_WRITE_HINT(bio) (0)
+#endif
+
+/* Memory access OK */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
+#define IOTRACE_ACCESS_OK(type, addr, size) access_ok(addr, size)
+#else
+#define IOTRACE_ACCESS_OK(type, addr, size) access_ok(type, addr, size)
+#endif
+
+/* typedef of page fault result */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 17, 0)
+typedef vm_fault_t iotrace_vm_fault_t;
+#else
+typedef int iotrace_vm_fault_t;
+#endif
+
+/* Block device lookup */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0)
+#define IOTRACE_LOOKUP_BDEV(path) lookup_bdev(path)
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 0)
+#define IOTRACE_LOOKUP_BDEV(path) lookup_bdev(path, 0)
+#else
+#define IOTRACE_LOOKUP_BDEV(path) lookup_bdev(path)
 #endif
 
 #endif  // SOURCE_KERNEL_INTERNAL_CONFIG_H
