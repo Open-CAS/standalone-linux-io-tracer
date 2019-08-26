@@ -290,9 +290,95 @@ The JSON output as following:
 If you wish you can print CSV output as well. In future we plan to provide more
 advanced statistics like: histograms, percentiles, heat maps, timeseries graphs. 
 
-### Other Analytics
+### Analytics Examples
 
-TBD 
+#### Open-CAS Analytics
+
+[Open CAS Linux](https://github.com/Open-CAS/open-cas-linux) based on
+[Open CAS Framework](https://github.com/Open-CAS/ocf) is the high performance
+block storage caching. It accelerates Linux applications by caching active (hot)
+data to a local flash device inside servers. We successfully built a cache
+emulator which utilizes [OCTF](https://github.com/Open-CAS/open-cas-telemetry-framework)
+to parse captured IO traces and feeds them to the emulator. Thus allows to
+perform various analysis.
+Those could be:
+- Cache size recommendation
+- Cache line size recommendation
+- IO class configuration
+- and more
+ 
+Here we can see an example of cache size recommendation. After running an IO
+trace over the OpenCAS cache emulator user gets information what cache hit ratio
+is for various cache size. Then user can see recommendation for cache size.
+The output of such procedure is following:
+
+~~~{.sh}
+{
+ "hitRatio": [
+  {
+   "cacheSize": 50198,
+   "hitPercent": 64
+  },
+  {
+   "cacheSize": 100396,
+   "hitPercent": 75
+  },
+  {
+   "cacheSize": 250992,
+   "hitPercent": 81
+  },
+  {
+   "cacheSize": 501984,
+   "hitPercent": 83
+  },
+  {
+   "cacheSize": 1003969,
+   "hitPercent": 85
+  },
+  {
+   "cacheSize": 1505954,
+   "hitPercent": 87
+  },
+  {
+   "cacheSize": 2007939,
+   "hitPercent": 88
+  },
+  {
+   "cacheSize": 2509924,
+   "hitPercent": 90
+  },
+  {
+   "cacheSize": 3011908,
+   "hitPercent": 92
+  },
+  {
+   "cacheSize": 3513893,
+   "hitPercent": 93
+  },
+  {
+   "cacheSize": 4015878,
+   "hitPercent": 95
+  },
+  {
+   "cacheSize": 4517863,
+   "hitPercent": 97
+  },
+  {
+   "cacheSize": 5019848,
+   "hitPercent": 97
+  },
+  {
+   "cacheSize": 5521832,
+   "hitPercent": 97
+  }
+ ],
+ "recommendedCacheSize": "3513893"
+}
+~~~
+
+We can visualize it:
+![Cache Hit Ratio Prediction](resources/CacheHitRatioPrediction.png "Cache Hit Ratio Prediction")
+
 
 ## Integration with other tools
 
