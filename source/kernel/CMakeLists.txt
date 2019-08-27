@@ -41,38 +41,25 @@ add_custom_command(
     DEPENDS ${moduleSources}
 )
 
-# Make sure we have the supported headers by checking current kernel version
-# TODO (trybicki): Provide a better way of checking headers
-if (DEFINED ENV{KERNEL_SRCS} OR
-    kernelName MATCHES ".*\.el7\..*" OR
-    kernelName MATCHES ".*4\.15\..*")
+add_custom_target(traceModule
+    ALL
+    DEPENDS ${traceModulePath}
+)
 
-    add_custom_target(traceModule
-        ALL
-        DEPENDS ${traceModulePath}
+add_custom_target(clean-module
+    COMMAND cd ${kernelSourcesPath} && make M=${CMAKE_CURRENT_SOURCE_DIR} clean
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+# Install kernel module and run depmod
+install(FILES "${traceModulePath}"
+	DESTINATION "lib/modules/${kernelName}/extra"
+	COMPONENT iotrace-install
+)
+
+if (${CMAKE_INSTALL_PREFIX} STREQUAL "/")
+	install(
+	   CODE "execute_process(COMMAND depmod)"
+        COMPONENT iotrace-install
     )
-
-    add_custom_target(clean-module
-        COMMAND cd ${kernelSourcesPath} && make M=${CMAKE_CURRENT_SOURCE_DIR} clean
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    )
-
-	# Install kernel module and run depmod
-	install(FILES "${traceModulePath}"
-		DESTINATION "lib/modules/${kernelName}/extra"
-		COMPONENT iotrace-install
-	)
-
-	if (${CMAKE_INSTALL_PREFIX} STREQUAL "/")
-		install(CODE "execute_process(COMMAND depmod)"
-			COMPONENT iotrace-install
-		)
-	endif()
-
-else()
-    message(WARNING "Tracing module is built on EL7 or Ubuntu 18 kernel only - skipping target. \
-    Environment variable 'KERNEL_SRCS' can be set to override this behaviour")
-
-    add_custom_target(clean-module)
-
-endif()
+endif()            

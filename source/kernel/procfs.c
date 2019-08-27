@@ -15,6 +15,7 @@
 #include <linux/version.h>
 #include <linux/vmalloc.h>
 #include <linux/wait.h>
+#include "config.h"
 #include "context.h"
 #include "iotrace_event.h"
 #include "procfs_files.h"
@@ -127,12 +128,12 @@ static loff_t _iotrace_llseek(struct file *file, loff_t offset, int whence) {
 }
 
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 10, 0)
-int _iotrace_fault(struct vm_area_struct *vma,
-                   struct vm_fault *vmf,
-                   bool trace_ring) {
+iotrace_vm_fault_t _iotrace_fault(struct vm_area_struct *vma,
+                                  struct vm_fault *vmf,
+                                  bool trace_ring) {
     struct file *file = vma->vm_file;
 #else
-int _iotrace_fault(struct vm_fault *vmf, bool trace_ring) {
+iotrace_vm_fault_t _iotrace_fault(struct vm_fault *vmf, bool trace_ring) {
     struct file *file = vmf->vma->vm_file;
 #endif
     struct iotrace_proc_file *proc_file = file->private_data;
@@ -151,7 +152,7 @@ int _iotrace_fault(struct vm_fault *vmf, bool trace_ring) {
         return -EACCES;
 
     get_page(vmf->page);
-    return 0;
+    return VM_FAULT_MAJOR;
 }
 
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 10, 0)
@@ -165,10 +166,10 @@ int _iotrace_fault_consumer_hdr(struct vm_area_struct *vma,
     return _iotrace_fault(vma, vmf, false);
 }
 #else
-int _iotrace_fault_trace_ring(struct vm_fault *vmf) {
+iotrace_vm_fault_t _iotrace_fault_trace_ring(struct vm_fault *vmf) {
     return _iotrace_fault(vmf, true);
 }
-int _iotrace_fault_consumer_hdr(struct vm_fault *vmf) {
+iotrace_vm_fault_t _iotrace_fault_consumer_hdr(struct vm_fault *vmf) {
     return _iotrace_fault(vmf, false);
 }
 #endif
@@ -256,7 +257,7 @@ static ssize_t iotrace_mngt_write(struct file *file,
     if (*ppos > 0 || count >= PATH_MAX)
         return -EFAULT;
 
-    if (!access_ok(VERIFY_READ, ubuf, count))
+    if (!IOTRACE_ACCESS_OK(VERIFY_READ, ubuf, count))
         return -EFAULT;
 
     /* one byte more to put terminating 0 there */
@@ -317,7 +318,7 @@ static ssize_t iotrace_mngt_read(struct file *file,
     if (*ppos > 0)
         return 0;
 
-    if (!access_ok(VERIFY_WRITE, ubuf, ubuf_size))
+    if (!IOTRACE_ACCESS_OK(VERIFY_WRITE, ubuf, ubuf_size))
         return -EACCES;
 
     /* allocate internal buffer on byte larger to contain terminating NULL,
