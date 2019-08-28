@@ -141,7 +141,10 @@ static void bio_complete_event(void *ignore,
 static void deinit_tracers(struct iotrace_state *state) {
     unsigned i;
 
-    for_each_online_cpu(i) octf_trace_close(per_cpu_ptr(state->traces, i));
+    for_each_online_cpu(i) {
+        octf_trace_close(per_cpu_ptr(state->traces, i));
+        iotrace_inode_destroy(per_cpu_ptr(state->inode_traces, i));
+    }
 
     free_percpu(state->traces);
 }
@@ -160,12 +163,16 @@ static int init_tracers(struct iotrace_context *context) {
     int result = -EINVAL;
     unsigned i;
     octf_trace_t *trace;
+    iotrace_inode_t *iotrace_inode;
     struct iotrace_proc_file *file;
     struct iotrace_state *state = &context->trace_state;
 
     state->traces = alloc_percpu(octf_trace_t);
-    if (!state->traces)
-        return -ENOMEM;
+    state->inode_traces = alloc_percpu(iotrace_inode_t);
+    if (!state->traces || !state->inode_traces) {
+        result = -ENOMEM;
+        goto ERROR;
+    }
 
     for_each_online_cpu(i) {
         struct iotrace_cpu_context *cpu_context =
@@ -185,14 +192,33 @@ static int init_tracers(struct iotrace_context *context) {
                                  octf_trace_open_mode_producer, trace);
         if (result)
             break;
+
+        iotrace_inode = per_cpu_ptr(state->inode_traces, i);
+        result = iotrace_inode_create(iotrace_inode, i);
+        if (result) {
+            break;
+        }
     }
 
     if (result) {
-        for_each_online_cpu(i) {
-            trace = per_cpu_ptr(state->traces, i);
-            octf_trace_close(trace);
+    ERROR:
+        if (state->traces) {
+            for_each_online_cpu(i) {
+                trace = per_cpu_ptr(state->traces, i);
+                octf_trace_close(trace);
+            }
+            free_percpu(state->traces);
         }
-        free_percpu(state->traces);
+
+        if (state->inode_traces) {
+            for_each_online_cpu(i) {
+                iotrace_inode = per_cpu_ptr(state->inode_traces, i);
+                iotrace_inode_destroy(iotrace_inode);
+            }
+
+            free_percpu(state->inode_traces);
+        }
+
         return result;
     }
 

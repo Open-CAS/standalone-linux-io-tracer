@@ -80,7 +80,7 @@ static inline int _file_size_to_io_class(const struct inode *inode) {
 }
 
 struct bio_info {
-    const struct inode *inode;
+    struct inode *inode;
     const struct page *page;
 };
 
@@ -187,8 +187,12 @@ void iotrace_trace_bio(struct iotrace_context *context,
 
     octf_trace_push(trace, &ev, sizeof(ev));
 
-    if (ev.io_class >= DSS_DATA_FILE_4KB && ev.io_class <= DSS_DATA_FILE_BULK)
+    if (ev.io_class >= DSS_DATA_FILE_4KB && ev.io_class <= DSS_DATA_FILE_BULK) {
+        iotrace_inode_t inode_trace = *per_cpu_ptr(state->inode_traces, cpu);
+
         _trace_bio_fs_meta(trace, atomic64_inc_return(&state->sid), sid, &info);
+        iotrace_inode_trace(state, trace, inode_trace, info.inode);
+    }
 }
 
 void iotrace_trace_bio_completion(struct iotrace_context *context,
