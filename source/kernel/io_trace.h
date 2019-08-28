@@ -11,7 +11,7 @@
 #include "trace_inode.h"
 
 struct iotrace_context;
-struct iotrace_inode;
+struct iotrace_inode_tracer;
 
 /**
  * @brief Global tracing state
@@ -21,7 +21,7 @@ struct iotrace_state {
     octf_trace_t __percpu *traces;
 
     /** iotrace per CPU objects */
-    iotrace_inode_t __percpu *inode_traces;
+    iotrace_inode_tracer_t __percpu *inode_traces;
 
     /** Sequential number */
     atomic64_t sid;

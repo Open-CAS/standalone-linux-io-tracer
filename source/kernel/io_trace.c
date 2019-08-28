@@ -143,7 +143,7 @@ static void deinit_tracers(struct iotrace_state *state) {
 
     for_each_online_cpu(i) {
         octf_trace_close(per_cpu_ptr(state->traces, i));
-        iotrace_inode_destroy(per_cpu_ptr(state->inode_traces, i));
+        iotrace_destroy_inode_tracer(per_cpu_ptr(state->inode_traces, i));
     }
 
     free_percpu(state->traces);
@@ -163,12 +163,12 @@ static int init_tracers(struct iotrace_context *context) {
     int result = -EINVAL;
     unsigned i;
     octf_trace_t *trace;
-    iotrace_inode_t *iotrace_inode;
+    iotrace_inode_tracer_t *iotrace_inode;
     struct iotrace_proc_file *file;
     struct iotrace_state *state = &context->trace_state;
 
     state->traces = alloc_percpu(octf_trace_t);
-    state->inode_traces = alloc_percpu(iotrace_inode_t);
+    state->inode_traces = alloc_percpu(iotrace_inode_tracer_t);
     if (!state->traces || !state->inode_traces) {
         result = -ENOMEM;
         goto ERROR;
@@ -194,7 +194,7 @@ static int init_tracers(struct iotrace_context *context) {
             break;
 
         iotrace_inode = per_cpu_ptr(state->inode_traces, i);
-        result = iotrace_inode_create(iotrace_inode, i);
+        result = iotrace_create_inode_tracer(iotrace_inode, i);
         if (result) {
             break;
         }
@@ -213,7 +213,7 @@ static int init_tracers(struct iotrace_context *context) {
         if (state->inode_traces) {
             for_each_online_cpu(i) {
                 iotrace_inode = per_cpu_ptr(state->inode_traces, i);
-                iotrace_inode_destroy(iotrace_inode);
+                iotrace_destroy_inode_tracer(iotrace_inode);
             }
 
             free_percpu(state->inode_traces);

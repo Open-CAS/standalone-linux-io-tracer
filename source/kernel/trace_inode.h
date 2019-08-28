@@ -3,18 +3,59 @@
 
 #include "trace.h"
 
+/**
+ * @file
+ *
+ * @brief inodes tracer
+ *
+ * It provides tracing of following inodes properties:
+ * - Inode's name; It keeps an internal cache with information if given inode
+ * name has been already traced. If it hasn't, the inode name is traced.
+ */
+
+// Forward declarations
+struct iotrace_inode_tracer;
 struct inode;
 struct iotrace_state;
 
-typedef struct iotrace_inode *iotrace_inode_t;
+/**
+ * Handle of inodes tracer instance
+ */
+typedef struct iotrace_inode_tracer *iotrace_inode_tracer_t;
 
-int iotrace_inode_create(iotrace_inode_t *iotrace_inode, int cpu);
+/**
+ * @brief Creates inode tracer instance
+ *
+ * @note inode tracer doesn't guaranty thread safety. If you intend to use it
+ * across many threads, you need to ensure synchronization yourself
+ *
+ * @param[out] inode_tracer Handle of created inodes tracer instance
+ * @param cpu CPU on which inode tracer will be running
+ *
+ * @return Operation result
+ * @retval 0 - inode tracer created successfully
+ * @retval Non-zero error while creating inode tracer
+ */
+int iotrace_create_inode_tracer(iotrace_inode_tracer_t *inode_tracer, int cpu);
 
-void iotrace_inode_destroy(iotrace_inode_t *iotrace_inode);
+/**
+ * @brief Destroys inode tracer
+ *
+ * @param[in,out] iotrace_inode inode tracer to be destroyed
+ */
+void iotrace_destroy_inode_tracer(iotrace_inode_tracer_t *inode_tracer);
 
-void iotrace_inode_trace(struct iotrace_state *state,
+/**
+ * @brief Traces indoe
+ *
+ * @param state Trace state
+ * @param trace Circular trace buffer
+ * @param inode_tracer inode tracer
+ * @param inode inode to be traced
+ */
+void iotrace_trace_inode(struct iotrace_state *state,
                          octf_trace_t trace,
-                         iotrace_inode_t iotrace_inode,
+                         iotrace_inode_tracer_t inode_tracer,
                          struct inode *inode);
 
 #endif  // TRACE_INODE_H_
