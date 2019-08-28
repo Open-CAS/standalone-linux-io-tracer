@@ -36,7 +36,6 @@ struct cache_entry {
 struct iotrace_inode {
     int cpu;
     DECLARE_HASHTABLE(hash_table, ilog2(HASH_ENTRIES));
-    struct list_head list_free;
     struct list_head list_lru;
     struct cache_entry entries[CACHE_ENTRIES];
 };
@@ -55,13 +54,12 @@ int iotrace_inode_create(iotrace_inode_t *_iotrace_inode, int cpu) {
 
     iotrace_inode->cpu = cpu;
     hash_init(iotrace_inode->hash_table);
-    INIT_LIST_HEAD(&iotrace_inode->list_free);
     INIT_LIST_HEAD(&iotrace_inode->list_lru);
 
     /* Initialize free list */
     for (i = 0; i < ARRAY_SIZE(iotrace_inode->entries); i++) {
         struct cache_entry *entry = &iotrace_inode->entries[i];
-        list_add(&entry->lru, &iotrace_inode->list_free);
+        list_add(&entry->lru, &iotrace_inode->list_lru);
     }
 
     *_iotrace_inode = iotrace_inode;
@@ -88,14 +86,6 @@ static void _set_hot(iotrace_inode_t iotrace_inode, struct cache_entry *entry) {
 
 static struct cache_entry *_get_entry(iotrace_inode_t iotrace_inode) {
     struct cache_entry *entry;
-    struct list_head *free_list = &iotrace_inode->list_free;
-
-    if (!list_empty(free_list)) {
-        debug("Pick free");
-        entry = list_first_entry(free_list, struct cache_entry, lru);
-        list_del(&entry->lru);
-        return entry;
-    }
 
     // No more free entries, we need to evict one
     entry = list_last_entry(&iotrace_inode->list_lru, struct cache_entry, lru);
@@ -156,12 +146,11 @@ int _trace(struct iotrace_state *state,
     ev.file_parent_id = parent_id;
 
     // Copy file name
-    // TODO (mariuszbarczak) Instead of using short name we should use long one
     {
-        size_t smax = sizeof(dentry->d_iname);
+        size_t smax = dentry->d_name.len;
         size_t dmax = sizeof(ev.file_name) - 1;
         size_t to_copy = min(smax, dmax);
-        memcpy_s(ev.file_name, dmax, dentry->d_iname, to_copy);
+        memcpy_s(ev.file_name, dmax, dentry->d_name.name, to_copy);
         ev.file_name[dmax] = '\0';
     }
 
