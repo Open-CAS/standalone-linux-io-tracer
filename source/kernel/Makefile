@@ -6,4 +6,4 @@ include $(M)/config.mk
 obj-m := iotrace.o
 
 iotrace-objs = main.o procfs.o io_trace.o trace_bdev.o trace.o trace_bio.o \
-	config.o
+	config.o trace_inode.o

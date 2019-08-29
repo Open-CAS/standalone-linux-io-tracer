@@ -8,8 +8,10 @@
 
 #include <linux/mutex.h>
 #include "trace.h"
+#include "trace_inode.h"
 
 struct iotrace_context;
+struct iotrace_inode_tracer;
 
 /**
  * @brief Global tracing state
@@ -18,13 +20,16 @@ struct iotrace_state {
     /** iotrace per CPU objects */
     octf_trace_t __percpu *traces;
 
+    /** iotrace per CPU objects */
+    iotrace_inode_tracer_t __percpu *inode_traces;
+
     /** Sequential number */
     atomic64_t sid;
 
     /** Mutex for client attach / detach */
     struct mutex client_mutex;
 
-    /* Number od attached clients */
+    /* Number of attached clients */
     unsigned clients;
 };
 

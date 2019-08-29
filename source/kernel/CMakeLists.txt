@@ -26,6 +26,8 @@ set(moduleSources
     "${CMAKE_CURRENT_LIST_DIR}/trace_bio.c"
     "${CMAKE_CURRENT_LIST_DIR}/trace.c"
     "${CMAKE_CURRENT_LIST_DIR}/trace.h"
+    "${CMAKE_CURRENT_LIST_DIR}/trace_inode.h"
+    "${CMAKE_CURRENT_LIST_DIR}/trace_inode.c"
 )
 
 # Command for building iotrace.ko kernel module

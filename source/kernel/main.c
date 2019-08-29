@@ -12,6 +12,7 @@
 #include "procfs.h"
 #include "trace.h"
 #include "trace_bdev.h"
+#include "trace_inode.h"
 
 #define VALUE_TO_STRING(x) #x
 #define VALUE(x) VALUE_TO_STRING(x)
@@ -51,25 +52,27 @@ static const char *get_version(void) {
 static int __init iotrace_init_module(void) {
     int result = 0;
 
-    if (iotrace_trace_init(iotrace))
-        goto free_context;
+    result = iotrace_trace_init(iotrace);
+    if (result)
+        return result;
 
     result = iotrace_bdev_init(&iotrace->bdev);
     if (result)
-        goto free_context;
+        goto error_bdev_init;
 
     result = iotrace_procfs_init(iotrace);
     if (result)
-        goto free_sa;
+        goto error_procfs_init;
 
     printk(KERN_INFO "iotrace module loaded, version %s\n", get_version());
 
     return 0;
 
-free_sa:
+error_procfs_init:
     iotrace_bdev_deinit(&iotrace->bdev);
-free_context:
+error_bdev_init:
     iotrace_trace_deinit(iotrace);
+
     return result;
 }
 

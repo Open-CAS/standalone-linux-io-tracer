@@ -12,6 +12,7 @@
 #include "trace.h"
 #include "trace_bdev.h"
 #include "trace_env_kernel.h"
+#include "trace_inode.h"
 
 /**
  * Per CPU iotrace context
