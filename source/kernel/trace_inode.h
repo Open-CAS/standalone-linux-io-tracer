@@ -9,11 +9,24 @@
  * @brief inodes tracer
  *
  * It provides tracing of following inodes properties:
- * - Inode's name; It keeps an internal cache with information if given inode
+ * 1. Inode's name
+ * 2. Inode's ID
+ * 3. Inode's parent ID
+ * 4. Inode's device ID
+ *
+ * - Each element of inode's full path is added as a separate FilenameEvent
+ * - Each inode's FilenameEvent is usually (see below) added only once (per
+ * cpu).
+ * - Due to internal cache limitations, some rarely accesed inodes' filenames
+ * may be traced more than once
+ *
+ * For Inode's names, we keep an internal cache with information if given inode
  * name has been already traced. If it hasn't, the inode name is traced.
  */
 
-// Forward declarations
+/*
+ * Forward declarations
+ */
 struct iotrace_inode_tracer;
 struct inode;
 struct iotrace_state;
@@ -46,7 +59,7 @@ int iotrace_create_inode_tracer(iotrace_inode_tracer_t *inode_tracer, int cpu);
 void iotrace_destroy_inode_tracer(iotrace_inode_tracer_t *inode_tracer);
 
 /**
- * @brief Traces indoe
+ * @brief Traces inode
  *
  * @param state Trace state
  * @param trace Circular trace buffer
