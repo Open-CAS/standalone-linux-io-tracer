@@ -35,6 +35,7 @@ following OSes:
 |------------------------------|-------------------|-------------------
 |RHEL/CentOS                   | 7.6               |               
 |Ubuntu                        | 18.04             | Experimental             
+|Fedora                        | 30                | Experimental             
 
 <a id="documentation"></a>
 
