@@ -29,11 +29,20 @@ all: init
 	cd $(BUILD_DIR) && cmake $(SOURCE_PATH) -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) -DCMAKE_INSTALL_PREFIX=$(PREFIX)
 	$(MAKE) -C $(BUILD_DIR) all
 
-install: all
-	cmake -P $(BUILD_DIR)/cmake_install.cmake
+install: | uninstall all
+	cmake -DCOMPONENT=octf-install -P $(BUILD_DIR)/cmake_install.cmake
+	cmake -DCOMPONENT=octf-post-install -P $(BUILD_DIR)/cmake_install.cmake
+	cmake -DCOMPONENT=iotrace-install -P $(BUILD_DIR)/cmake_install.cmake
+	cmake -DCOMPONENT=iotrace-post-install -P $(BUILD_DIR)/cmake_install.cmake
 
-uninstall:
-	xargs rm -v -f < $(BUILD_DIR)/install_manifest.txt
+uninstall: init
+	cd $(BUILD_DIR) && cmake $(SOURCE_PATH) -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) -DCMAKE_INSTALL_PREFIX=$(PREFIX)
+	$(MAKE) -C $(BUILD_DIR) iotrace-uninstall
+	$(MAKE) -C $(BUILD_DIR) octf-uninstall
+
+uninstall-tracer: init
+	cd $(BUILD_DIR) && cmake $(SOURCE_PATH) -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) -DCMAKE_INSTALL_PREFIX=$(PREFIX)
+	$(MAKE) -C $(BUILD_DIR) iotrace-uninstall
 
 test:
 
