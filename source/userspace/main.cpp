@@ -3,11 +3,12 @@
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
-#include <memory>
 #include <octf/cli/Executor.h>
 #include <octf/interface/InterfaceConfigurationImpl.h>
 #include <octf/interface/InterfaceTraceManagementImpl.h>
 #include <octf/interface/InterfaceTraceParsingImpl.h>
+#include <octf/utils/Exception.h>
+#include <memory>
 #include "InterfaceKernelTraceCreatingImpl.h"
 
 using namespace std;
@@ -23,37 +24,47 @@ static const char *get_version() {
 }
 
 int main(int argc, char *argv[]) {
-    // Create executor and local command set
-    Executor ex;
-
-    auto &properties = ex.getCliProperties();
-
     const string APP_NAME = "iotrace";
-    properties.setName(APP_NAME);
-    properties.setVersion(get_version());
+    try {
+        // Create executor and local command set
+        Executor ex;
 
-    // Create interfaces
+        auto &properties = ex.getCliProperties();
 
-    // Trace Management Interface
-    InterfaceShRef iTraceManagement =
-            std::make_shared<InterfaceTraceManagementImpl>("");
+        properties.setName(APP_NAME);
+        properties.setVersion(get_version());
 
-    // Kernel Trace Creating Interface
-    InterfaceShRef iKernelTarcing =
-            std::make_shared<InterfaceKernelTraceCreatingImpl>();
+        // Create interfaces
 
-    // Trace Parsing Interface
-    InterfaceShRef iTraceParsing =
-            std::make_shared<InterfaceTraceParsingImpl>();
+        // Trace Management Interface
+        InterfaceShRef iTraceManagement =
+                std::make_shared<InterfaceTraceManagementImpl>("");
 
-    // Configuration Interface for setting trace repository path
-    InterfaceShRef iConfiguration =
-            std::make_shared<InterfaceConfigurationImpl>();
+        // Kernel Trace Creating Interface
+        InterfaceShRef iKernelTarcing =
+                std::make_shared<InterfaceKernelTraceCreatingImpl>();
 
-    // Add interfaces to executor
-    ex.addModules(iTraceManagement, iKernelTarcing, iTraceParsing,
-                  iConfiguration);
+        // Trace Parsing Interface
+        InterfaceShRef iTraceParsing =
+                std::make_shared<InterfaceTraceParsingImpl>();
 
-    // Execute command
-    return ex.execute(argc, argv);
+        // Configuration Interface for setting trace repository path
+        InterfaceShRef iConfiguration =
+                std::make_shared<InterfaceConfigurationImpl>();
+
+        // Add interfaces to executor
+        ex.addModules(iTraceManagement, iKernelTarcing, iTraceParsing,
+                      iConfiguration);
+
+        // Execute command
+        return ex.execute(argc, argv);
+
+    } catch (Exception &e) {
+        log::cerr << e.what() << endl;
+        return 1;
+    } catch (std::exception &e) {
+        log::critical << APP_NAME << " execution interrupted: " << e.what()
+                      << endl;
+        return 1;
+    }
 }
