@@ -4,15 +4,14 @@
  */
 
 #include "InterfaceKernelTraceCreatingImpl.h"
-#include <sys/types.h>
-#include <cstdio>
-#include <string>
 #include <octf/interface/TraceManager.h>
 #include <octf/plugin/NodePlugin.h>
 #include <octf/proto/trace.pb.h>
 #include <octf/trace/iotrace_event.h>
 #include <octf/utils/Exception.h>
-#include <octf/utils/SignalHandler.h>
+#include <sys/types.h>
+#include <cstdio>
+#include <string>
 #include "KernelTraceExecutor.h"
 
 namespace octf {
