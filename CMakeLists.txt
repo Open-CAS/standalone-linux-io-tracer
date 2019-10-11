@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
 set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
 
 include(version.cmake)
 project(iotrace VERSION ${IOTRACE_VERSION} LANGUAGES C CXX)

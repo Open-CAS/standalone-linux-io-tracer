@@ -11,7 +11,7 @@ ifdef DEBUG
 	BUILD_DIR=build/debug
 	BUILD_TYPE=DEBUG
 	ifndef PREFIX
-		PREFIX=build/debug/rootfs
+		PREFIX=./rootfs
 	endif
 else
 	BUILD_DIR=build/release
