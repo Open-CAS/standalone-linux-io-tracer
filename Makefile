@@ -29,7 +29,8 @@ all: init
 	cd $(BUILD_DIR) && cmake $(SOURCE_PATH) -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) -DCMAKE_INSTALL_PREFIX=$(PREFIX)
 	$(MAKE) -C $(BUILD_DIR) all
 
-install: | uninstall all
+install: all
+	$(MAKE) uninstall
 	cmake -DCOMPONENT=octf-install -P $(BUILD_DIR)/cmake_install.cmake
 	cmake -DCOMPONENT=octf-post-install -P $(BUILD_DIR)/cmake_install.cmake
 	cmake -DCOMPONENT=iotrace-install -P $(BUILD_DIR)/cmake_install.cmake
