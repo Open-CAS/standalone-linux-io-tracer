@@ -74,10 +74,13 @@ But if you are going to develop iotrace, it is ok to checkout master branch.
 
   ~~~{.sh}
   git submodule update --init --recursive
-  sudo ./modules/open-cas-telemetry-framework/setup_dependencies.sh
+  sudo ./setup_dependencies.sh
   ~~~
 
-  OCTF will then be installed along with iotrace in the next step.
+  Installed dependencies include Google Protocol Buffers, CMake and Google Test.
+  The dependencies are either installed with yum/apt or installed to a dedicated directory /opt/octf/ to avoid overwriting already installed ones.
+
+  OCTF will then be installed along with iotrace in the next steps.
 
   > **NOTE:**  Alternatively OCTF can also be installed separately, using instructions found in it's [README](https://github.com/Open-CAS/open-cas-telemetry-framework/blob/master/README.md). This option however right now only allows building the cli binary, and not the kernel module
 
