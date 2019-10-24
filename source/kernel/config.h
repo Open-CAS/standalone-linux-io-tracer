@@ -14,9 +14,9 @@
 #include <linux/version.h>
 #include <trace/events/block.h>
 
-/*
- * Common declarations
- */
+/* ************************************************************************** */
+/* Common declarations */
+/* ************************************************************************** */
 
 /*
  * BIO completion trace function
@@ -40,7 +40,9 @@ typedef void (*iotrace_bio_complete_fn)(void *ignore,
 /* Gets BIO vector  */
 #define IOTRACE_BIO_BVEC(vec) (vec)
 
+/* ************************************************************************** */
 /* Defines for CentOS 7.6 (3.10 kernel) */
+/* ************************************************************************** */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0)
 
 #define IOTRACE_BIO_OP_FLAGS(bio) (bio)->bi_rw
@@ -107,7 +109,9 @@ static inline int iotrace_unregister_trace_block_bio_complete(
     return result;
 }
 
+/* ************************************************************************** */
 /* Defines for Ubuntu 18.04 (4.15 kernel) */
+/* ************************************************************************** */
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0)
 
 #define IOTRACE_BIO_OP_FLAGS(bio) (bio)->bi_opf
@@ -187,6 +191,7 @@ static inline int iotrace_unregister_trace_block_bio_complete(
 
     return result;
 }
+
 #endif
 
 /* Write hint getter */
