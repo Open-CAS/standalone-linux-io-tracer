@@ -4,9 +4,14 @@
 #include <linux/dcache.h>
 #include <linux/errno.h>
 #include <linux/fs.h>
+#include <linux/fsnotify_backend.h>
 #include <linux/hashtable.h>
+#include <linux/kallsyms.h>
 #include <linux/list.h>
+#include <linux/refcount.h>
 #include <linux/slab.h>
+#include <linux/version.h>
+#include "context.h"
 #include "io_trace.h"
 #include "iotrace_event.h"
 #include "trace_env_kernel.h"
@@ -427,7 +432,7 @@ int iotrace_create_inode_tracer(iotrace_inode_tracer_t *_inode_tracer,
 
     debug();
 
-    *_iotrace_inode = NULL;
+    *_inode_tracer = NULL;
     inode_tracer = vzalloc_node(sizeof(*inode_tracer), cpu_to_node(cpu));
     if (!inode_tracer) {
         return -ENOMEM;
@@ -454,6 +459,7 @@ void iotrace_destroy_inode_tracer(iotrace_inode_tracer_t *iotrace_inode) {
     debug();
 
     if (*iotrace_inode) {
+        _fs_monitor_put((*iotrace_inode)->fsm);
         vfree(*iotrace_inode);
         *iotrace_inode = NULL;
     }
@@ -509,12 +515,12 @@ static struct cache_entry *_lookup(iotrace_inode_tracer_t inode_tracer,
     return NULL;
 }
 
-int _trace(struct iotrace_state *state,
-           octf_trace_t trace,
-           uint64_t devId,
-           uint64_t id,
-           uint64_t parent_id,
-           struct dentry *dentry) {
+int _trace_filename(struct iotrace_state *state,
+                    octf_trace_t trace,
+                    uint64_t devId,
+                    uint64_t id,
+                    uint64_t parent_id,
+                    struct dentry *dentry) {
     struct iotrace_event_fs_file_name ev = {};
     uint64_t sid = atomic64_inc_return(&state->sid);
 
@@ -538,6 +544,7 @@ int _trace(struct iotrace_state *state,
     return octf_trace_push(trace, &ev, sizeof(ev));
 }
 
+/** Handle trace event related to inode */
 void iotrace_trace_inode(struct iotrace_state *state,
                          octf_trace_t trace,
                          iotrace_inode_tracer_t inode_tracer,
@@ -565,14 +572,20 @@ void iotrace_trace_inode(struct iotrace_state *state,
         parent_dentry = dget_parent(this_dentry);
         if (parent_dentry) {
             parent_inode = d_inode(parent_dentry);
+
+            if (S_ISDIR(parent_inode->i_mode)) {
+                if (inode_tracer->fsm) {
+                    _fs_add_mark(inode_tracer->fsm->group, parent_inode);
+                }
+            }
         }
 
         // Trace dentry name (file or directory name)
         debug("ID = %lu, name = %s", this_inode->i_ino, this_dentry->d_iname);
 
-        result =
-                _trace(state, trace, this_inode->i_sb->s_dev, this_inode->i_ino,
-                       parent_inode ? parent_inode->i_ino : 0, this_dentry);
+        result = _trace_filename(
+                state, trace, this_inode->i_sb->s_dev, this_inode->i_ino,
+                parent_inode ? parent_inode->i_ino : 0, this_dentry);
 
         if (0 == result) {
             // event traced successfully, add inode to the cache
