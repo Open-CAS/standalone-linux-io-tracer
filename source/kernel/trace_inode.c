@@ -11,6 +11,7 @@
 #include <linux/refcount.h>
 #include <linux/slab.h>
 #include <linux/version.h>
+#include "config.h"
 #include "context.h"
 #include "io_trace.h"
 #include "iotrace_event.h"
@@ -101,14 +102,15 @@ struct iotrace_group_priv {
  * looked up.
  */
 struct fsnotify_backend_ops {
-    typeof(&fsnotify_get_group) get_group;
-    typeof(&fsnotify_put_group) put_group;
-    typeof(&fsnotify_alloc_group) alloc_group;
-    typeof(&fsnotify_destroy_group) destroy_group;
-    typeof(&fsnotify_init_mark) init_mark;
-    typeof(&fsnotify_put_mark) put_mark;
-    typeof(&fsnotify_add_mark) add_mark;
-    typeof(&fsnotify_find_mark) find_mark;
+    typeof(&FSNOTIFY_FUN(get_group)) get_group;
+    typeof(&FSNOTIFY_FUN(put_group)) put_group;
+    typeof(&FSNOTIFY_FUN(alloc_group)) alloc_group;
+    typeof(&FSNOTIFY_FUN(destroy_group)) destroy_group;
+    typeof(&FSNOTIFY_FUN(init_mark)) init_mark;
+    typeof(&FSNOTIFY_FUN(put_mark)) put_mark;
+    typeof(&FSNOTIFY_FUN(find_mark)) find_mark;
+    typeof(&FSNOTIFY_FUN(IOTRACE_FSNOTIFY_ADD_MARK_NAME))
+            IOTRACE_FSNOTIFY_ADD_MARK_NAME;
 } static fsnotify_ops;
 
 /** Looks up fsnotify_... function, and evaluates to the result of lookup*/
@@ -191,7 +193,8 @@ static void _fs_add_mark(struct fsnotify_group *group, struct inode *inode) {
     /* All events interest us, in particular EVENT_ON_CHILD */
     mark->mask = ALL_FSNOTIFY_EVENTS;
 
-    result = fsnotify_ops.add_mark(mark, inode, NULL, 0);
+    result = IOTRACE_FSNOTIFY_ADD_MARK(mark, inode);
+
     if (result) {
         debug("add_mark error");
         fsnotify_ops.put_mark(mark);
@@ -291,11 +294,20 @@ static int _fs_handle_event(struct fsnotify_group *group,
 }
 
 /* Switch for different kernels */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 18, 0)
 static int iotrace_fs_handle_event(struct fsnotify_group *group,
                                    struct inode *inode,
                                    struct fsnotify_mark *inode_mark,
                                    struct fsnotify_mark *vfsmount_mark,
+                                   u32 mask,
+                                   const void *data,
+                                   int data_type,
+                                   const unsigned char *file_name,
+                                   u32 cookie,
+                                   struct fsnotify_iter_info *iter_info)
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(5, 2, 0)
+static int iotrace_fs_handle_event(struct fsnotify_group *group,
+                                   struct inode *inode,
                                    u32 mask,
                                    const void *data,
                                    int data_type,
@@ -308,7 +320,7 @@ static int iotrace_fs_handle_event(struct fsnotify_group *group,
                                    u32 mask,
                                    const void *data,
                                    int data_type,
-                                   const unsigned char *file_name,
+                                   const struct qstr *file_name,
                                    u32 cookie,
                                    struct fsnotify_iter_info *iter_info)
 #endif
@@ -372,8 +384,12 @@ static void _fsm_init(iotrace_inode_tracer_t inode_tracer) {
         result |= fsnotify_lookup_symbol(destroy_group);
         result |= fsnotify_lookup_symbol(init_mark);
         result |= fsnotify_lookup_symbol(put_mark);
-        result |= fsnotify_lookup_symbol(add_mark);
         result |= fsnotify_lookup_symbol(find_mark);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 18, 0)
+        result |= fsnotify_lookup_symbol(add_inode_mark);
+#else
+        result |= fsnotify_lookup_symbol(add_mark);
+#endif
 
         if (result) {
             printk(KERN_WARNING "Cannot lookup FS monitor's operations\n");

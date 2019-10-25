@@ -192,9 +192,24 @@ static inline int iotrace_unregister_trace_block_bio_complete(
     return result;
 }
 
+#endif  // Ubuntu 18.04
+
+/* fsnotify macros */
+#define CONCAT(x, y) x##y
+#define FSNOTIFY_FUN(fun_name) CONCAT(fsnotify_, fun_name)
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 18, 0)
+#define IOTRACE_FSNOTIFY_ADD_MARK_NAME add_inode_mark
+#define IOTRACE_FSNOTIFY_ADD_MARK(mark, inode) \
+    (fsnotify_ops.IOTRACE_FSNOTIFY_ADD_MARK_NAME(mark, inode, 0));
+
+#else
+#define IOTRACE_FSNOTIFY_ADD_MARK_NAME add_mark
+#define IOTRACE_FSNOTIFY_ADD_MARK(mark, inode) \
+    (fsnotify_ops.IOTRACE_FSNOTIFY_ADD_MARK_NAME(mark, inode, NULL, 0));
+
 #endif
 
-/* Write hint getter */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 13, 0)
 #define IOTRACE_GET_WRITE_HINT(bio) (bio->bi_write_hint)
 #else
