@@ -88,7 +88,7 @@ distro=$(detect_distribution)
 case "${distro}" in
 "RHEL7")
     info "RHEL7.x detected"
-    packages="kernel-headers-$(uname -r)"
+    packages="kernel-devel-$(uname -r)"
 
     info "Installing packages: ${packages}"
     yum -y install ${packages}
@@ -103,7 +103,7 @@ case "${distro}" in
     ;;
 "CENTOS7")
     info "CentOS7.x detected"
-    packages="kernel-headers-$(uname -r)"
+    packages="kernel-devel-$(uname -r)"
 
     info "Installing packages: ${packages}"
     yum -y install ${packages}
