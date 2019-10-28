@@ -54,6 +54,15 @@ function detect_distribution ()
         fi
     fi
 
+    if [ -f /etc/fedora-release ]
+    then
+        if ( cat /etc/fedora-release | grep "Fedora release 30" &>/dev/null )
+        then
+            echo FEDORA30
+            return 0
+        fi
+    fi
+
     if [ -f /etc/os-release ]
     then
         if ( cat /etc/os-release | grep "Ubuntu 18" &>/dev/null )
@@ -115,6 +124,14 @@ case "${distro}" in
     fi
 
     setup_other_deps
+    ;;
+"FEDORA30")
+    info "Fedora 30 detected"
+    packages="kernel-devel-$(uname -r)"
+
+    info "Installing packages: ${packages}"
+    dnf -y install ${packages}
+    check_result $? "Cannot install required dependencies"
     ;;
 "UBUNTU18")
     info "Ubuntu 18 detected"
