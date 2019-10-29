@@ -195,18 +195,21 @@ static inline int iotrace_unregister_trace_block_bio_complete(
 #endif  // Ubuntu 18.04
 
 /* fsnotify macros */
-#define CONCAT(x, y) x##y
-#define FSNOTIFY_FUN(fun_name) CONCAT(fsnotify_, fun_name)
+#define FSNOTIFY_FUN(fun_name) "fsnotify_" #fun_name
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 18, 0)
-#define IOTRACE_FSNOTIFY_ADD_MARK_NAME add_inode_mark
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 18, 0)
 #define IOTRACE_FSNOTIFY_ADD_MARK(mark, inode) \
-    (fsnotify_ops.IOTRACE_FSNOTIFY_ADD_MARK_NAME(mark, inode, 0));
+    (fsnotify_ops.add_mark(mark, inode, NULL, 0));
+
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(5, 1, 0)
+#define IOTRACE_FSNOTIFY_ADD_MARK(mark, inode)             \
+    (fsnotify_ops.add_mark(mark, &inode->i_fsnotify_marks, \
+                           FSNOTIFY_OBJ_TYPE_INODE, 0));
 
 #else
-#define IOTRACE_FSNOTIFY_ADD_MARK_NAME add_mark
-#define IOTRACE_FSNOTIFY_ADD_MARK(mark, inode) \
-    (fsnotify_ops.IOTRACE_FSNOTIFY_ADD_MARK_NAME(mark, inode, NULL, 0));
+#define IOTRACE_FSNOTIFY_ADD_MARK(mark, inode)             \
+    (fsnotify_ops.add_mark(mark, &inode->i_fsnotify_marks, \
+                           FSNOTIFY_OBJ_TYPE_INODE, 0, NULL));
 
 #endif
 

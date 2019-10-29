@@ -102,22 +102,24 @@ struct iotrace_group_priv {
  * looked up.
  */
 struct fsnotify_backend_ops {
-    typeof(&FSNOTIFY_FUN(get_group)) get_group;
-    typeof(&FSNOTIFY_FUN(put_group)) put_group;
-    typeof(&FSNOTIFY_FUN(alloc_group)) alloc_group;
-    typeof(&FSNOTIFY_FUN(destroy_group)) destroy_group;
-    typeof(&FSNOTIFY_FUN(init_mark)) init_mark;
-    typeof(&FSNOTIFY_FUN(put_mark)) put_mark;
-    typeof(&FSNOTIFY_FUN(find_mark)) find_mark;
-    typeof(&FSNOTIFY_FUN(IOTRACE_FSNOTIFY_ADD_MARK_NAME))
-            IOTRACE_FSNOTIFY_ADD_MARK_NAME;
+    typeof(&fsnotify_get_group) get_group;
+    typeof(&fsnotify_put_group) put_group;
+    typeof(&fsnotify_alloc_group) alloc_group;
+    typeof(&fsnotify_destroy_group) destroy_group;
+    typeof(&fsnotify_init_mark) init_mark;
+    typeof(&fsnotify_put_mark) put_mark;
+    typeof(&fsnotify_find_mark) find_mark;
+
+    /* Call this using IOTRACE_FSNOTIFY_ADD_MARK macro */
+    typeof(&fsnotify_add_mark) add_mark;
+
 } static fsnotify_ops;
 
 /** Looks up fsnotify_... function, and evaluates to the result of lookup*/
-#define fsnotify_lookup_symbol(f)                                       \
-    ({                                                                  \
-        fsnotify_ops.f = (void *) kallsyms_lookup_name("fsnotify_" #f); \
-        fsnotify_ops.f != NULL ? 0 : -EINVAL;                           \
+#define fsnotify_lookup_symbol(fun)                                          \
+    ({                                                                       \
+        fsnotify_ops.fun = (void *) kallsyms_lookup_name(FSNOTIFY_FUN(fun)); \
+        fsnotify_ops.fun != NULL ? 0 : -EINVAL;                              \
     })
 
 /** File system events monitor */
@@ -137,6 +139,10 @@ static void _fs_monitor_get(struct fs_monitor *fsm) {
 
 /** Put references of group and fsmonitor */
 static void _fs_monitor_put(struct fs_monitor *fsm) {
+    if (fsm == NULL) {
+        return;
+    }
+
     if (refcount_dec_and_test(&fsm->refcnt)) {
         debug("Destroying FS monitor");
         fsnotify_ops.destroy_group(fsm->group);
@@ -372,7 +378,7 @@ struct fs_monitor *_fsm_try_get(void) {
 /** Allocate only one fsmonitor */
 static void _fsm_init(iotrace_inode_tracer_t inode_tracer) {
     struct fs_monitor *fsm = NULL;
-    struct iotrace_group_priv *priv;
+    struct iotrace_group_priv *priv = NULL;
 
     /* Check if FS monitor operations have been resolved */
     if (NULL == fsnotify_ops.get_group) {
@@ -385,11 +391,7 @@ static void _fsm_init(iotrace_inode_tracer_t inode_tracer) {
         result |= fsnotify_lookup_symbol(init_mark);
         result |= fsnotify_lookup_symbol(put_mark);
         result |= fsnotify_lookup_symbol(find_mark);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 18, 0)
-        result |= fsnotify_lookup_symbol(add_inode_mark);
-#else
         result |= fsnotify_lookup_symbol(add_mark);
-#endif
 
         if (result) {
             printk(KERN_WARNING "Cannot lookup FS monitor's operations\n");
@@ -474,7 +476,7 @@ int iotrace_create_inode_tracer(iotrace_inode_tracer_t *_inode_tracer,
 void iotrace_destroy_inode_tracer(iotrace_inode_tracer_t *iotrace_inode) {
     debug();
 
-    if (*iotrace_inode) {
+    if (iotrace_inode && *iotrace_inode) {
         _fs_monitor_put((*iotrace_inode)->fsm);
         vfree(*iotrace_inode);
         *iotrace_inode = NULL;
