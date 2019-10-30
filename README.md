@@ -63,6 +63,8 @@ cd standalone-linux-io-tracer
 To get stable version of iotrace checkout latest release:
   
 ~~~{.sh} 
+git clone https://github.com/Open-CAS/standalone-linux-io-tracer/
+cd standalone-linux-io-tracer
 git checkout $(git tag | grep "^v[[:digit:]]*.[[:digit:]]*.[[:digit:]]*$" | tail -1)
 ~~~
 
