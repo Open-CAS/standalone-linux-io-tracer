@@ -72,7 +72,7 @@ But if you are going to develop iotrace, it is ok to checkout master branch.
 
 ### Prerequisites
 
-* To build and use Standalone Linux IO Tracer, [OCTF](https://github.com/Open-CAS/open-cas-telemetry-framework) needs to be set up in the following way:
+* To build and use Standalone Linux IO Tracer, setup [OCTF](https://github.com/Open-CAS/open-cas-telemetry-framework) in the following way, from this repository:
 
   ~~~{.sh}
   git submodule update --init --recursive
