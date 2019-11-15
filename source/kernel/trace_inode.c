@@ -211,19 +211,17 @@ static void _fs_add_mark(struct fsnotify_group *group, struct inode *inode) {
     debug("Mark added, inode id = %lu", inode->i_ino);
 }
 
-void _trace_file_event(uint64_t devId,
-                       uint64_t fileId,
-                       uint64_t parentId,
-                       iotrace_fs_event_type eventType) {
+static void _trace_file_event(uint64_t part_id,
+                              uint64_t file_id,
+                              iotrace_fs_event_type eventType) {
     uint64_t sid;
     unsigned int cpu;
     octf_trace_t trace;
     struct iotrace_context *context;
     struct iotrace_event_fs_file_event ev = {};
 
-    ev.device_id = devId;
-    ev.file_id = fileId;
-    ev.parent_id = parentId;
+    ev.partition_id = part_id;
+    ev.file_id = file_id;
     ev.fs_event_type = eventType;
 
     context = iotrace_get_context();
@@ -263,21 +261,18 @@ static int _fs_handle_event(struct fsnotify_group *group,
     }
 
     if (mask & FS_MOVED_FROM & IOTRACE_FSNOTIFY_EVENTS) {
-        _trace_file_event(disk_devt(child_inode->i_sb->s_bdev->bd_disk),
-                          child_inode->i_ino, inode->i_ino,
+        _trace_file_event(child_inode->i_sb->s_dev, child_inode->i_ino,
                           iotrace_fs_event_move_from);
     }
     if (mask & FS_MOVED_TO & IOTRACE_FSNOTIFY_EVENTS) {
-        _trace_file_event(disk_devt(child_inode->i_sb->s_bdev->bd_disk),
-                          child_inode->i_ino, inode->i_ino,
+        _trace_file_event(child_inode->i_sb->s_dev, child_inode->i_ino,
                           iotrace_fs_event_move_to);
     }
     if (mask & FS_CREATE) {
         _fs_add_mark(group, child_inode);
 
         if (mask & IOTRACE_FSNOTIFY_EVENTS) {
-            _trace_file_event(disk_devt(child_inode->i_sb->s_bdev->bd_disk),
-                              child_inode->i_ino, inode->i_ino,
+            _trace_file_event(child_inode->i_sb->s_dev, child_inode->i_ino,
                               iotrace_fs_event_create);
         }
     }
@@ -287,8 +282,8 @@ static int _fs_handle_event(struct fsnotify_group *group,
          * We have no information here about parent inode - it is in a separate
          * event - FS_DELETE
          */
-        _trace_file_event(disk_devt(child_inode->i_sb->s_bdev->bd_disk),
-                          child_inode->i_ino, 0, iotrace_fs_event_delete);
+        _trace_file_event(child_inode->i_sb->s_dev, child_inode->i_ino,
+                          iotrace_fs_event_delete);
     }
 
     if (mask & FS_OPEN) {
@@ -535,8 +530,8 @@ static struct cache_entry *_lookup(iotrace_inode_tracer_t inode_tracer,
 
 int _trace_filename(struct iotrace_state *state,
                     octf_trace_t trace,
-                    uint64_t devId,
-                    uint64_t id,
+                    uint64_t part_id,
+                    uint64_t file_id,
                     uint64_t parent_id,
                     struct dentry *dentry) {
     struct iotrace_event_fs_file_name ev = {};
@@ -545,8 +540,8 @@ int _trace_filename(struct iotrace_state *state,
     iotrace_event_init_hdr(&ev.hdr, iotrace_event_type_fs_file_name, sid,
                            ktime_to_ns(ktime_get()), sizeof(ev));
 
-    ev.device_id = devId;
-    ev.file_id = id;
+    ev.partition_id = part_id;
+    ev.file_id = file_id;
     ev.file_parent_id = parent_id;
 
     // Copy file name

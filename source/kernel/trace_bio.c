@@ -146,6 +146,7 @@ static void _trace_bio_fs_meta(octf_trace_t trace,
     ev.file_id = info->inode->i_ino;
     ev.file_offset = info->page->index << (PAGE_SHIFT - SECTOR_SHIFT);
     ev.file_size = info->inode->i_size >> SECTOR_SHIFT;
+    ev.partition_id = info->inode->i_sb->s_dev;
 
     octf_trace_push(trace, &ev, sizeof(ev));
 }
