@@ -1,0 +1,27 @@
+*** Running tests ***
+
+    Tests require:
+        - python >= 3.6
+        - requirements from the file "modules/test-framework/requirements.txt"
+
+    To install the latter type:
+        pip3 install -r requirements.txt
+
+    To start tests call the following command from 'tests' directory:
+        python3 -m pytest --dut-config="path/to/config" --log-path="path/to/logs"
+
+    The command executes pytest module. All tests in the working directory are then
+    discovered and executed on the DUT specified in the dut config.
+
+
+*** The DUT config file ***
+
+    DUT config file is a yaml file which configures where the tests are run.
+
+    'ip' field should be filled with valid IP string to use remote ssh executor
+    or it should be commented out when user want to execute tests on local machine
+
+    An example of DUT config can be found in "tests/config/example_config.yml"
+
+    WARNING!
+    If no disks are specified in DUT config, the framework formats all non-system drives!
