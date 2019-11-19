@@ -17,9 +17,6 @@ from utils.installer import install_iotrace, uninstall_iotrace
 from test_utils.singleton import Singleton
 
 
-# Flag to stop test teardown if test setup has failed
-setup_complete = False
-
 """
 Singleton class to provide test-session wide scope
 """
@@ -29,13 +26,12 @@ class IotracePlugin(metaclass=Singleton):
         self.working_dir = working_dir  # DUT's make/install work directory
         self.installed = False          # Was iotrace installed already
 
-
 # Called for each test in directory
 def pytest_runtest_setup(item):
     """
     pytest should be executed with option --dut-config=conf_name'.
     and optionally --log-path="./mylogs"
-    
+
     'ip' field should be filled with valid IP string to use remote ssh executor
     or it should be commented out when user want to execute tests on local machine
     """
@@ -45,6 +41,7 @@ def pytest_runtest_setup(item):
 
     test_name = item.name.split('[')[0]
     TestRun.LOGGER = create_log(item.config.getoption('--log-path'), test_name)
+
     with TestRun.LOGGER.step("Test initialization"):
 
         try:
@@ -60,14 +57,14 @@ def pytest_runtest_setup(item):
             # Setup from dut config
             TestRun.setup(dut_config)
 
-            TestRun.plugins['iotrace'] = IotracePlugin(                
-                repo_dir=os.path.join(os.path.dirname(__file__), "../"),                
+            TestRun.plugins['iotrace'] = IotracePlugin(
+                repo_dir=os.path.join(os.path.dirname(__file__), "../"),
                 working_dir=dut_config['working_dir']
             )
 
         except Exception as e:
             TestRun.LOGGER.exception(f"{str(e)}\n{traceback.format_exc()}")
-            
+
         TestRun.LOGGER.info(f"DUT info: {TestRun.dut}")
 
     # Prepare DUT for test
@@ -76,12 +73,9 @@ def pytest_runtest_setup(item):
         TestRun.LOGGER.add_build_info(f"{get_current_commit_hash()}")
         TestRun.LOGGER.add_build_info(f'Commit message:')
         TestRun.LOGGER.add_build_info(f'{get_current_commit_message()}')
+        dut_prepare(item)
 
-    dut_prepare(item)
-
-    TestRun.LOGGER.write_to_command_log("Test body")
     TestRun.LOGGER.start_group("Test body")
-    setup_complete = True
 
 
 def pytest_runtest_teardown():
@@ -89,9 +83,6 @@ def pytest_runtest_teardown():
     This method is executed always in the end of each test,
     even if it fails or raises exception in prepare stage.
     """
-    if not setup_complete :
-        print("Setup didnt complete successfully")
-        return
 
     TestRun.LOGGER.end_all_groups()
 
@@ -117,8 +108,12 @@ def kill_all_io():
     TestRun.executor.run("kill -9 `ps aux | grep -i vdbench.* | awk '{ print $1 }'`")
     TestRun.executor.run("pkill --signal SIGKILL fio*")
 
-    
 def dut_prepare(item):
     if not TestRun.plugins['iotrace'].installed:
+        TestRun.LOGGER.info("Installing iotrace")
         install_iotrace()
+    else:
+        TestRun.LOGGER.info("iotrace is already installed by previous test")
+
+    TestRun.LOGGER.info("Killing all IO")
     kill_all_io()

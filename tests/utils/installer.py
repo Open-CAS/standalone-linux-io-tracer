@@ -9,7 +9,7 @@ from core.test_run_utils import TestRun
 
 def install_iotrace():
     TestRun.plugins['iotrace'].installed = True
-    
+
     TestRun.LOGGER.info("Copying standalone-linux-io-tracer repository to DUT")
     TestRun.executor.rsync(
         f"{TestRun.plugins['iotrace'].repo_dir}/",
@@ -17,7 +17,7 @@ def install_iotrace():
         delete=True,
         symlinks=True,
         exclude_list=['build'])
-    
+
     TestRun.LOGGER.info("Installing dependencies")
     output = TestRun.executor.run(
         f"cd {TestRun.plugins['iotrace'].working_dir} && "
@@ -25,9 +25,9 @@ def install_iotrace():
     if output.exit_code != 0:
         TestRun.exception(
             f"Installing dependencies failed with nonzero status: {output.stdout}\n{output.stderr}")
-    
 
-    TestRun.LOGGER.info("Building iotrace")
+
+    TestRun.LOGGER.info("Calling make all")
     output = TestRun.executor.run(
         f"cd {TestRun.plugins['iotrace'].working_dir} && "
         "make clean && make -j`nproc --all`")
@@ -35,7 +35,7 @@ def install_iotrace():
         TestRun.exception(
             f"Make command executed with nonzero status: {output.stdout}\n{output.stderr}")
 
-    TestRun.LOGGER.info("Installing iotrace")
+    TestRun.LOGGER.info("Calling make install")
     output = TestRun.executor.run(
         f"cd {TestRun.plugins['iotrace'].working_dir} && "
         f"make install")
@@ -45,11 +45,11 @@ def install_iotrace():
 
     TestRun.LOGGER.info("Checking if iotrace is properly installed.")
     output = TestRun.executor.run("iotrace -V")
-    if output.exit_code != 0:   
+    if output.exit_code != 0:
         TestRun.exception(
             f"'iotrace -V' command returned an error: {output.stdout}\n{output.stderr}")
     else:
-        TestRun.LOGGER.info(output.stdout)
+        TestRun.LOGGER.debug(output.stdout)
 
 
 def uninstall_iotrace():
@@ -64,8 +64,3 @@ def uninstall_iotrace():
         if output.exit_code != 0:
             TestRun.exception(
                 f"There was an error during uninstall process: {output.stdout}\n{output.stderr}")
-
-
-def reinstall_opencas():
-    uninstall_iotrace()
-    install_iotrace()
