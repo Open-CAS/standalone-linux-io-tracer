@@ -14,9 +14,9 @@
 #include <linux/version.h>
 #include <trace/events/block.h>
 
-/*
- * Common declarations
- */
+/* ************************************************************************** */
+/* Common declarations */
+/* ************************************************************************** */
 
 /*
  * BIO completion trace function
@@ -40,7 +40,9 @@ typedef void (*iotrace_bio_complete_fn)(void *ignore,
 /* Gets BIO vector  */
 #define IOTRACE_BIO_BVEC(vec) (vec)
 
+/* ************************************************************************** */
 /* Defines for CentOS 7.6 (3.10 kernel) */
+/* ************************************************************************** */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0)
 
 #define IOTRACE_BIO_OP_FLAGS(bio) (bio)->bi_rw
@@ -107,7 +109,9 @@ static inline int iotrace_unregister_trace_block_bio_complete(
     return result;
 }
 
+/* ************************************************************************** */
 /* Defines for Ubuntu 18.04 (4.15 kernel) */
+/* ************************************************************************** */
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0)
 
 #define IOTRACE_BIO_OP_FLAGS(bio) (bio)->bi_opf
@@ -187,9 +191,28 @@ static inline int iotrace_unregister_trace_block_bio_complete(
 
     return result;
 }
+
+#endif  // Ubuntu 18.04
+
+/* fsnotify macros */
+#define FSNOTIFY_FUN(fun_name) "fsnotify_" #fun_name
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 18, 0)
+#define IOTRACE_FSNOTIFY_ADD_MARK(mark, inode) \
+    (fsnotify_ops.add_mark(mark, inode, NULL, 0));
+
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(5, 1, 0)
+#define IOTRACE_FSNOTIFY_ADD_MARK(mark, inode)             \
+    (fsnotify_ops.add_mark(mark, &inode->i_fsnotify_marks, \
+                           FSNOTIFY_OBJ_TYPE_INODE, 0));
+
+#else
+#define IOTRACE_FSNOTIFY_ADD_MARK(mark, inode)             \
+    (fsnotify_ops.add_mark(mark, &inode->i_fsnotify_marks, \
+                           FSNOTIFY_OBJ_TYPE_INODE, 0, NULL));
+
 #endif
 
-/* Write hint getter */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 13, 0)
 #define IOTRACE_GET_WRITE_HINT(bio) (bio->bi_write_hint)
 #else
