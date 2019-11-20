@@ -8,7 +8,7 @@ from core.test_run_utils import TestRun
 
 
 def install_iotrace():
-    TestRun.plugins['iotrace'].installed = True
+    uninstall_iotrace()
 
     TestRun.LOGGER.info("Copying standalone-linux-io-tracer repository to DUT")
     TestRun.executor.rsync(
@@ -24,8 +24,8 @@ def install_iotrace():
         "./setup_dependencies.sh")
     if output.exit_code != 0:
         TestRun.exception(
-            f"Installing dependencies failed with nonzero status: {output.stdout}\n{output.stderr}")
-
+            "Installing dependencies failed with nonzero status: "
+            f"{output.stdout}\n{output.stderr}")
 
     TestRun.LOGGER.info("Calling make all")
     output = TestRun.executor.run(
@@ -33,7 +33,8 @@ def install_iotrace():
         "make clean && make -j`nproc --all`")
     if output.exit_code != 0:
         TestRun.exception(
-            f"Make command executed with nonzero status: {output.stdout}\n{output.stderr}")
+            "Make command executed with nonzero status: "
+            f"{output.stdout}\n{output.stderr}")
 
     TestRun.LOGGER.info("Calling make install")
     output = TestRun.executor.run(
@@ -47,20 +48,30 @@ def install_iotrace():
     output = TestRun.executor.run("iotrace -V")
     if output.exit_code != 0:
         TestRun.exception(
-            f"'iotrace -V' command returned an error: {output.stdout}\n{output.stderr}")
+            "'iotrace -V' command returned an error: "
+            f"{output.stdout}\n{output.stderr}")
     else:
         TestRun.LOGGER.debug(output.stdout)
+
+    TestRun.plugins['iotrace'].installed = True
 
 
 def uninstall_iotrace():
     TestRun.LOGGER.info("Uninstalling iotrace")
-    output = TestRun.executor.run("iotrace -V")
+    TestRun.executor.run(
+        f"cd {TestRun.plugins['iotrace'].working_dir} && "
+        "make uninstall")
+
+
+def insert_module():
+    output = TestRun.executor.run(f"modprobe iotrace")
     if output.exit_code != 0:
-        TestRun.exception("iotrace is not properly installed")
-    else:
-        TestRun.executor.run(
-            f"cd {TestRun.plugins['iotrace'].working_dir} && "
-            f"make uninstall")
-        if output.exit_code != 0:
-            TestRun.exception(
-                f"There was an error during uninstall process: {output.stdout}\n{output.stderr}")
+        TestRun.exception(
+            f"modprobe failed with: {output.stdout}\n{output.stderr}")
+
+
+def remove_module():
+    output = TestRun.executor.run(f"rmmod iotrace")
+    if output.exit_code != 0:
+        TestRun.exception(
+            f"rmmod failed with: {output.stdout}\n{output.stderr}")

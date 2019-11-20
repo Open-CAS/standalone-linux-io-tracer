@@ -6,7 +6,8 @@ import traceback
 from IPy import IP
 
 # Path to test-framework
-sys.path.append(os.path.join(os.path.dirname(__file__), "../modules/test-framework"))
+sys.path.append(os.path.join(os.path.dirname(__file__),
+                             "../modules/test-framework"))
 sys.path.append(os.path.join(os.path.dirname(__file__), "../utils"))
 
 from log.logger import create_log, Log
@@ -14,29 +15,22 @@ from core.test_run_utils import TestRun
 from connection.local_executor import LocalExecutor
 from utils.git import get_current_commit_hash, get_current_commit_message
 from utils.installer import install_iotrace, uninstall_iotrace
+from utils.installer import insert_module, remove_module
+from utils.misc import kill_all_io
 from test_utils.singleton import Singleton
 
 
-"""
-Singleton class to provide test-session wide scope
-"""
+# Singleton class to provide test-session wide scope
 class IotracePlugin(metaclass=Singleton):
     def __init__(self, repo_dir, working_dir):
         self.repo_dir = repo_dir        # Test controller's repo, copied to DUT
         self.working_dir = working_dir  # DUT's make/install work directory
         self.installed = False          # Was iotrace installed already
 
+
 # Called for each test in directory
 def pytest_runtest_setup(item):
-    """
-    pytest should be executed with option --dut-config=conf_name'.
-    and optionally --log-path="./mylogs"
 
-    'ip' field should be filled with valid IP string to use remote ssh executor
-    or it should be commented out when user want to execute tests on local machine
-    """
-
-    # This mostly remembers which disks are required for this test
     TestRun.prepare(item)
 
     test_name = item.name.split('[')[0]
@@ -94,19 +88,15 @@ def pytest_runtest_teardown():
         except Exception:
             TestRun.LOGGER.warning("Exception occured during platform cleanup.")
 
-
     TestRun.LOGGER.end()
     TestRun.LOGGER.get_additional_logs()
     Log.destroy()
+
 
 def pytest_addoption(parser):
     parser.addoption("--dut-config", action="store", default="None")
     parser.addoption("--log-path", action="store", default=".")
 
-def kill_all_io():
-    TestRun.executor.run("pkill --signal SIGKILL dd")
-    TestRun.executor.run("kill -9 `ps aux | grep -i vdbench.* | awk '{ print $1 }'`")
-    TestRun.executor.run("pkill --signal SIGKILL fio*")
 
 def dut_prepare(item):
     if not TestRun.plugins['iotrace'].installed:
@@ -117,3 +107,11 @@ def dut_prepare(item):
 
     TestRun.LOGGER.info("Killing all IO")
     kill_all_io()
+
+    TestRun.LOGGER.info("Inserting iotrace module")
+    insert_module()
+
+
+def dut_cleanup(item):
+    TestRun.LOGGER.info("Removing iotrace module")
+    remove_module()

@@ -1,8 +1,11 @@
 *** Running tests ***
 
-    Tests require:
+    Test controller requirements:
         - python >= 3.6
-        - requirements from the file "modules/test-framework/requirements.txt"
+        - python requirements from the file "modules/test-framework/requirements.txt"
+
+    Device Under Test requirements:
+        - packages specified in file "tests/dut_requirements.txt"
 
     To install the latter type:
         pip3 install -r requirements.txt
