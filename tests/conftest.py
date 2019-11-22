@@ -14,18 +14,12 @@ from log.logger import create_log, Log
 from core.test_run_utils import TestRun
 from connection.local_executor import LocalExecutor
 from utils.git import get_current_commit_hash, get_current_commit_message
+from utils.git import get_current_octf_hash
 from utils.installer import install_iotrace, uninstall_iotrace
 from utils.installer import insert_module, remove_module
 from utils.misc import kill_all_io
-from test_utils.singleton import Singleton
+from utils.iotrace import IotracePlugin
 
-
-# Singleton class to provide test-session wide scope
-class IotracePlugin(metaclass=Singleton):
-    def __init__(self, repo_dir, working_dir):
-        self.repo_dir = repo_dir        # Test controller's repo, copied to DUT
-        self.working_dir = working_dir  # DUT's make/install work directory
-        self.installed = False          # Was iotrace installed already
 
 
 # Called for each test in directory
@@ -67,6 +61,8 @@ def pytest_runtest_setup(item):
         TestRun.LOGGER.add_build_info(f"{get_current_commit_hash()}")
         TestRun.LOGGER.add_build_info(f'Commit message:')
         TestRun.LOGGER.add_build_info(f'{get_current_commit_message()}')
+        TestRun.LOGGER.add_build_info(f'OCTF commit hash:')
+        TestRun.LOGGER.add_build_info(f'{get_current_octf_hash()}')
         dut_prepare(item)
 
     TestRun.LOGGER.start_group("Test body")
