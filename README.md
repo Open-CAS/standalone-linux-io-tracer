@@ -105,7 +105,7 @@ sudo make install
 
 ## Examples
 
-Make sure you removed old version of iotrace kernel module: modprobe -r iotrace
+Make sure you removed old version of iotrace kernel module:
 ~~~{.sh}
 modprobe -r iotrace
 ~~~
