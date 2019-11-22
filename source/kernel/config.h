@@ -43,7 +43,7 @@ typedef void (*iotrace_bio_complete_fn)(void *ignore,
 /* ************************************************************************** */
 /* Defines for CentOS 7.6 (3.10 kernel) */
 /* ************************************************************************** */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
 
 #define IOTRACE_BIO_OP_FLAGS(bio) (bio)->bi_rw
 /* BIO operation macros (read/write/discard) */
@@ -112,7 +112,7 @@ static inline int iotrace_unregister_trace_block_bio_complete(
 /* ************************************************************************** */
 /* Defines for Ubuntu 18.04 (4.15 kernel) */
 /* ************************************************************************** */
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0)
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0)
 
 #define IOTRACE_BIO_OP_FLAGS(bio) (bio)->bi_opf
 /* BIO operation macros (read/write/discard) */
