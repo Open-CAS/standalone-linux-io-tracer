@@ -110,6 +110,8 @@ To allow tracing of block devices, tracing module needs to be loaded first:
 modprobe iotrace
 ~~~
 
+  > **NOTE:**  Make sure you removed old version of iotrace kernel module: modprobe -r iotrace
+
 * Start tracing two block devices for 1 hour, or until trace file is 1GiB:
   ~~~{.sh}
   sudo iotrace --start-trace --devices /dev/sda,/dev/sdb1 --time 3600 --size 1024
