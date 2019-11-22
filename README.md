@@ -105,6 +105,11 @@ sudo make install
 
 ## Examples
 
+Make sure you removed old version of iotrace kernel module:
+~~~{.sh}
+modprobe -r iotrace
+~~~
+
 To allow tracing of block devices, tracing module needs to be loaded first:
 ~~~{.sh}
 modprobe iotrace

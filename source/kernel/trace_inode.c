@@ -295,7 +295,8 @@ static int _fs_handle_event(struct fsnotify_group *group,
 }
 
 /* Switch for different kernels */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 18, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 18, 0) && \
+        !defined(IOTRACE_FSNOTIFY_VERSION_5)
 static int iotrace_fs_handle_event(struct fsnotify_group *group,
                                    struct inode *inode,
                                    struct fsnotify_mark *inode_mark,

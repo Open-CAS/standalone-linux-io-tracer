@@ -9,8 +9,12 @@ type: "local"
 
 # env: "HTTPS_PROXY=myproxy.example:12345"
 
-working_dir: "/tmp/open-cas-linux/"
+working_dir: "/tmp/iotrace/"
 
+# Allow autodetecting non-system drives for tests:
+# allow_disk_autoselect: True
+
+# Explicitly list drives available for testing:
 disks:
   - path: "/dev/device_name1" # disk device path
     serial: "ABC"             # disk serial number
