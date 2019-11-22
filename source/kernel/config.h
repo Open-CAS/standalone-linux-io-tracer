@@ -197,7 +197,14 @@ static inline int iotrace_unregister_trace_block_bio_complete(
 /* fsnotify macros */
 #define FSNOTIFY_FUN(fun_name) "fsnotify_" #fun_name
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 18, 0)
+#if defined(RHEL_MAJOR) && defined(RHEL_MINOR)
+#if RHEL_MAJOR == 7 && RHEL_MINOR >= 7
+#define IOTRACE_FSNOTIFY_VERSION_5
+#endif
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 18, 0) && \
+        !defined(IOTRACE_FSNOTIFY_VERSION_5)
 #define IOTRACE_FSNOTIFY_ADD_MARK(mark, inode) \
     (fsnotify_ops.add_mark(mark, inode, NULL, 0));
 
