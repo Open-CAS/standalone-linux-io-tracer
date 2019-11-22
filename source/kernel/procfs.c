@@ -8,6 +8,7 @@
 #include <linux/fs.h>
 #include <linux/kref.h>
 #include <linux/mm.h>
+#include <linux/module.h>
 #include <linux/poll.h>
 #include <linux/proc_fs.h>
 #include <linux/stat.h>
@@ -42,18 +43,25 @@ static void _iotrace_free(struct kref *kref) {
     proc_file->consumer_hdr = NULL;
 }
 
-static int _iotrace_open(struct inode *inode, struct file *file, bool writeable)
-
-{
+static int _iotrace_open(struct inode *inode,
+                         struct file *file,
+                         bool writeable) {
     struct iotrace_proc_file *proc_file = PDE_DATA(inode);
     int result;
 
     if ((file->f_mode & FMODE_WRITE) && !writeable)
         return -EACCES;
 
+    if (!try_module_get(THIS_MODULE)) {
+        printk(KERN_ERR "Cannot get module\n");
+        return -EINVAL;
+    }
+
     result = iotrace_attach_client(iotrace_get_context());
-    if (result)
+    if (result) {
+        module_put(THIS_MODULE);
         return result;
+    }
 
     kref_get(&proc_file->ref);
     file->private_data = proc_file;
@@ -72,6 +80,7 @@ static int _iotrace_release(struct inode *inode, struct file *file) {
     struct iotrace_proc_file *proc_file = PDE_DATA(inode);
     iotrace_detach_client(iotrace_get_context());
     kref_put(&proc_file->ref, _iotrace_free);
+    module_put(THIS_MODULE);
     return 0;
 }
 
@@ -104,7 +113,9 @@ static long _iotrace_ioctl(struct file *file,
         result = 0;
     } break;
 
-    default: { } break; }
+    default: {
+    } break;
+    }
 
     return result;
 }
