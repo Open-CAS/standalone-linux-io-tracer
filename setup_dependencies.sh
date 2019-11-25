@@ -132,6 +132,8 @@ case "${distro}" in
     info "Installing packages: ${packages}"
     dnf -y install ${packages}
     check_result $? "Cannot install required dependencies"
+
+    setup_other_deps
     ;;
 "UBUNTU18")
     info "Ubuntu 18 detected"
