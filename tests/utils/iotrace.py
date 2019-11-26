@@ -21,13 +21,11 @@ class IotracePlugin(metaclass=Singleton):
         self.working_dir = working_dir  # DUT's make/install work directory
         self.installed = False          # Was iotrace installed already
 
-
     def parse_output(self, output):
         msgs_list = []
         for obj in self.__decode_json_stream(output):
             msgs_list.append(obj)
         return msgs_list
-
 
     # Get json objects from a stream of concatenated json messages
     def __decode_json_stream(self, document, pos=0, decoder=json.JSONDecoder()):
@@ -43,6 +41,6 @@ class IotracePlugin(metaclass=Singleton):
             try:
                 obj, pos = decoder.raw_decode(document, pos)
             except json.JSONDecodeError:
-                    raise Exception("Ivalid json formatting")
+                raise Exception("Ivalid json formatting")
 
             yield obj

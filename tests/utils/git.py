@@ -21,6 +21,7 @@ def get_current_commit_message():
         f"cd {TestRun.plugins['iotrace'].repo_dir} &&"
         f'git show HEAD -s --pretty=format:"%B"').stdout
 
+
 def get_current_octf_hash():
     local_executor = LocalExecutor()
     return local_executor.run(

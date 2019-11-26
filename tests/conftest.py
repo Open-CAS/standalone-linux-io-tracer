@@ -8,6 +8,7 @@ from IPy import IP
 # Path to test-framework
 sys.path.append(os.path.join(os.path.dirname(__file__),
                              "../modules/test-framework"))
+# TODO (trybicki) Don't use file relative paths if possible
 sys.path.append(os.path.join(os.path.dirname(__file__), "../utils"))
 
 from log.logger import create_log, Log
@@ -19,7 +20,6 @@ from utils.installer import install_iotrace, uninstall_iotrace
 from utils.installer import insert_module, remove_module
 from utils.misc import kill_all_io
 from utils.iotrace import IotracePlugin
-
 
 
 # Called for each test in directory
