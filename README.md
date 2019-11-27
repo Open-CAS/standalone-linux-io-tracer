@@ -23,6 +23,7 @@ iotrace consists of a kernel tracing module (iotrace.ko) and an executable
 * [Deployment](#deployment)
 * [Examples](#examples)
 * [Contributing](#contributing)
+* [Tests](#tests)
 
 <a id="os_support"></a>
 
@@ -155,6 +156,11 @@ modprobe iotrace
   ...
   ~~~
 
+<a id="tests"></a>
+
+## Tests
+
+See our tests [README](tests/README.md)
 
 <a id="contributing"></a>
 

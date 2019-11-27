@@ -22,7 +22,7 @@ def test_version():
     bin_version = parsed[0]['trace'].split()[0]
 
     TestRun.LOGGER.info("iotrace binary version is: " + str(parsed[0]['trace']))
-    TestRun.LOGGER.info("OCTF library version is: " + str(parsed[0]['trace']))
+    TestRun.LOGGER.info("OCTF library version is: " + str(parsed[1]['trace']))
 
     output = TestRun.executor.run("dmesg | grep iotrace | tail -n 1")
     if output.exit_code != 0:
