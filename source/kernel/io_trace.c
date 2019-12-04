@@ -53,22 +53,30 @@ int iotrace_trace_desc(struct iotrace_context *iotrace,
     int result = 0;
     struct iotrace_state *state = &iotrace->trace_state;
     octf_trace_t trace = *per_cpu_ptr(state->traces, cpu);
+    octf_trace_event_handle_t ev_hndl;
 
-    struct iotrace_event_device_desc desc;
+    struct iotrace_event_device_desc *desc = NULL;
     uint64_t sid = atomic64_inc_return(&state->sid);
-    const size_t dev_name_size = sizeof(desc.device_name);
+
+    const size_t dev_name_size = sizeof(desc->device_name);
 
     if (strnlen(dev_name, dev_name_size) >= dev_name_size)
         return -ENOSPC;
-    strlcpy(desc.device_name, dev_name, sizeof(desc.device_name));
 
-    iotrace_event_init_hdr(&desc.hdr, iotrace_event_type_device_desc, sid,
-                           ktime_to_ns(ktime_get()), sizeof(desc));
+    result = octf_trace_get_wr_buffer(trace, &ev_hndl, (void **) &desc,
+                                      sizeof(*desc));
+    if (result) {
+        return result;
+    }
+    strlcpy(desc->device_name, dev_name, sizeof(desc->device_name));
 
-    desc.id = dev_id;
-    desc.device_size = dev_size;
+    iotrace_event_init_hdr(&desc->hdr, iotrace_event_type_device_desc, sid,
+                           ktime_to_ns(ktime_get()), sizeof(*desc));
 
-    result = octf_trace_push(trace, &desc, sizeof(desc));
+    desc->id = dev_id;
+    desc->device_size = dev_size;
+
+    result = octf_trace_commit_wr_buffer(trace, ev_hndl);
 
     iotrace_notify_of_new_events(iotrace, cpu);
 
