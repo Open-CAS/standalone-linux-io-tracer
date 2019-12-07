@@ -62,14 +62,6 @@ def uninstall_iotrace():
         f"cd {TestRun.plugins['iotrace'].working_dir} && "
         "make uninstall")
 
-
-def insert_module():
-    output = TestRun.executor.run(f"modprobe iotrace")
-    if output.exit_code != 0:
-        TestRun.exception(
-            f"modprobe failed with: {output.stdout}\n{output.stderr}")
-
-
 def remove_module():
     output = TestRun.executor.run(f"rmmod iotrace")
     if output.exit_code != 0:

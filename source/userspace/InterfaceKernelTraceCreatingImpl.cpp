@@ -4,14 +4,15 @@
  */
 
 #include "InterfaceKernelTraceCreatingImpl.h"
+#include <sys/types.h>
+#include <cstdio>
+#include <string>
 #include <octf/interface/TraceManager.h>
 #include <octf/plugin/NodePlugin.h>
 #include <octf/proto/trace.pb.h>
 #include <octf/trace/iotrace_event.h>
 #include <octf/utils/Exception.h>
-#include <sys/types.h>
-#include <cstdio>
-#include <string>
+#include <octf/utils/Log.h>
 #include "KernelTraceExecutor.h"
 
 namespace octf {
@@ -53,6 +54,8 @@ void InterfaceKernelTraceCreatingImpl::StartTracing(
             throw Exception("Invalid circular buffer size");
         }
 
+        probeModule();
+
         // List of devices to trace
         std::vector<std::string> devices(request->devicepaths_size());
         for (int i = 0; i < request->devicepaths_size(); i++) {
@@ -81,7 +84,30 @@ void InterfaceKernelTraceCreatingImpl::StartTracing(
         controller->SetFailed(e.what());
     }
 
+    removeModule();
     done->Run();
+}
+
+auto static constexpr REMOVE_MODULE_COMMAND = "modprobe -r iotrace &>/dev/null";
+auto static constexpr PROBE_MODULE_COMMAND = "modprobe iotrace &>/dev/null";
+
+void InterfaceKernelTraceCreatingImpl::probeModule() {
+    int result = std::system(REMOVE_MODULE_COMMAND);
+    if (result) {
+        throw Exception("Cannot reload iotrace kernel module");
+    }
+
+    result = std::system(PROBE_MODULE_COMMAND);
+    if (result) {
+        throw Exception("Cannot load iotrace kernel module");
+    }
+}
+
+void InterfaceKernelTraceCreatingImpl::removeModule() {
+    int result = std::system(REMOVE_MODULE_COMMAND);
+    if (result) {
+        log::cerr << "Cannot remove iotrace kernel module" << std::endl;
+    }
 }
 
 }  // namespace octf
