@@ -9,7 +9,7 @@ from IPy import IP
 sys.path.append(os.path.join(os.path.dirname(__file__),
                              "../modules/test-framework"))
 # TODO (trybicki) Don't use file relative paths if possible
-sys.path.append(os.path.join(os.path.dirname(__file__), "../utils"))
+sys.path.append(os.path.join(os.path.dirname(__file__), "./utils"))
 
 from log.logger import create_log, Log
 from core.test_run_utils import TestRun
