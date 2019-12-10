@@ -32,11 +32,11 @@ iotrace consists of a kernel tracing module (iotrace.ko) and an executable
 Right now the compilation of Standalone Linux IO Tracer is tested on the
 following OSes:
 
-|OS                            | Version           | Comment           
+|OS                            | Version           | Comment
 |------------------------------|-------------------|-------------------
-|RHEL/CentOS                   | 7.6               |               
-|Ubuntu                        | 18.04             | Experimental             
-|Fedora                        | 30                | Experimental             
+|RHEL/CentOS                   | 7.6               |
+|Ubuntu                        | 18.04             | Experimental
+|Fedora                        | 30                | Experimental
 
 <a id="documentation"></a>
 
@@ -62,8 +62,8 @@ cd standalone-linux-io-tracer
 
 ### Checkout
 To get stable version of iotrace checkout latest release:
-  
-~~~{.sh} 
+
+~~~{.sh}
 git clone https://github.com/Open-CAS/standalone-linux-io-tracer/
 cd standalone-linux-io-tracer
 git checkout $(git tag | grep "^v[[:digit:]]*.[[:digit:]]*.[[:digit:]]*$" | tail -1)
@@ -106,20 +106,14 @@ sudo make install
 
 ## Examples
 
-Make sure you removed old version of iotrace kernel module:
-~~~{.sh}
-modprobe -r iotrace
-~~~
-
-To allow tracing of block devices, tracing module needs to be loaded first:
-~~~{.sh}
-modprobe iotrace
-~~~
-
 * Start tracing two block devices for 1 hour, or until trace file is 1GiB:
   ~~~{.sh}
   sudo iotrace --start-trace --devices /dev/sda,/dev/sdb1 --time 3600 --size 1024
   ~~~
+
+  > **NOTE:**  To allow tracing of block devices, Linux kernel tracing
+  module needs to be loaded first. It is done automatically. After
+  collecting traces the module will be unloaded.
 
 * List created traces:
 
