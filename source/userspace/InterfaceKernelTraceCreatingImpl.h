@@ -35,6 +35,10 @@ private:
             const std::string &fieldName,
             const ::google::protobuf::Descriptor *messageDescriptor);
 
+    void probeModule();
+
+    void removeModule();
+
     const NodePath m_nodePath;
 };
 
