@@ -34,20 +34,28 @@ class IotracePlugin(metaclass=Singleton):
             for disk in disks:
                 bdevs.append(disk.system_path)
 
-        pid = TestRun.executor.run_in_background('iotrace -S -d ' + ','.join(bdevs))
+        TestRun.executor.run_in_background('iotrace -S -d ' + ','.join(bdevs))
         TestRun.LOGGER.info("Started tracing of: " + ','.join(bdevs))
 
-        # Check if start trace command failed
-        time.sleep(3)
+
+    def check_if_tracing_active(self):
+        '''
+        Check if tracing is active
+
+        :return: True if iotrace process found, False otherwise
+        :rtype: Bool
+        '''
         output = TestRun.executor.run('pgrep iotrace')
         if output.stdout == "":
-            raise Exception("Could not start iotrace tracing binary")
+            return False
+        else:
+            return True
 
     def stop_tracing(self):
         '''
         Stop tracing.
 
-        :return: True if tracing was stopped, False no tracing active
+        :return: True if tracing was stopped, False no tracing was active
         :rtype: Bool
         :raises Exception: if could not stop tracing which is active
         '''
@@ -79,9 +87,15 @@ class IotracePlugin(metaclass=Singleton):
         :rtype: string
         '''
         output = TestRun.executor.run('iotrace -L')
-        paths_parsed = self.parse_output(output.stdout)
+        paths_parsed = self.parse_json(output.stdout)
 
-        # Return last element of trace list
+        # Sort trace paths
+        def sort_key(element):
+            return element['tracePath']
+
+        paths_parsed[0]['trace'].sort(key=sort_key)
+
+        # Return the last element of trace list
         if len(paths_parsed):
             return paths_parsed[0]['trace'][-1]['tracePath']
         else:
@@ -94,28 +108,15 @@ class IotracePlugin(metaclass=Singleton):
         :param str trace_path: trace path
         :return: Summary of trace
         :rtype: string
+        :raises Exception: if summary is invalid
         '''
         output = TestRun.executor.run(f'iotrace --get-trace-summary -p {trace_path}')
+        if (output.stdout == ""):
+            raise Exception("Invalid summary")
+
         return output.stdout
 
-    def validate_summary(self, summary):
-        '''
-        Check if summary is valid
-
-        :param str summary: trace summary
-        :return: True if summary is valid, false otherwise
-        :rtype: Bool
-        '''
-        summary_parsed = self.parse_output(summary)
-        if len(summary_parsed) <= 0:
-            return False
-
-        if summary_parsed[0]['state'] == "ERROR":
-            return False
-
-        return True
-
-    def parse_output(self, output):
+    def parse_json(self, output):
         '''
         Parse a string with json messages to a list of python dictionaries
 

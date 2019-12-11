@@ -19,7 +19,7 @@ def test_version():
     TestRun.LOGGER.info("Testing cli version")
     output = TestRun.executor.run('iotrace -V')
 
-    parsed = TestRun.plugins['iotrace'].parse_output(output.stdout)
+    parsed = TestRun.plugins['iotrace'].parse_json(output.stdout)
     bin_version = parsed[0]['trace'].split()[0]
 
     TestRun.LOGGER.info("iotrace binary version is: " + str(parsed[0]['trace']))
@@ -55,14 +55,7 @@ def test_trace_start_stop():
 
     trace_path = iotrace.get_latest_trace_path()
     summary = iotrace.get_trace_summary(trace_path)
-
-    valid = iotrace.validate_summary(summary)
-    if not valid:
-        raise Exception("Invalid trace summary.")
-
-    summary_parsed = iotrace.parse_output(summary)
-    if int(summary_parsed[0]['droppedEvents']) > 0:
-        raise Exception("Dropped events during sanity check.")
+    summary_parsed = iotrace.parse_json(summary)
 
     if summary_parsed[0]['state'] != "COMPLETE":
         raise Exception("Trace state is not complete")
