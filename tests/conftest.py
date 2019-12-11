@@ -20,6 +20,7 @@ from utils.installer import install_iotrace, uninstall_iotrace
 from utils.installer import insert_module, remove_module
 from utils.misc import kill_all_io
 from utils.iotrace import IotracePlugin
+from test_tools.fio.fio import Fio
 
 
 # Called for each test in directory
@@ -85,7 +86,6 @@ def pytest_runtest_teardown():
             TestRun.LOGGER.warning("Exception occured during platform cleanup.")
 
     TestRun.LOGGER.end()
-    TestRun.LOGGER.get_additional_logs()
     Log.destroy()
 
 
@@ -106,6 +106,13 @@ def dut_prepare(item):
 
     TestRun.LOGGER.info("Inserting iotrace module")
     insert_module()
+
+    fio = Fio()
+    if not fio.is_installed():
+        TestRun.LOGGER.info("Installing fio")
+        fio.install()
+
+    TestRun.plugins['iotrace'].stop_tracing()
 
 
 def dut_cleanup(item):
