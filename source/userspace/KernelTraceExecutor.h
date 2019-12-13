@@ -44,9 +44,15 @@ public:
      */
     void waitUntilStopTrace();
 
-private:
-    bool isKernelModuleLoaded();
+    /**
+     * @brief Checks if IO tracer Linux kernel module is loaded
+     *
+     * @retval true module is loaded
+     * @retval false module is not loaded
+     */
+    static bool isKernelModuleLoaded();
 
+private:
     bool checkModuleCompatibility();
 
     bool writeSatraceProcfs(std::string file, const std::string &text);
