@@ -17,7 +17,7 @@ from connection.local_executor import LocalExecutor
 from utils.git import get_current_commit_hash, get_current_commit_message
 from utils.git import get_current_octf_hash
 from utils.installer import install_iotrace, uninstall_iotrace
-from utils.installer import remove_module
+from utils.installer import remove_module, insert_module
 from utils.misc import kill_all_io
 from utils.iotrace import IotracePlugin
 from test_tools.fio.fio import Fio
@@ -101,17 +101,21 @@ def dut_prepare(item):
     else:
         TestRun.LOGGER.info("iotrace is already installed by previous test")
 
-    TestRun.LOGGER.info("Killing all IO")
-    kill_all_io()
-
     fio = Fio()
     if not fio.is_installed():
         TestRun.LOGGER.info("Installing fio")
         fio.install()
+
+    TestRun.LOGGER.info("Killing all IO")
+    kill_all_io()
+
+    TestRun.LOGGER.info("Probing module")
+    insert_module()
 
     TestRun.plugins['iotrace'].stop_tracing()
 
 
 def dut_cleanup(item):
     TestRun.LOGGER.info("Removing iotrace module")
+    TestRun.plugins['iotrace'].stop_tracing()
     remove_module()

@@ -67,3 +67,10 @@ def remove_module():
     if output.exit_code != 0:
         TestRun.exception(
             f"rmmod failed with: {output.stdout}\n{output.stderr}")
+
+def insert_module():
+    TestRun.executor.run_expect_success(f"modprobe -r iotrace")
+    output = TestRun.executor.run(f"modprobe iotrace")
+    if output.exit_code != 0:
+        TestRun.exception(
+            f"modprobe failed with: {output.stdout}\n{output.stderr}")

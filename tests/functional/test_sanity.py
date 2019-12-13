@@ -6,6 +6,7 @@
 import pytest
 from core.test_run import TestRun
 from iotrace import IotracePlugin
+from utils.installer import insert_module
 
 
 def test_help():
@@ -16,27 +17,31 @@ def test_help():
 
 
 def test_version():
+    # Make sure module is loaded
+    insert_module()
     TestRun.LOGGER.info("Testing cli version")
     output = TestRun.executor.run('iotrace -V')
 
     parsed = TestRun.plugins['iotrace'].parse_json(output.stdout)
-    bin_version = parsed[0]['trace'].split()[0]
+    bin_version = parsed[0]['trace']
 
     TestRun.LOGGER.info("iotrace binary version is: " + str(parsed[0]['trace']))
     TestRun.LOGGER.info("OCTF library version is: " + str(parsed[1]['trace']))
 
-    output = TestRun.executor.run("dmesg | grep 'iotrace module loaded' | tail -n 1")
+    output = TestRun.executor.run("cat /sys/module/iotrace/version")
     if output.exit_code != 0:
         raise Exception("Could not find module version")
-    module_version = output.stdout.split()[-1]
+    module_version = output.stdout
 
     TestRun.LOGGER.info("Module version is: " + module_version)
-
     if bin_version != module_version:
         raise Exception("Mismatching executable and module versions")
 
 
 def test_module_loaded():
+    # Make sure module is loaded
+    insert_module()
+
     TestRun.LOGGER.info("Testing iotrace kernel module loading")
     output = TestRun.executor.run('lsmod | grep iotrace')
     if output.exit_code != 0:
