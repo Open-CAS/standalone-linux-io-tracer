@@ -5,8 +5,10 @@
 
 #include "InterfaceKernelTraceCreatingImpl.h"
 #include <sys/types.h>
+#include <chrono>
 #include <cstdio>
 #include <string>
+#include <thread>
 #include <octf/interface/TraceManager.h>
 #include <octf/plugin/NodePlugin.h>
 #include <octf/proto/trace.pb.h>
@@ -100,6 +102,20 @@ void InterfaceKernelTraceCreatingImpl::probeModule() {
     result = std::system(PROBE_MODULE_COMMAND);
     if (result) {
         throw Exception("Cannot load iotrace kernel module");
+    }
+
+    // On some OSes, procfs' files provided by the module are not ready just
+    // after module loading, thus wait a time until the module is fully up and
+    // running
+    std::chrono::milliseconds timeout(1000);
+    while (!KernelTraceExecutor::isKernelModuleLoaded()) {
+        std::chrono::milliseconds sleep(100);
+        if (timeout > std::chrono::milliseconds(0)) {
+            timeout -= sleep;
+            std::this_thread::sleep_for(sleep);
+        } else {
+            throw Exception("Cannot use iotrace kernel module");
+        }
     }
 }
 
