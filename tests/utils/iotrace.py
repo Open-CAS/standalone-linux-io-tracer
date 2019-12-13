@@ -90,10 +90,10 @@ class IotracePlugin(metaclass=Singleton):
         paths_parsed = self.parse_json(output.stdout)
 
         # Sort trace paths
-        def sort_key(element):
+        def get_sort_key(element):
             return element['tracePath']
 
-        paths_parsed[0]['trace'].sort(key=sort_key)
+        paths_parsed[0]['trace'].sort(key=get_sort_key)
 
         # Return the last element of trace list
         if len(paths_parsed):
