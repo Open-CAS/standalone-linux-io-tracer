@@ -10,16 +10,14 @@
 #include "context.h"
 #include "io_trace.h"
 #include "procfs.h"
+#include "procfs_files.h"
 #include "trace.h"
 #include "trace_bdev.h"
 #include "trace_inode.h"
 
-#define VALUE_TO_STRING(x) #x
-#define VALUE(x) VALUE_TO_STRING(x)
-
 MODULE_AUTHOR("Intel(R) Corporation");
 MODULE_LICENSE("Dual BSD/GPL");
-MODULE_VERSION(VALUE(IOTRACE_VERSION));
+MODULE_VERSION(IOTRACE_VERSION_STRING);
 
 /**
  * @brief Tracing global context
@@ -28,19 +26,6 @@ static struct iotrace_context _sa = {}, *iotrace = &_sa;
 
 struct iotrace_context *iotrace_get_context(void) {
     return iotrace;
-}
-
-static const char *get_version(void) {
-    static char label[] = VALUE(IOTRACE_VERSION_LABEL);
-
-    if (label[0]) {
-        static const char version[] =
-                VALUE(IOTRACE_VERSION) " (" VALUE(IOTRACE_VERSION_LABEL) ")";
-        return version;
-    } else {
-        static const char version[] = VALUE(IOTRACE_VERSION);
-        return version;
-    }
 }
 
 /**
@@ -64,7 +49,8 @@ static int __init iotrace_init_module(void) {
     if (result)
         goto error_procfs_init;
 
-    printk(KERN_INFO "iotrace module loaded, version %s\n", get_version());
+    printk(KERN_INFO "iotrace module loaded, version %s\n",
+           IOTRACE_VERSION_STRING);
 
     return 0;
 
@@ -89,7 +75,8 @@ static void __exit iotrace_exit_module(void) {
     /* deinitialize tracing context */
     iotrace_trace_deinit(iotrace);
 
-    printk(KERN_INFO "iotrace module unloaded, version %s\n", get_version());
+    printk(KERN_INFO "iotrace module unloaded, version %s\n",
+           IOTRACE_VERSION_STRING);
 }
 
 module_exit(iotrace_exit_module);

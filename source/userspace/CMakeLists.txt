@@ -30,9 +30,15 @@ PRIVATE
 # Create version definitions
 target_compile_definitions(iotrace
     PUBLIC
-    IOTRACE_VERSION="${IOTRACE_VERSION}"
-    IOTRACE_VERSION_LABEL="${IOTRACE_VERSION_LABEL}"
+    IOTRACE_VERSION=${IOTRACE_VERSION}
 )
+
+if (IOTRACE_VERSION_LABEL)
+    target_compile_definitions(iotrace
+        PUBLIC
+        IOTRACE_VERSION_LABEL=${IOTRACE_VERSION_LABEL}
+    )
+endif()
 
 # Link to octf library
 target_link_libraries(iotrace PRIVATE octf)

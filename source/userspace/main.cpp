@@ -3,25 +3,18 @@
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
+#include <memory>
 #include <octf/cli/Executor.h>
 #include <octf/interface/InterfaceConfigurationImpl.h>
 #include <octf/interface/InterfaceTraceManagementImpl.h>
 #include <octf/interface/InterfaceTraceParsingImpl.h>
 #include <octf/utils/Exception.h>
-#include <memory>
 #include "InterfaceKernelTraceCreatingImpl.h"
+#include "procfs_files.h"
 
 using namespace std;
 using namespace octf;
 using namespace octf::cli;
-
-static const char *get_version() {
-    if (IOTRACE_VERSION_LABEL[0]) {
-        return IOTRACE_VERSION " (" IOTRACE_VERSION_LABEL ")";
-    } else {
-        return IOTRACE_VERSION;
-    }
-}
 
 int main(int argc, char *argv[]) {
     const string APP_NAME = "iotrace";
@@ -32,7 +25,7 @@ int main(int argc, char *argv[]) {
         auto &properties = ex.getCliProperties();
 
         properties.setName(APP_NAME);
-        properties.setVersion(get_version());
+        properties.setVersion(IOTRACE_VERSION_STRING);
 
         // Create interfaces
 
