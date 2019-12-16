@@ -66,4 +66,4 @@ def test_trace_start_stop():
         raise Exception("Trace state is not complete")
 
 
-
+# TODO (trybicki) test for sanity checking installation, e.g. validating install_manifest.
