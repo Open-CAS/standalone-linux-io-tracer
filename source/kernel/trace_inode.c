@@ -214,15 +214,12 @@ static void _fs_add_mark(struct fsnotify_group *group, struct inode *inode) {
 static void _trace_file_event(uint64_t part_id,
                               uint64_t file_id,
                               iotrace_fs_event_type eventType) {
+    octf_trace_event_handle_t ev_hndl;
     uint64_t sid;
     unsigned int cpu;
     octf_trace_t trace;
     struct iotrace_context *context;
-    struct iotrace_event_fs_file_event ev = {};
-
-    ev.partition_id = part_id;
-    ev.file_id = file_id;
-    ev.fs_event_type = eventType;
+    struct iotrace_event_fs_file_event *ev = NULL;
 
     context = iotrace_get_context();
 
@@ -230,10 +227,17 @@ static void _trace_file_event(uint64_t part_id,
     trace = *per_cpu_ptr(context->trace_state.traces, cpu);
     sid = atomic64_inc_return(&context->trace_state.sid);
 
-    iotrace_event_init_hdr(&ev.hdr, iotrace_event_type_fs_file_event, sid,
-                           ktime_to_ns(ktime_get()), sizeof(ev));
+    if (octf_trace_get_wr_buffer(trace, &ev_hndl, (void **) &ev, sizeof(*ev))) {
+        return;
+    }
+    iotrace_event_init_hdr(&ev->hdr, iotrace_event_type_fs_file_event, sid,
+                           ktime_to_ns(ktime_get()), sizeof(*ev));
 
-    octf_trace_push(trace, &ev, sizeof(ev));
+    ev->partition_id = part_id;
+    ev->file_id = file_id;
+    ev->fs_event_type = eventType;
+
+    octf_trace_commit_wr_buffer(trace, ev_hndl);
     put_cpu();
 }
 
@@ -535,27 +539,33 @@ int _trace_filename(struct iotrace_state *state,
                     uint64_t file_id,
                     uint64_t parent_id,
                     struct dentry *dentry) {
-    struct iotrace_event_fs_file_name ev = {};
+    struct iotrace_event_fs_file_name *ev = NULL;
     uint64_t sid = atomic64_inc_return(&state->sid);
+    octf_trace_event_handle_t ev_hndl;
+    int result;
 
-    iotrace_event_init_hdr(&ev.hdr, iotrace_event_type_fs_file_name, sid,
-                           ktime_to_ns(ktime_get()), sizeof(ev));
+    result = octf_trace_get_wr_buffer(trace, &ev_hndl, (void **) &ev,
+                                      sizeof(*ev));
+    if (result) {
+        return result;
+    }
+    iotrace_event_init_hdr(&ev->hdr, iotrace_event_type_fs_file_name, sid,
+                           ktime_to_ns(ktime_get()), sizeof(*ev));
 
-    ev.partition_id = part_id;
-    ev.file_id = file_id;
-    ev.file_parent_id = parent_id;
+    ev->partition_id = part_id;
+    ev->file_id = file_id;
+    ev->file_parent_id = parent_id;
 
     // Copy file name
     {
         size_t smax = dentry->d_name.len;
-        size_t dmax = sizeof(ev.file_name) - 1;
+        size_t dmax = sizeof(ev->file_name) - 1;
         size_t to_copy = min(smax, dmax);
-        memcpy_s(ev.file_name, dmax, dentry->d_name.name, to_copy);
-        ev.file_name[dmax] = '\0';
+        memcpy_s(ev->file_name, dmax, dentry->d_name.name, to_copy);
+        ev->file_name[dmax] = '\0';
     }
 
-    // TODO (mariuszbarczak) Switch to operate directly on OCTF trace buffer
-    return octf_trace_push(trace, &ev, sizeof(ev));
+    return octf_trace_commit_wr_buffer(trace, ev_hndl);
 }
 
 /** Handle trace event related to inode */

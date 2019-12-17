@@ -137,58 +137,67 @@ static void _trace_bio_fs_meta(octf_trace_t trace,
                                log_sid_t sid,
                                log_sid_t ref_sid,
                                struct bio_info *info) {
-    struct iotrace_event_fs_meta ev = {};
+    struct iotrace_event_fs_meta *ev = NULL;
+    octf_trace_event_handle_t ev_hndl;
 
-    iotrace_event_init_hdr(&ev.hdr, iotrace_event_type_fs_meta, sid,
-                           ktime_to_ns(ktime_get()), sizeof(ev));
+    if (octf_trace_get_wr_buffer(trace, &ev_hndl, (void **) &ev, sizeof(*ev))) {
+        return;
+    }
+    iotrace_event_init_hdr(&ev->hdr, iotrace_event_type_fs_meta, sid,
+                           ktime_to_ns(ktime_get()), sizeof(*ev));
 
-    ev.ref_sid = ref_sid;
-    ev.file_id = info->inode->i_ino;
-    ev.file_offset = info->page->index << (PAGE_SHIFT - SECTOR_SHIFT);
-    ev.file_size = info->inode->i_size >> SECTOR_SHIFT;
-    ev.partition_id = info->inode->i_sb->s_dev;
+    ev->ref_sid = ref_sid;
+    ev->file_id = info->inode->i_ino;
+    ev->file_offset = info->page->index << (PAGE_SHIFT - SECTOR_SHIFT);
+    ev->file_size = info->inode->i_size >> SECTOR_SHIFT;
+    ev->partition_id = info->inode->i_sb->s_dev;
 
-    octf_trace_push(trace, &ev, sizeof(ev));
+    octf_trace_commit_wr_buffer(trace, ev_hndl);
 }
 
 void iotrace_trace_bio(struct iotrace_context *context,
                        unsigned cpu,
                        uint64_t dev_id,
                        struct bio *bio) {
-    struct iotrace_event ev = {};
+    struct iotrace_event *ev = NULL;
     struct iotrace_state *state = &context->trace_state;
     uint64_t sid = atomic64_inc_return(&state->sid);
-    struct bio_info info;
+    struct bio_info info = {};
     octf_trace_t trace = *per_cpu_ptr(state->traces, cpu);
+    octf_trace_event_handle_t ev_hndl;
+    uint32_t io_class = DSS_UNCLASSIFIED;
 
-    iotrace_event_init_hdr(&ev.hdr, iotrace_event_type_io, sid,
-                           ktime_to_ns(ktime_get()), sizeof(ev));
+    if (octf_trace_get_wr_buffer(trace, &ev_hndl, (void **) &ev, sizeof(*ev))) {
+        return;
+    }
+    iotrace_event_init_hdr(&ev->hdr, iotrace_event_type_io, sid,
+                           ktime_to_ns(ktime_get()), sizeof(*ev));
 
     if (IOTRACE_BIO_IS_DISCARD(bio))
-        ev.operation = iotrace_event_operation_discard;
+        ev->operation = iotrace_event_operation_discard;
     else if (IOTRACE_BIO_IS_WRITE(bio))
-        ev.operation = iotrace_event_operation_wr;
+        ev->operation = iotrace_event_operation_wr;
     else
-        ev.operation = iotrace_event_operation_rd;
+        ev->operation = iotrace_event_operation_rd;
 
     if (IOTRACE_BIO_IS_FLUSH(bio))
-        ev.flags |= iotrace_event_flag_flush;
+        ev->flags |= iotrace_event_flag_flush;
     if (IOTRACE_BIO_IS_FUA(bio))
-        ev.flags |= iotrace_event_flag_fua;
+        ev->flags |= iotrace_event_flag_fua;
 
-    ev.lba = IOTRACE_BIO_BISECTOR(bio);
-    ev.len = IOTRACE_BIO_BISIZE(bio) >> SECTOR_SHIFT;
-    ev.dev_id = dev_id;
-    ev.write_hint = IOTRACE_GET_WRITE_HINT(bio);
+    ev->lba = IOTRACE_BIO_BISECTOR(bio);
+    ev->len = IOTRACE_BIO_BISIZE(bio) >> SECTOR_SHIFT;
+    ev->dev_id = dev_id;
+    ev->write_hint = IOTRACE_GET_WRITE_HINT(bio);
 
     if (!bio_has_data(bio))
-        ev.io_class = DSS_UNCLASSIFIED;
+        ev->io_class = DSS_UNCLASSIFIED;
     else
-        ev.io_class = _get_dss_io_class(bio, &info);
+        ev->io_class = io_class = _get_dss_io_class(bio, &info);
 
-    octf_trace_push(trace, &ev, sizeof(ev));
+    octf_trace_commit_wr_buffer(trace, ev_hndl);
 
-    if (ev.io_class >= DSS_DATA_FILE_4KB && ev.io_class <= DSS_DATA_FILE_BULK) {
+    if (io_class >= DSS_DATA_FILE_4KB && io_class <= DSS_DATA_FILE_BULK) {
         iotrace_inode_tracer_t inode_trace =
                 *per_cpu_ptr(state->inode_traces, cpu);
 
@@ -202,18 +211,23 @@ void iotrace_trace_bio_completion(struct iotrace_context *context,
                                   uint64_t dev_id,
                                   struct bio *bio,
                                   int error) {
-    struct iotrace_event_completion cmpl = {};
+    struct iotrace_event_completion *cmpl = NULL;
     struct iotrace_state *state = &context->trace_state;
     uint64_t sid = atomic64_inc_return(&state->sid);
     octf_trace_t trace = *per_cpu_ptr(state->traces, cpu);
+    octf_trace_event_handle_t ev_hndl;
 
-    iotrace_event_init_hdr(&cmpl.hdr, iotrace_event_type_io_cmpl, sid,
-                           ktime_to_ns(ktime_get()), sizeof(cmpl));
+    if (octf_trace_get_wr_buffer(trace, &ev_hndl, (void **) &cmpl,
+                                 sizeof(*cmpl))) {
+        return;
+    }
+    iotrace_event_init_hdr(&cmpl->hdr, iotrace_event_type_io_cmpl, sid,
+                           ktime_to_ns(ktime_get()), sizeof(*cmpl));
 
-    cmpl.lba = IOTRACE_BIO_BISECTOR(bio);
-    cmpl.len = IOTRACE_BIO_BISIZE(bio) >> SECTOR_SHIFT;
-    cmpl.error = error;
-    cmpl.dev_id = dev_id;
+    cmpl->lba = IOTRACE_BIO_BISECTOR(bio);
+    cmpl->len = IOTRACE_BIO_BISIZE(bio) >> SECTOR_SHIFT;
+    cmpl->error = error;
+    cmpl->dev_id = dev_id;
 
-    octf_trace_push(trace, &cmpl, sizeof(cmpl));
+    octf_trace_commit_wr_buffer(trace, ev_hndl);
 }
