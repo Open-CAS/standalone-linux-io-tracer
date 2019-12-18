@@ -73,20 +73,16 @@ But if you are going to develop iotrace, it is ok to checkout master branch.
 
 ### Prerequisites
 
-* To build and use Standalone Linux IO Tracer, setup [OCTF](https://github.com/Open-CAS/open-cas-telemetry-framework) in the following way, from this repository:
+* To build and use Standalone Linux IO Tracer, setup prerequisites first in the following way:
 
   ~~~{.sh}
   git submodule update --init --recursive
   sudo ./setup_dependencies.sh
   ~~~
 
-  Installed dependencies include Google Protocol Buffers, CMake and Google Test.
-  The dependencies are either installed with yum/apt or installed to a dedicated directory /opt/octf/ to avoid overwriting already installed ones.
-
-  OCTF will then be installed along with iotrace in the next steps.
-
-  > **NOTE:**  Alternatively OCTF can also be installed separately, using instructions found in it's [README](https://github.com/Open-CAS/open-cas-telemetry-framework/blob/master/README.md). This option however right now only allows building the cli binary, and not the kernel module
-
+  Installed dependencies include [OCTF](https://github.com/Open-CAS/open-cas-telemetry-framework),
+  Google Protocol Buffers, CMake and Google Test. The dependencies are either installed with yum/apt
+  or installed to a dedicated directory /opt/octf/ to avoid overwriting already installed ones.
 
 ### Build
 
