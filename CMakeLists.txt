@@ -15,5 +15,10 @@ if (NOT TARGET octf)
 	find_package(octf REQUIRED CONFIG)
 endif()
 
+# Rpath for local installation of OCTF
+if (NOT "${CMAKE_INSTALL_PREFIX}" STREQUAL "/")
+    set(CMAKE_INSTALL_RPATH "${OCTF_LIBRARY_DIR}")
+endif()
+
 add_subdirectory(source)
 add_subdirectory(doc)
