@@ -1,18 +1,20 @@
 ## Running tests
 Test controller (machine from which the tests are started) requirements:
   * python >= 3.6
-  * python requirements from the file [requirements.txt](../modules/test-framework/requirements.txt)
+  * python-devel
+  * python requirements from the file ./modules/test-framework/requirements.txt
 
-To install the latter type from 'tests' directory:
+To install the latter use from the repository's root:
 ```
-pip3 install -r ../modules/test-framework/requirements.txt
+pip3 install --user -r ./modules/test-framework/requirements.txt
 ```
 
 Device Under Test (DUT) requirements:
   * packages specified in file [dut_requirements.txt](./dut_requirements.txt)
 
-To start tests call the following command from 'tests' directory:
+To start the tests:
 ```
+cd tests
 python3 -m pytest --dut-config="path/to/config" --log-path="path/to/logs"
 ```
 
