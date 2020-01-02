@@ -562,7 +562,7 @@ int _trace_filename(struct iotrace_state *state,
         size_t dmax = sizeof(ev->file_name) - 1;
         size_t to_copy = min(smax, dmax);
         memcpy_s(ev->file_name, dmax, dentry->d_name.name, to_copy);
-        ev->file_name[dmax] = '\0';
+        ev->file_name[to_copy] = '\0';
     }
 
     return octf_trace_commit_wr_buffer(trace, ev_hndl);
