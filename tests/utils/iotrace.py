@@ -37,13 +37,24 @@ class IotracePlugin(metaclass=Singleton):
         TestRun.executor.run_in_background('iotrace -S -d ' + ','.join(bdevs))
         TestRun.LOGGER.info("Started tracing of: " + ','.join(bdevs))
 
+    def get_trace_repository_path(self) -> str:
+        '''
+        Get the path to trace repository from iotrace
 
-    def check_if_tracing_active(self):
+        :return: JSON string with trace repository path
+        :raises Exception: when cannot find the path
+        '''
+        output = TestRun.executor.run('iotrace --get-trace-repository-path')
+        if output.exit_code != 0:
+            raise Exception("Could not get trace repository path")
+
+        return output.stdout
+
+    def check_if_tracing_active(self) -> bool:
         '''
         Check if tracing is active
 
         :return: True if iotrace process found, False otherwise
-        :rtype: Bool
         '''
         output = TestRun.executor.run('pgrep iotrace')
         if output.stdout == "":
@@ -51,12 +62,11 @@ class IotracePlugin(metaclass=Singleton):
         else:
             return True
 
-    def stop_tracing(self):
+    def stop_tracing(self) -> bool:
         '''
         Stop tracing.
 
         :return: True if tracing was stopped, False no tracing was active
-        :rtype: Bool
         :raises Exception: if could not stop tracing which is active
         '''
         TestRun.LOGGER.info("Stopping tracing")
@@ -79,12 +89,11 @@ class IotracePlugin(metaclass=Singleton):
 
         return True
 
-    def get_latest_trace_path(self):
+    def get_latest_trace_path(self) -> str:
         '''
         Returns trace path of most recent trace
 
         :return: trace path
-        :rtype: string
         '''
         output = TestRun.executor.run('iotrace -L')
         paths_parsed = self.parse_json(output.stdout)
@@ -101,13 +110,12 @@ class IotracePlugin(metaclass=Singleton):
         else:
             return ""
 
-    def get_trace_summary(self, trace_path):
+    def get_trace_summary(self, trace_path: str) -> str:
         '''
         Get trace summary of given trace path
 
-        :param str trace_path: trace path
-        :return: Summary of trace
-        :rtype: string
+        :param trace_path: trace path
+        :return: Summary of trace in JSON format
         :raises Exception: if summary is invalid
         '''
         output = TestRun.executor.run(f'iotrace --get-trace-summary -p {trace_path}')
@@ -116,11 +124,11 @@ class IotracePlugin(metaclass=Singleton):
 
         return output.stdout
 
-    def parse_json(self, output):
+    def parse_json(self, output: str):
         '''
         Parse a string with json messages to a list of python dictionaries
 
-        :param str output: JSON output to be parsed into python dicts
+        :param output: JSON output to be parsed into python dicts
 
         :return: List of dictionaries with fields corresponding to json messages fields
         :rtype: List of dicts

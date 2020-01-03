@@ -85,6 +85,7 @@ def pytest_runtest_teardown():
         except Exception:
             TestRun.LOGGER.warning("Exception occured during platform cleanup.")
 
+    dut_cleanup()
     TestRun.LOGGER.end()
     Log.destroy()
 
@@ -101,6 +102,10 @@ def dut_prepare(item):
     else:
         TestRun.LOGGER.info("iotrace is already installed by previous test")
 
+    # Call it after installing iotrace because we need iotrace
+    # to get valid paths
+    dut_cleanup()
+
     fio = Fio()
     if not fio.is_installed():
         TestRun.LOGGER.info("Installing fio")
@@ -115,7 +120,14 @@ def dut_prepare(item):
     TestRun.plugins['iotrace'].stop_tracing()
 
 
-def dut_cleanup(item):
+def dut_cleanup():
+    iotrace: IotracePlugin = TestRun.plugins['iotrace']
+
     TestRun.LOGGER.info("Removing iotrace module")
-    TestRun.plugins['iotrace'].stop_tracing()
+    iotrace.stop_tracing()
     remove_module()
+
+    TestRun.LOGGER.info("Removing existing traces")
+    trace_repository_path: str = iotrace.parse_json(
+        iotrace.get_trace_repository_path())[0]['path']
+    TestRun.executor.run_expect_success(f'rm -rf {trace_repository_path}/kernel')

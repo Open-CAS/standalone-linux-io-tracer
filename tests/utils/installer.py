@@ -23,7 +23,7 @@ def install_iotrace():
         f"cd {TestRun.plugins['iotrace'].working_dir} && "
         "./setup_dependencies.sh")
     if output.exit_code != 0:
-        TestRun.exception(
+        raise Exception(
             "Installing dependencies failed with nonzero status: "
             f"{output.stdout}\n{output.stderr}")
 
@@ -32,7 +32,7 @@ def install_iotrace():
         f"cd {TestRun.plugins['iotrace'].working_dir} && "
         "make clean && make -j`nproc --all`")
     if output.exit_code != 0:
-        TestRun.exception(
+        raise Exception(
             "Make command executed with nonzero status: "
             f"{output.stdout}\n{output.stderr}")
 
@@ -41,13 +41,13 @@ def install_iotrace():
         f"cd {TestRun.plugins['iotrace'].working_dir} && "
         f"make install")
     if output.exit_code != 0:
-        TestRun.exception(
+        raise Exception(
             f"Error while installing iotrace: {output.stdout}\n{output.stderr}")
 
     TestRun.LOGGER.info("Checking if iotrace is properly installed.")
     output = TestRun.executor.run("iotrace -V")
     if output.exit_code != 0:
-        TestRun.exception(
+        raise Exception(
             "'iotrace -V' command returned an error: "
             f"{output.stdout}\n{output.stderr}")
     else:
@@ -62,15 +62,13 @@ def uninstall_iotrace():
         f"cd {TestRun.plugins['iotrace'].working_dir} && "
         "make uninstall")
 
+
 def remove_module():
-    output = TestRun.executor.run(f"rmmod iotrace")
+    output = TestRun.executor.run("modprobe -r iotrace")
     if output.exit_code != 0:
         TestRun.fail(
-            f"rmmod failed with: {output.stdout}\n{output.stderr}")
+            f"Removing module failed with: {output.stdout}\n{output.stderr}")
+
 
 def insert_module():
-    TestRun.executor.run_expect_success(f"modprobe -r iotrace")
-    output = TestRun.executor.run(f"modprobe iotrace")
-    if output.exit_code != 0:
-        TestRun.fail(
-            f"modprobe failed with: {output.stdout}\n{output.stderr}")
+    TestRun.executor.run_expect_success(f"modprobe iotrace")

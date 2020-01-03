@@ -18,5 +18,9 @@ working_dir: "/tmp/iotrace/"
 disks:
   - path: "/dev/device_name1" # disk device path
     serial: "ABC"             # disk serial number
+    type: "nand"
+    blocksize: 512
   - path: "/dev/device_name2"
     serial: "DEF"
+    type: "hdd"
+    blocksize: 512

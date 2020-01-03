@@ -5,6 +5,8 @@
 
 import pytest
 from core.test_run import TestRun
+import time
+
 
 
 def test_files_privileges():
@@ -40,7 +42,7 @@ def test_files_privileges():
 
     # Check permissions of all files inside trace repository
     trace_repo = config[0]['paths']['trace']
-    out = TestRun.executor.run_expect_success(f'find {trace_repo}/* -name "*"')
+    out = TestRun.executor.run_expect_success(f'find {trace_repo}/ -name "*"')
     file_list = str.splitlines(out.stdout)
 
     for file in file_list:
@@ -82,11 +84,14 @@ def test_procfs_privileges():
 
     # Start tracing
     iotrace.start_tracing()
+    time.sleep(1)
 
     # Check file count in procfs
-    file_count = int(TestRun.executor.run_expect_success('ls -1 | wc -l').stdout)
-    if file_count > procfiles_count:
-        TestRun.fail("Extra files files found in procfs")
+    expected_file_count = int(TestRun.executor.run_expect_success(
+        'ls -1 /proc/iotrace | wc -l').stdout)
+    if expected_file_count > procfiles_count:
+        TestRun.fail(f"Extra files files found in procfs: found"
+                     f" {procfiles_count} procfiles,")
 
     # Check singular files
     for file, permissions in procfs_files.items():
