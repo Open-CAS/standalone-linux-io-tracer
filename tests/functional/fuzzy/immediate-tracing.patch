@@ -1,0 +1,11 @@
+--- source/userspace/InterfaceKernelTraceCreatingImpl.cpp	2020-01-02 16:02:28.532481993 +0100
++++ source/userspace/InterfaceKernelTraceCreatingImpl.cpp.modified	2020-01-02 16:02:17.795481351 +0100
+@@ -71,7 +71,7 @@
+         manager.startJobs(maxDuration, maxSize, circBufferSize,
+                           request->label(), SerializerType::FileSerializer);
+ 
+-        kernelExecutor.waitUntilStopTrace();
++        // kernelExecutor.waitUntilStopTrace();
+ 
+         manager.stopJobs();
+ 
