@@ -23,6 +23,11 @@ fi
 if [ "$1" = "clean" ]; then
         killall -s SIGINT afl-fuzz
         sleep 3
-        killall screen
+
+        screen -X -S master kill
+        for (( cpu=1; cpu<cpus; cpu++ ))
+        do
+            screen -X -S slave${cpu} kill
+        done
 fi
 
