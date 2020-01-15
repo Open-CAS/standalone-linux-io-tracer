@@ -24,6 +24,12 @@ def install_afl():
 def is_afl_installed():
     TestRun.LOGGER.info("Checking for AFL")
 
+    output = TestRun.executor.run(
+        f"[ -d {TestRun.plugins['iotrace'].working_dir}/AFL ]")
+
+    if output.exit_code != 0:
+        return False
+
     output = TestRun.executor.run("afl-g++ --version")
     if output.exit_code != 0:
         return False

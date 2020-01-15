@@ -35,6 +35,14 @@ def install_iotrace_with_afl_support(patch_path: str):
         symlinks=True,
         exclude_list=['build'])
 
+    # Copy neccessary files for patching
+    TestRun.executor.run_expect_success(f'cp {iotrace.working_dir}/AFL/'
+                                        f'experimental/argv_fuzzing/argv-fuzz-inl.h '
+                                        f'{iotrace.working_dir}/slit-afl/source/userspace/')
+    TestRun.executor.run_expect_success(f'cp {iotrace.working_dir}/tests/'
+                                        f'functional/fuzzy/afl-fuzzer-utils.h '
+                                        f'{iotrace.working_dir}/slit-afl/source/userspace/')
+
     TestRun.LOGGER.info("Applying code patches")
     output = TestRun.executor.run(f'cd {repo_path} '
                                   f'&& patch -f -p0 -F4 <{tracing_patch_path} '

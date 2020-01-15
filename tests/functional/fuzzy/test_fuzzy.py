@@ -94,7 +94,7 @@ def test_fuzz_config():
 
     TestRun.LOGGER.info("Trying 'get-trace-repository-path' command")
     TestRun.executor.run(f'cd {repo_path} && ./tests/functional/fuzzy/fuzz.sh '
-                         '"rootfs/bin/iotrace -L" --one-job')
+                         '"rootfs/bin/iotrace --get-trace-repository" --one-job')
     output = wait_for_completion(fuzzing_time_seconds/2, repo_path)
     TestRun.executor.run(f'cd {repo_path} && ./tests/functional/fuzzy/fuzz.sh clean')
     detect_crashes(output.stdout)
