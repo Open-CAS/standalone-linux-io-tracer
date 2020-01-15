@@ -34,12 +34,15 @@ iotrace --help
 Usage: iotrace command [options...]
 
 Available commands:
+           --get-fs-statistics                   Gets filesystem statistics
+           --get-latency-histogram               Gets latency histogram
+           --get-lba-histogram                   Returns a histogram of LBA hits
            --get-trace-repository-path           Returns location of trace repository path
-     -T    --get-trace-statistics                Get trace statistics
+     -T    --get-trace-statistics                Gets trace statistics
      -G    --get-trace-summary                   Returns summary of specified trace
      -H    --help                                Print help
      -L    --list-traces                         Lists available traces
-     -P    --parse-trace                         Parse trace files to human readable form
+     -P    --parse-trace                         Parses trace files to human readable form
      -R    --remove-traces                       Removes specified trace(s)
            --set-trace-repository-path           Sets location of trace repository path
      -S    --start-trace                         Start IO tracing
@@ -123,28 +126,37 @@ iotrace --parse-trace --path kernel/2019-08-13_12:35:22 --format csv
 You should get the CSV output:
 
 ~~~{.sh}
-device.id,device.name,file.id,file.offset,file.size,header.sid,header.timestamp,io.error,io.flush,io.fua,io.ioClass,io.latency,io.lba,io.len,io.operation,io.qd
-271581185,nvme0n1,,,,23,33493819292,false,false,false,1,144925,1953524992,8,Read,1
-271581185,nvme0n1,,,,25,33493993812,false,false,false,1,113330,1953525152,8,Read,1
-271581185,nvme0n1,,,,27,33494133732,false,false,false,1,100530,0,8,Read,1
+device.id,device.name,device.partition,file.eventType,file.id,file.offset,file.path,file.size,header.sid,header.timestamp,io.error,io.flush,io.fua,io.ioClass,io.latency,io.lba,io.len,io.operation,io.qd,io.writeHint
 ...
-271581184,nvme1n1,537233997,0,3,80572,160822194559,false,false,false,11,12530,366967080,8,Write,1
-271581184,nvme1n1,268439476,0,12,80575,160822223349,false,false,false,12,13985,183234024,16,Write,1
-271581184,nvme1n1,268439477,0,9,80578,160822252644,false,false,false,12,20540,183234040,16,Write,1
+8388608,sda,8388608,,,,,,48,5082383915,false,false,false,1,145584,193227744,8,Write,16,0
+8388608,sda,8388608,,,,,,65,5082575353,false,false,false,0,85643,0,0,Write,1,0
+8388608,sda,8388608,,,,,,67,5082674546,false,false,true,1,95763,193227752,8,Write,1,0
+8388608,sda,265289728,Access,1706144,0,/var/lib/PackageKit/transactions.db,64,69,5083009634,false,false,false,13,121461,176554232,8,Write,1,0
+8388608,sda,265289728,Access,1706144,40,/var/lib/PackageKit/transactions.db,64,72,5083018301,false,false,false,13,126345,176554272,8,Write,2,0
+8388608,sda,8388608,,,,,,76,5083155359,false,false,false,0,119120,0,0,Write,1,0
+8388608,sda,265289728,Access,1704686,0,/var/lib/dnf/history.sqlite,1520,78,5088873278,false,false,false,15,227152,176422616,32,Read,1,0
+8388608,sda,265289728,Access,1704687,0,/var/lib/dnf/history.sqlite-shm,0,83,5089530676,false,false,false,11,229684,176423616,8,Read,1,0
+8388608,sda,265289728,Access,1704688,0,/var/lib/dnf/history.sqlite-wal,11965,87,5089910485,false,false,false,17,110146,176423680,32,Read,1,0
+8388608,sda,265289728,Access,1704688,32,/var/lib/dnf/history.sqlite-wal,11965,91,5090073317,false,false,false,17,90240,176423712,64,Read,1,0
+8388608,sda,265289728,Access,1704688,96,/var/lib/dnf/history.sqlite-wal,11965,94,5090177953,false,false,false,17,109399,176423776,128,Read,1,0
 ...
 ~~~
 
 And in case of JSON the output is:
 
 ~~~{.sh}
-{"header":{"sid":"23","timestamp":"33493819292"},"io":{"lba":"1953524992","len":8,"ioClass":1,"operation":"Read","flush":false,"fua":false,"error":false,"latency":"144925","qd":"1"},"device":{"id":"271581185","name":"nvme0n1"}}
-{"header":{"sid":"25","timestamp":"33493993812"},"io":{"lba":"1953525152","len":8,"ioClass":1,"operation":"Read","flush":false,"fua":false,"error":false,"latency":"113330","qd":"1"},"device":{"id":"271581185","name":"nvme0n1"}}
-{"header":{"sid":"27","timestamp":"33494133732"},"io":{"lba":"0","len":8,"ioClass":1,"operation":"Read","flush":false,"fua":false,"error":false,"latency":"100530","qd":"1"},"device":{"id":"271581185","name":"nvme0n1"}}
 ...
-{"header":{"sid":"18834","timestamp":"134120569337"},"io":{"lba":"1465145088","len":88,"ioClass":14,"operation":"Write","flush":false,"fua":false,"error":false,"latency":"32495","qd":"2"},"device":{"id":"271581185","name":"nvme0n1"},"file":{"id":"1610612801","offset":"112","size":"192"}}
-{"header":{"sid":"18838","timestamp":"134120638297"},"io":{"lba":"904","len":120,"ioClass":14,"operation":"Write","flush":false,"fua":false,"error":false,"latency":"40076","qd":"1"},"device":{"id":"271581185","name":"nvme0n1"},"file":{"id":"73","offset":"0","size":"203"}}
-{"header":{"sid":"18840","timestamp":"134120664253"},"io":{"lba":"1024","len":88,"ioClass":14,"operation":"Write","flush":false,"fua":false,"error":false,"latency":"30424","qd":"2"},"device":{"id":"271581185","name":"nvme0n1"},"file":{"id":"73","offset":"120","size":"203"}}
-{"header":{"sid":"18844","timestamp":"134120707517"},"io":{"lba":"488382416","len":48,"ioClass":14,"operation":"Write","flush":false,"fua":false,"error":false,"latency":"20330","qd":"1"},"device":{"id":"271581185","name":"nvme0n1"},"file":{"id":"536870985","offset":"0","size":"193"}}
+{"header":{"sid":"48","timestamp":"5082383915"},"io":{"lba":"193227744","len":8,"ioClass":1,"operation":"Write","latency":"145584","qd":"16"},"device":{"id":"8388608","name":"sda","partition":"8388608"}}
+{"header":{"sid":"65","timestamp":"5082575353"},"io":{"operation":"Write","latency":"85643","qd":"1"},"device":{"id":"8388608","name":"sda","partition":"8388608"}}
+{"header":{"sid":"67","timestamp":"5082674546"},"io":{"lba":"193227752","len":8,"ioClass":1,"operation":"Write","fua":true,"latency":"95763","qd":"1"},"device":{"id":"8388608","name":"sda","partition":"8388608"}}
+{"header":{"sid":"69","timestamp":"5083009634"},"io":{"lba":"176554232","len":8,"ioClass":13,"operation":"Write","latency":"121461","qd":"1"},"device":{"id":"8388608","name":"sda","partition":"265289728"},"file":{"id":"1706144","size":"64","path":"/var/lib/PackageKit/transactions.db","eventType":"Access"}}
+{"header":{"sid":"72","timestamp":"5083018301"},"io":{"lba":"176554272","len":8,"ioClass":13,"operation":"Write","latency":"126345","qd":"2"},"device":{"id":"8388608","name":"sda","partition":"265289728"},"file":{"id":"1706144","offset":"40","size":"64","path":"/var/lib/PackageKit/transactions.db","eventType":"Access"}}
+{"header":{"sid":"76","timestamp":"5083155359"},"io":{"operation":"Write","latency":"119120","qd":"1"},"device":{"id":"8388608","name":"sda","partition":"8388608"}}
+{"header":{"sid":"78","timestamp":"5088873278"},"io":{"lba":"176422616","len":32,"ioClass":15,"latency":"227152","qd":"1"},"device":{"id":"8388608","name":"sda","partition":"265289728"},"file":{"id":"1704686","size":"1520","path":"/var/lib/dnf/history.sqlite","eventType":"Access"}}
+{"header":{"sid":"83","timestamp":"5089530676"},"io":{"lba":"176423616","len":8,"ioClass":11,"latency":"229684","qd":"1"},"device":{"id":"8388608","name":"sda","partition":"265289728"},"file":{"id":"1704687","path":"/var/lib/dnf/history.sqlite-shm","eventType":"Access"}}
+{"header":{"sid":"87","timestamp":"5089910485"},"io":{"lba":"176423680","len":32,"ioClass":17,"latency":"110146","qd":"1"},"device":{"id":"8388608","name":"sda","partition":"265289728"},"file":{"id":"1704688","size":"11965","path":"/var/lib/dnf/history.sqlite-wal","eventType":"Access"}}
+{"header":{"sid":"91","timestamp":"5090073317"},"io":{"lba":"176423712","len":64,"ioClass":17,"latency":"90240","qd":"1"},"device":{"id":"8388608","name":"sda","partition":"265289728"},"file":{"id":"1704688","offset":"32","size":"11965","path":"/var/lib/dnf/history.sqlite-wal","eventType":"Access"}}
+{"header":{"sid":"94","timestamp":"5090177953"},"io":{"lba":"176423776","len":128,"ioClass":17,"latency":"109399","qd":"1"},"device":{"id":"8388608","name":"sda","partition":"265289728"},"file":{"id":"1704688","offset":"96","size":"11965","path":"/var/lib/dnf/history.sqlite-wal","eventType":"Access"}}
 ...
 ~~~
 
@@ -170,11 +182,17 @@ included our future plans for tracing.
     <td>Filesystem metadata</td>
     <td>- File Id<br>- File Offset<br>- File Name</td>
     <td>- File Path</td>
-    <td>In Progress</td>
+    <td>Implemented</td>
   </tr>
   <tr>
     <td>Filesystem events</td>
-    <td>- Dirs and files creation, renaming, moving, removal<br>- Dirs and files attributes<br><br></td>
+    <td>- Dirs and files creation, moving, removal<br>- Dirs and files attributes<br><br></td>
+    <td></td>
+    <td>Implemented</td>
+  </tr>
+  <tr>
+    <td>Filesystem events</td>
+    <td>- Dirs and files renaming<br>- Dirs and files attributes<br><br></td>
     <td></td>
     <td>Future</td>
   </tr>
