@@ -32,5 +32,5 @@ def test_data_performance_20s():
         with TestRun.step("Stop tracing"):
             iotrace.stop_tracing()
 
-        if trace_iops / clean_iops < 0.98:
+        if trace_iops / clean_iops < 0.95:
             raise Exception("Excessive performance drop during tracing")
