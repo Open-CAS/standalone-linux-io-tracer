@@ -1,4 +1,5 @@
 sg3_utils
 isdct
 libaio-devel
-git
+patch
+screen

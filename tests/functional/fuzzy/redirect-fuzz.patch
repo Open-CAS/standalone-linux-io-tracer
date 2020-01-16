@@ -1,0 +1,17 @@
+--- source/userspace/main.cpp	2020-01-14 15:11:27.154324851 +0100
++++ source/userspace/main.cpp.modified	2020-01-14 15:11:19.101324369 +0100
+@@ -11,12 +11,14 @@
+ #include <octf/utils/Exception.h>
+ #include "InterfaceKernelTraceCreatingImpl.h"
+ #include "procfs_files.h"
++#include "afl-fuzzer-utils.h"
+ 
+ using namespace std;
+ using namespace octf;
+ using namespace octf::cli;
+ 
+ int main(int argc, char *argv[]) {
++    fuzzFile("FUZZED_FILE_PATH");
+     const string APP_NAME = "iotrace";
+     try {
+         // Create executor and local command set

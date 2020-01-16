@@ -117,8 +117,6 @@ def dut_prepare(item):
     TestRun.LOGGER.info("Probing module")
     insert_module()
 
-    TestRun.plugins['iotrace'].stop_tracing()
-
 
 def dut_cleanup():
     iotrace: IotracePlugin = TestRun.plugins['iotrace']

@@ -1,0 +1,18 @@
+--- source/userspace/main.cpp	2020-01-02 16:02:33.739482305 +0100
++++ source/userspace/main.cpp.modified	2020-01-02 16:01:57.103480113 +0100
+@@ -11,12 +11,15 @@
+ #include <octf/utils/Exception.h>
+ #include "InterfaceKernelTraceCreatingImpl.h"
+ #include "procfs_files.h"
++#include "argv-fuzz-inl.h"
+ 
+ using namespace std;
+ using namespace octf;
+ using namespace octf::cli;
+ 
+ int main(int argc, char *argv[]) {
++    AFL_INIT_ARGV();
++
+     const string APP_NAME = "iotrace";
+     try {
+         // Create executor and local command set
