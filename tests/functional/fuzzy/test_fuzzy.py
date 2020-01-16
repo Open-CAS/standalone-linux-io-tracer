@@ -14,7 +14,6 @@ import time
 
 def test_fuzz_args():
     fuzzing_time_seconds = 60 * 60
-    TestRun.LOGGER.info("Fuzzing iotrace args")
     iotrace: IotracePlugin = TestRun.plugins['iotrace']
 
     repo_path: str = f"{iotrace.working_dir}/slit-afl"
@@ -39,7 +38,7 @@ def test_fuzz_args():
 
     # Run script which will launch parallel fuzzers in separate 'screen'
     # windows in the background
-    TestRun.LOGGER.info('Starting fuzzing. This should take ' +
+    TestRun.LOGGER.info('Starting fuzzing argv. This should take ' +
                         str(fuzzing_time_seconds/60) + ' minutes')
     TestRun.executor.run(f'cd {repo_path} && ./tests/functional/fuzzy/fuzz.sh '
                          'rootfs/bin/iotrace')
@@ -55,7 +54,6 @@ def test_fuzz_args():
 
 def test_fuzz_config():
     fuzzing_time_seconds = 20 * 60
-    TestRun.LOGGER.info("Fuzzing iotrace config file")
     iotrace: IotracePlugin = TestRun.plugins['iotrace']
 
     repo_path: str = f"{iotrace.working_dir}/slit-afl"
@@ -82,7 +80,7 @@ def test_fuzz_config():
     TestRun.executor.run_expect_success(f'cp {repo_path}/rootfs/etc/octf/octf.conf'
                                         f' {repo_path}/afl-i/case0')
 
-    TestRun.LOGGER.info('Starting fuzzing. This should take ' +
+    TestRun.LOGGER.info('Starting fuzzing octf.conf. This should take ' +
                         str(fuzzing_time_seconds / 60) + ' minutes')
 
     TestRun.LOGGER.info("Trying 'list-traces' command")
