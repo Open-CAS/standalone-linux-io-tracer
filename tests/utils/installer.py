@@ -9,17 +9,17 @@ from core.test_run_utils import TestRun
 from utils.iotrace import IotracePlugin
 
 
-'''
-    This copies the repository and applies diff patch from supplied path
-    Then iotrace is built with AFL fuzzer support and installed locally
-    in the build directory.
-
-    The source code patch(es) are required to prepare iotrace for fuzzing,
-    and may for example redirect fuzzed values from stdin to file.
-
-    :param str patch_path: Path to patch file
-'''
 def install_iotrace_with_afl_support(patch_path: str):
+    '''
+        This copies the repository and applies diff patch from supplied path
+        Then iotrace is built with AFL fuzzer support and installed locally
+        in the build directory.
+
+        The source code patch(es) are required to prepare iotrace for fuzzing,
+        and may for example redirect fuzzed values from stdin to file.
+
+        :param str patch_path: Path to patch file
+    '''
     TestRun.LOGGER.info("Copying standalone-linux-io-tracer repository to DUT"
                         " for AFL fuzzy tests")
 

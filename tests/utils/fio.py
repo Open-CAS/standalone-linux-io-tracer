@@ -2,6 +2,7 @@
 # Copyright(c) 2019 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause-Clear
 #
+from datetime import timedelta
 
 from core.test_run import TestRun
 from test_tools.fio.fio import Fio
@@ -9,10 +10,12 @@ from test_tools.fio.fio_param import ReadWrite, IoEngine, VerifyMethod
 from test_utils.size import Unit, Size
 
 
-def run_workload(target, runtime, io_depth=128, verify=True,
-                 block_size=int(Size(4, Unit.KibiByte)), num_jobs=1, method=ReadWrite.randrw):
+def run_workload(target: str, runtime: timedelta, io_depth=128,
+                 verify=True, block_size=int(Size(4, Unit.KibiByte)),
+                 num_jobs=1, method=ReadWrite.randrw,
+                 io_engine=IoEngine.libaio):
     fio_run = Fio().create_command()
-    fio_run.io_engine(IoEngine.libaio)
+    fio_run.io_engine(io_engine)
     fio_run.direct()
     fio_run.time_based()
 
