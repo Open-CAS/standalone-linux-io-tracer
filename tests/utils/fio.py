@@ -10,7 +10,7 @@ from test_tools.fio.fio_param import ReadWrite, IoEngine, VerifyMethod
 from test_utils.size import Unit, Size
 
 
-def run_workload(target: str, runtime: timedelta, io_depth=128,
+def setup_workload(target: str, runtime: timedelta, io_depth=128,
                  verify=True, block_size=int(Size(4, Unit.KibiByte)),
                  num_jobs=1, method=ReadWrite.randrw,
                  io_engine=IoEngine.libaio):
@@ -33,4 +33,13 @@ def run_workload(target: str, runtime: timedelta, io_depth=128,
     for i in range(num_jobs):
         fio_run.add_job()
 
+    return fio_run
+
+
+def run_workload(target: str, runtime: timedelta, io_depth=128,
+                 verify=True, block_size=int(Size(4, Unit.KibiByte)),
+                 num_jobs=1, method=ReadWrite.randrw,
+                 io_engine=IoEngine.libaio):
+    fio_run = setup_workload(target, runtime, io_depth, verify, block_size,
+                             num_jobs, method, io_engine)
     return fio_run.run()

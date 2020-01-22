@@ -8,7 +8,6 @@ from core.test_run import TestRun
 from utils.afl import is_afl_installed, install_afl
 from utils.afl import create_patch_redirect_fuzz_to_file
 from installer import install_iotrace_with_afl_support
-from utils.fio import run_workload
 from utils.iotrace import IotracePlugin
 from datetime import datetime
 
