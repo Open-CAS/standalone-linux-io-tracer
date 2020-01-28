@@ -36,7 +36,8 @@ def test_fuzz_args():
     TestRun.executor.run_expect_success('echo core > /proc/sys/kernel/core_pattern')
     TestRun.executor.run_expect_success(f'cd {repo_path} && mkdir -p afl-i afl-o')
 
-    # Add input seeds which shall be mutated
+    # Add input seeds which shall be mutated - try list-traces, version, help,
+    # start-tracing and remove-trace commands to guide the fuzzer.
     TestRun.executor.run_expect_success(f'cd {repo_path} && echo "-L"'
                                         f' > afl-i/case0')
     TestRun.executor.run_expect_success(f'cd {repo_path} && echo "-L -p k*"'
