@@ -28,7 +28,7 @@ def test_fuzz_args():
     # Install iotrace locally with AFL support
     # Patch so that we redirect fuzzed stdin to argv
     install_iotrace_with_afl_support(
-        repo_path + "/tests/functional/fuzzy/redirect-fuzz-to-argv.patch")
+        repo_path + "/tests/security/fuzzy/redirect-fuzz-to-argv.patch")
 
     # Instruct the system to output coredumps as files instead of sending them
     # to a specific crash handler app
@@ -55,14 +55,14 @@ def test_fuzz_args():
     # windows in the background
     TestRun.LOGGER.info('Starting fuzzing argv. This should take ' +
                         str(fuzzing_time_seconds/60) + ' minutes')
-    TestRun.executor.run(f'cd {repo_path} && ./tests/functional/fuzzy/fuzz.sh '
+    TestRun.executor.run(f'cd {repo_path} && ./tests/security/fuzzy/fuzz.sh '
                          'rootfs/bin/iotrace')
 
     # Wait for fuzzing completion and output logs
     output = wait_for_completion(fuzzing_time_seconds, repo_path)
 
     TestRun.LOGGER.info('Killing fuzzers')
-    TestRun.executor.run(f'cd {repo_path} && ./tests/functional/fuzzy/fuzz.sh clean')
+    TestRun.executor.run(f'cd {repo_path} && ./tests/security/fuzzy/fuzz.sh clean')
 
     detect_crashes(output.stdout)
 
@@ -99,17 +99,17 @@ def test_fuzz_config():
                         str(fuzzing_time_seconds / 60) + ' minutes')
 
     TestRun.LOGGER.info("Trying 'list-traces' command")
-    TestRun.executor.run(f'cd {repo_path} && ./tests/functional/fuzzy/fuzz.sh '
+    TestRun.executor.run(f'cd {repo_path} && ./tests/security/fuzzy/fuzz.sh '
                          '"rootfs/bin/iotrace -L" --one-job')
     output = wait_for_completion(fuzzing_time_seconds/2, repo_path)
-    TestRun.executor.run(f'cd {repo_path} && ./tests/functional/fuzzy/fuzz.sh clean')
+    TestRun.executor.run(f'cd {repo_path} && ./tests/security/fuzzy/fuzz.sh clean')
     detect_crashes(output.stdout)
 
     TestRun.LOGGER.info("Trying 'get-trace-repository-path' command")
-    TestRun.executor.run(f'cd {repo_path} && ./tests/functional/fuzzy/fuzz.sh '
+    TestRun.executor.run(f'cd {repo_path} && ./tests/security/fuzzy/fuzz.sh '
                          '"rootfs/bin/iotrace --get-trace-repository" --one-job')
     output = wait_for_completion(fuzzing_time_seconds/2, repo_path)
-    TestRun.executor.run(f'cd {repo_path} && ./tests/functional/fuzzy/fuzz.sh clean')
+    TestRun.executor.run(f'cd {repo_path} && ./tests/security/fuzzy/fuzz.sh clean')
     detect_crashes(output.stdout)
 
 
@@ -154,11 +154,11 @@ def test_fuzz_trace_file():
 
     TestRun.LOGGER.info(f'Starting fuzzing {tracefile_path} This should take ' +
                         str(fuzzing_time_seconds / 60) + ' minutes')
-    TestRun.executor.run(f'cd {repo_path} && ./tests/functional/fuzzy/fuzz.sh '
+    TestRun.executor.run(f'cd {repo_path} && ./tests/security/fuzzy/fuzz.sh '
                          '"rootfs/bin/iotrace --get-trace-statistics -p '
                          f'{iotrace.get_latest_trace_path()}" --one-job')
     output = wait_for_completion(fuzzing_time_seconds, repo_path)
-    TestRun.executor.run(f'cd {repo_path} && ./tests/functional/fuzzy/fuzz.sh clean')
+    TestRun.executor.run(f'cd {repo_path} && ./tests/security/fuzzy/fuzz.sh clean')
     detect_crashes(output.stdout)
 
 
@@ -205,11 +205,11 @@ def test_fuzz_summary_file():
 
     TestRun.LOGGER.info(f'Starting fuzzing {summary_path} This should take ' +
                         str(fuzzing_time_seconds / 60) + ' minutes')
-    TestRun.executor.run(f'cd {repo_path} && ./tests/functional/fuzzy/fuzz.sh '
+    TestRun.executor.run(f'cd {repo_path} && ./tests/security/fuzzy/fuzz.sh '
                          '"rootfs/bin/iotrace --get-trace-statistics -p '
                          f'{iotrace.get_latest_trace_path()}" --one-job')
     output = wait_for_completion(fuzzing_time_seconds, repo_path)
-    TestRun.executor.run(f'cd {repo_path} && ./tests/functional/fuzzy/fuzz.sh clean')
+    TestRun.executor.run(f'cd {repo_path} && ./tests/security/fuzzy/fuzz.sh clean')
     detect_crashes(output.stdout)
 
 

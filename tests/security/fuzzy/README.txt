@@ -17,4 +17,4 @@ If crashes are found, output is saved in working_dir/fuzzy-crashes/.
 
 Fuzzy tests can take some time to complete, you can ignore them by adding
 the following to pytest invocation:
-'--ignore=functional/fuzzy/'
+'--ignore=security/fuzzy/'

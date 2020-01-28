@@ -24,8 +24,8 @@ def install_iotrace_with_afl_support(patch_path: str):
                         " for AFL fuzzy tests")
 
     iotrace: IotracePlugin = TestRun.plugins['iotrace']
-    tracing_patch_path: str = "tests/functional/fuzzy/immediate-tracing.patch"
-    modprobe_disable_patch_path: str = "tests/functional/fuzzy/disable_modprobe.patch"
+    tracing_patch_path: str = "tests/security/fuzzy/immediate-tracing.patch"
+    modprobe_disable_patch_path: str = "tests/security/fuzzy/disable_modprobe.patch"
     repo_path = f"{iotrace.working_dir}/slit-afl"
 
     TestRun.executor.rsync(
@@ -40,7 +40,7 @@ def install_iotrace_with_afl_support(patch_path: str):
                                         f'experimental/argv_fuzzing/argv-fuzz-inl.h '
                                         f'{iotrace.working_dir}/slit-afl/source/userspace/')
     TestRun.executor.run_expect_success(f'cp {iotrace.working_dir}/tests/'
-                                        f'functional/fuzzy/afl-fuzzer-utils.h '
+                                        f'security/fuzzy/afl-fuzzer-utils.h '
                                         f'{iotrace.working_dir}/slit-afl/source/userspace/')
 
     TestRun.LOGGER.info("Applying code patches")
