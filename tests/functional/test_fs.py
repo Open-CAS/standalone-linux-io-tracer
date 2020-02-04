@@ -106,6 +106,13 @@ def test_procfs_privileges():
             TestRun.fail(f"Invalid permissions on {file_path}, found {file_permissions},"
                          f" expected {permissions}")
 
+        # Attempt to write to read-only files
+        if file_permissions == "400":
+            if attempt_to_write(file_path) is True:
+                TestRun.fail(f'File {file_path} could be written to with '
+                             f'read-only permissions')
+
+
     # Check per cpu files
     for file, permissions in procfs_files_per_cpu.items():
         for cpu in range(cpu_count):
@@ -121,6 +128,33 @@ def test_procfs_privileges():
                 TestRun.fail(f"Invalid permissions on {file_path}, found {file_permissions},"
                              f" expected {permissions}")
 
+            # Attempt to write to read-only files
+            if file_permissions == "400":
+                if attempt_to_write(file_path) is True:
+                    TestRun.fail(f'File {file_path} could be written to with '
+                                 f'read-only permissions')
+
     result = iotrace.stop_tracing()
     if not result:
         TestRun.fail("Tracing process not found")
+
+
+def attempt_to_write(file_path: str) -> bool:
+    '''
+    Attempt to write to file and return result
+    '''
+    TestRun.LOGGER.info(f'Attempting to write to {file_path}')
+    fio_result = TestRun.executor.run(
+        f'fio --name=job --direct=0 --ioengine=mmap '
+        f'--filename={file_path} '
+        f'--runtime=2s --bs=4k '
+        f'--iodepth=1 --rw=randwrite --size=4k')
+
+    echo_result = TestRun.executor.run(f'echo "1" > {file_path}')
+
+    if ("Operation not permitted" in fio_result.stderr \
+            or "Permission denied" in fio_result.stdout)\
+            and echo_result.exit_code != 0:
+        return False
+    else:
+        return True
