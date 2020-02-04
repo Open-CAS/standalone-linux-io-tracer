@@ -11,10 +11,10 @@ from utils.fio import run_workload
 from test_tools.fio.fio_param import ReadWrite
 
 
-def test_data_performance_20s():
+def test_data_performance_120s():
     TestRun.LOGGER.info("Testing performance drop with tracing")
     iotrace: IotracePlugin = TestRun.plugins['iotrace']
-    runtime = datetime.timedelta(seconds=20)
+    runtime = datetime.timedelta(seconds=120)
     jobs = 16
     method = ReadWrite.randread
 
@@ -32,5 +32,5 @@ def test_data_performance_20s():
         with TestRun.step("Stop tracing"):
             iotrace.stop_tracing()
 
-        if trace_iops / clean_iops < 0.98:
+        if trace_iops / clean_iops < 0.95:
             raise Exception("Excessive performance drop during tracing")
