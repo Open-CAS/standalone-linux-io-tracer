@@ -10,7 +10,7 @@ import time
 
 
 def test_io_events():
-    TestRun.LOGGER.info("Testing file system events during tracing")
+    TestRun.LOGGER.info("Testing io events during tracing")
     iotrace = TestRun.plugins['iotrace']
 
     for disk in TestRun.dut.disks:
@@ -39,8 +39,6 @@ def test_io_events():
             trace_path = iotrace.get_latest_trace_path()
             events = iotrace.get_trace_events(trace_path)
             events_parsed = iotrace.parse_json(events)
-            for log in events_parsed:
-                TestRun.LOGGER.info(str(log))
             result = any(
                 'io' in event and
                 'operation' in event['io'] and
@@ -62,6 +60,8 @@ def test_io_events():
                 int(event['io']['len']) == int(read_length.get_value() / 512) and
                 f"/dev/{event['device']['name']}" == disk.system_path for
                 event in events_parsed)
+            if not result:
+                raise Exception("Could not find read event")
             result = any(
                 'io' in event and
                 'operation' in event['io'] and
@@ -72,4 +72,4 @@ def test_io_events():
                 f"/dev/{event['device']['name']}" == disk.system_path for
                 event in events_parsed)
             if not result:
-                raise Exception("Could not find read event")
+                raise Exception("Could not find discard event")
