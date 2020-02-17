@@ -9,6 +9,7 @@ import time
 from datetime import timedelta
 from core.test_run_utils import TestRun
 from test_utils.singleton import Singleton
+from utils.installer import check_if_installed
 
 NOT_WHITESPACE = re.compile(r'[^\s]')
 
@@ -17,7 +18,7 @@ class IotracePlugin(metaclass=Singleton):
     def __init__(self, repo_dir, working_dir):
         self.repo_dir = repo_dir  # Test controller's repo, copied to DUT
         self.working_dir = working_dir  # DUT's make/install work directory
-        self.installed = False  # Was iotrace installed already
+        self.installed = check_if_installed()  # Was iotrace installed already
 
     def start_tracing(self, bdevs=[]):
         '''
