@@ -16,8 +16,7 @@ from core.test_run_utils import TestRun
 from connection.local_executor import LocalExecutor
 from utils.git import get_current_commit_hash, get_current_commit_message
 from utils.git import get_current_octf_hash
-from utils.installer import install_iotrace, uninstall_iotrace
-from utils.installer import remove_module, insert_module
+from utils.installer import remove_module, insert_module, install_iotrace
 from utils.misc import kill_all_io
 from utils.iotrace import IotracePlugin
 from test_tools.fio.fio import Fio
@@ -64,7 +63,7 @@ def pytest_runtest_setup(item):
         TestRun.LOGGER.add_build_info(f'{get_current_commit_message()}')
         TestRun.LOGGER.add_build_info(f'OCTF commit hash:')
         TestRun.LOGGER.add_build_info(f'{get_current_octf_hash()}')
-        dut_prepare(item)
+        dut_prepare(item.config.getoption('--force-reinstall'))
 
     TestRun.LOGGER.start_group("Test body")
 
@@ -93,10 +92,11 @@ def pytest_runtest_teardown():
 def pytest_addoption(parser):
     parser.addoption("--dut-config", action="store", default="None")
     parser.addoption("--log-path", action="store", default=".")
+    parser.addoption("--force-reinstall", action="store_true")
 
 
-def dut_prepare(item):
-    if not TestRun.plugins['iotrace'].installed:
+def dut_prepare(force_reinstall):
+    if not TestRun.plugins['iotrace'].installed or force_reinstall:
         TestRun.LOGGER.info("Installing iotrace")
         install_iotrace()
     else:
