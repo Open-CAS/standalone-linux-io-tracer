@@ -45,11 +45,8 @@ class IotracePlugin(metaclass=Singleton):
         :return: JSON string with trace repository path
         :raises Exception: when cannot find the path
         '''
-        output = TestRun.executor.run('iotrace --get-trace-repository-path')
-        if output.exit_code != 0:
-            raise Exception("Could not get trace repository path")
-
-        return output.stdout
+        return TestRun.executor.run_expect_success(
+                                'iotrace --get-trace-repository-path').stdout
 
     def check_if_tracing_active(self) -> bool:
         '''
@@ -96,7 +93,7 @@ class IotracePlugin(metaclass=Singleton):
 
         :return: trace path
         '''
-        output = TestRun.executor.run('iotrace -L')
+        output = TestRun.executor.run_expect_success('iotrace -L')
         paths_parsed = self.parse_json(output.stdout)
 
         # Sort trace paths

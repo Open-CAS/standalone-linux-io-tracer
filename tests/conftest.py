@@ -28,14 +28,15 @@ def pytest_runtest_setup(item):
         with open(item.config.getoption('--dut-config')) as cfg:
             dut_config = yaml.safe_load(cfg)
     except Exception:
-        raise Exception("You need to specify DUT config. See the example_dut_config.py file.")
-
+        raise Exception("You need to specify DUT config. "
+                        "See the example_dut_config.py file.")
 
     try:
         TestRun.prepare(item, dut_config)
 
         test_name = item.name.split('[')[0]
-        TestRun.LOGGER = create_log(item.config.getoption('--log-path'), test_name)
+        TestRun.LOGGER = create_log(item.config.getoption('--log-path'),
+                                    test_name)
 
         TestRun.setup()
 

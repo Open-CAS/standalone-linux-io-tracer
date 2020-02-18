@@ -10,15 +10,10 @@ from utils.iotrace import IotracePlugin
 def install_afl():
     TestRun.LOGGER.info("Installing AFL")
 
-    output = TestRun.executor.run(
+    TestRun.executor.run_expect_success(
         f"cd {TestRun.plugins['iotrace'].working_dir}"
         f" && git clone http://github.com/google/AFL"
         f" && cd AFL && make && make install")
-
-    if output.exit_code != 0:
-        raise Exception(
-            "Installing AFL failed with nonzero status: "
-            f"{output.stdout}\n{output.stderr}")
 
 
 def is_afl_installed():
