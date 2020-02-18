@@ -24,48 +24,50 @@ from test_tools.fio.fio import Fio
 
 # Called for each test in directory
 def pytest_runtest_setup(item):
+    try:
+        with open(item.config.getoption('--dut-config')) as cfg:
+            dut_config = yaml.safe_load(cfg)
+    except Exception:
+        raise Exception("You need to specify DUT config. See the example_dut_config.py file.")
 
-    TestRun.prepare(item)
 
-    test_name = item.name.split('[')[0]
-    TestRun.LOGGER = create_log(item.config.getoption('--log-path'), test_name)
+    try:
+        TestRun.prepare(item, dut_config)
 
-    with TestRun.LOGGER.step("Test initialization"):
+        test_name = item.name.split('[')[0]
+        TestRun.LOGGER = create_log(item.config.getoption('--log-path'), test_name)
 
-        try:
-            # Open and parse yaml config file
-            try:
-                with open(item.config.getoption('--dut-config')) as cfg:
-                    dut_config = yaml.safe_load(cfg)
+        TestRun.setup()
 
-            except Exception as e:
-                print(e)
-                exit(1)
+        TestRun.plugins['iotrace'] = IotracePlugin(
+            repo_dir=os.path.join(os.path.dirname(__file__), "../"),
+            working_dir=dut_config['working_dir']
+        )
+    except Exception as ex:
+        raise Exception(f"Exception occurred during test setup:\n"
+                        f"{str(ex)}\n{traceback.format_exc()}")
 
-            # Setup from dut config
-            TestRun.setup(dut_config)
-
-            TestRun.plugins['iotrace'] = IotracePlugin(
-                repo_dir=os.path.join(os.path.dirname(__file__), "../"),
-                working_dir=dut_config['working_dir']
-            )
-
-        except Exception as e:
-            TestRun.LOGGER.exception(f"{str(e)}\n{traceback.format_exc()}")
-
-        TestRun.LOGGER.info(f"DUT info: {TestRun.dut}")
+    TestRun.LOGGER.info(f"DUT info: {TestRun.dut}")
 
     # Prepare DUT for test
-    with TestRun.LOGGER.step("DUT prepare"):
-        TestRun.LOGGER.add_build_info(f'Commit hash:')
-        TestRun.LOGGER.add_build_info(f"{get_current_commit_hash()}")
-        TestRun.LOGGER.add_build_info(f'Commit message:')
-        TestRun.LOGGER.add_build_info(f'{get_current_commit_message()}')
-        TestRun.LOGGER.add_build_info(f'OCTF commit hash:')
-        TestRun.LOGGER.add_build_info(f'{get_current_octf_hash()}')
-        dut_prepare(item.config.getoption('--force-reinstall'))
+    TestRun.LOGGER.add_build_info(f'Commit hash:')
+    TestRun.LOGGER.add_build_info(f"{get_current_commit_hash()}")
+    TestRun.LOGGER.add_build_info(f'Commit message:')
+    TestRun.LOGGER.add_build_info(f'{get_current_commit_message()}')
+    TestRun.LOGGER.add_build_info(f'OCTF commit hash:')
+    TestRun.LOGGER.add_build_info(f'{get_current_octf_hash()}')
 
+    dut_prepare(item.config.getoption('--force-reinstall'))
+
+    TestRun.LOGGER.info(f"DUT info: {TestRun.dut}")
+    TestRun.LOGGER.write_to_command_log("Test body")
     TestRun.LOGGER.start_group("Test body")
+
+
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    res = (yield).get_result()
+    TestRun.makereport(item, call, res)
 
 
 def pytest_runtest_teardown():
@@ -73,6 +75,8 @@ def pytest_runtest_teardown():
     This method is executed always in the end of each test,
     even if it fails or raises exception in prepare stage.
     """
+    if TestRun.outcome == "skipped":
+        return
 
     TestRun.LOGGER.end_all_groups()
 
@@ -86,7 +90,10 @@ def pytest_runtest_teardown():
 
     dut_cleanup()
     TestRun.LOGGER.end()
+    if TestRun.executor:
+        TestRun.LOGGER.get_additional_logs()
     Log.destroy()
+    TestRun.teardown()
 
 
 def pytest_addoption(parser):
