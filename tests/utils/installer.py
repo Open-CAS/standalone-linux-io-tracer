@@ -6,7 +6,6 @@ from datetime import timedelta
 
 from log.logger import Log
 from core.test_run_utils import TestRun
-from utils.iotrace import IotracePlugin
 
 
 def install_iotrace_with_afl_support(patch_path: str):
@@ -23,7 +22,7 @@ def install_iotrace_with_afl_support(patch_path: str):
     TestRun.LOGGER.info("Copying standalone-linux-io-tracer repository to DUT"
                         " for AFL fuzzy tests")
 
-    iotrace: IotracePlugin = TestRun.plugins['iotrace']
+    iotrace = TestRun.plugins['iotrace']
     tracing_patch_path: str = "tests/security/fuzzy/immediate-tracing.patch"
     modprobe_disable_patch_path: str = "tests/security/fuzzy/disable_modprobe.patch"
     repo_path = f"{iotrace.working_dir}/slit-afl"
@@ -69,7 +68,7 @@ def install_iotrace_with_afl_support(patch_path: str):
 
 def install_iotrace():
     uninstall_iotrace()
-    iotrace: IotracePlugin = TestRun.plugins['iotrace']
+    iotrace = TestRun.plugins['iotrace']
 
     TestRun.LOGGER.info("Copying standalone-linux-io-tracer repository to DUT")
     TestRun.executor.rsync(
@@ -105,16 +104,17 @@ def install_iotrace():
         raise Exception(
             f"Error while installing iotrace: {output.stdout}\n{output.stderr}")
 
-    TestRun.LOGGER.info("Checking if iotrace is properly installed.")
-    output = TestRun.executor.run("iotrace -V")
-    if output.exit_code != 0:
-        raise Exception(
-            "'iotrace -V' command returned an error: "
-            f"{output.stdout}\n{output.stderr}")
+    if not check_if_installed():
+        raise Exception("iotrace wasn't properly installed")
     else:
-        TestRun.LOGGER.debug(output.stdout)
+        iotrace.installed = True
 
-    iotrace.installed = True
+
+def check_if_installed():
+    TestRun.LOGGER.info("Checking if iotrace is installed")
+    output = TestRun.executor.run("iotrace -V")
+
+    return output.exit_code == 0
 
 
 def uninstall_iotrace():
