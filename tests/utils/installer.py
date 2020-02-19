@@ -56,14 +56,9 @@ def install_iotrace_with_afl_support(patch_path: str):
                         " Error: " + output.stderr)
 
     TestRun.LOGGER.info("Calling make install with AFL compiler")
-    output = TestRun.executor.run(
+    TestRun.executor.run_expect_success(
         f"cd {repo_path} && "
         f"make install PREFIX={repo_path}/rootfs CXX=afl-g++ -j`nproc --all`")
-
-    if output.exit_code != 0:
-        raise Exception(
-            f"Error while compiling and installing iotrace with afl support"
-            f" locally: {output.stdout}\n{output.stderr}")
 
 
 def install_iotrace():
@@ -79,30 +74,19 @@ def install_iotrace():
         exclude_list=['build'])
 
     TestRun.LOGGER.info("Installing dependencies")
-    output = TestRun.executor.run(
+    TestRun.executor.run_expect_success(
         f"cd {iotrace.working_dir} && "
         "./setup_dependencies.sh")
-    if output.exit_code != 0:
-        raise Exception(
-            "Installing dependencies failed with nonzero status: "
-            f"{output.stdout}\n{output.stderr}")
 
     TestRun.LOGGER.info("Calling make all")
-    output = TestRun.executor.run(
+    TestRun.executor.run_expect_success(
         f"cd {iotrace.working_dir} && "
         "make clean && make -j`nproc --all`")
-    if output.exit_code != 0:
-        raise Exception(
-            "Make command executed with nonzero status: "
-            f"{output.stdout}\n{output.stderr}")
 
     TestRun.LOGGER.info("Calling make install")
-    output = TestRun.executor.run(
+    TestRun.executor.run_expect_success(
         f"cd {iotrace.working_dir} && "
         f"make install")
-    if output.exit_code != 0:
-        raise Exception(
-            f"Error while installing iotrace: {output.stdout}\n{output.stderr}")
 
     if not check_if_installed():
         raise Exception("iotrace wasn't properly installed")
@@ -119,16 +103,13 @@ def check_if_installed():
 
 def uninstall_iotrace():
     TestRun.LOGGER.info("Uninstalling previous iotrace")
-    TestRun.executor.run(
+    TestRun.executor.run_expect_success(
         f"cd {TestRun.plugins['iotrace'].working_dir} && "
         "make uninstall")
 
 
 def remove_module():
-    output = TestRun.executor.run("modprobe -r iotrace")
-    if output.exit_code != 0:
-        TestRun.fail(
-            f"Removing module failed with: {output.stdout}\n{output.stderr}")
+    TestRun.executor.run_expect_success("modprobe -r iotrace")
 
 
 def insert_module():
