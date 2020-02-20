@@ -136,6 +136,21 @@ class IotracePlugin(metaclass=Singleton):
 
         return output.stdout
 
+    def get_trace_statistics(self, trace_path: str) -> str:
+        '''
+        Get statistics of particular trace
+
+        :param trace_path: trace path
+        :return: Trace events in JSON format
+        :raises Exception: if traces are invalid
+        '''
+        output = TestRun.executor.run(
+                f'iotrace --get-trace-statistics -p {trace_path}')
+        if (output.stdout == ""):
+            raise Exception("Invalid traces")
+
+        return self.parse_json(output.stdout)[0]['statistics'][0]
+
     def parse_json(self, output: str):
         '''
         Parse a string with json messages to a list of python dictionaries
