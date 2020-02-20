@@ -13,12 +13,13 @@ from utils.installer import check_if_installed
 
 NOT_WHITESPACE = re.compile(r'[^\s]')
 
-# Singleton class to provide test-session wide scope
-class IotracePlugin(metaclass=Singleton):
+
+class IotracePlugin:
     def __init__(self, repo_dir, working_dir):
         self.repo_dir = repo_dir  # Test controller's repo, copied to DUT
         self.working_dir = working_dir  # DUT's make/install work directory
         self.installed = check_if_installed()  # Was iotrace installed already
+        self.pid = None
 
     def start_tracing(self, bdevs=[]):
         '''
@@ -35,7 +36,8 @@ class IotracePlugin(metaclass=Singleton):
             for disk in disks:
                 bdevs.append(disk.system_path)
 
-        TestRun.executor.run_in_background('iotrace -S -d ' + ','.join(bdevs))
+        self.pid = str(TestRun.executor.run_in_background(
+            'iotrace -S -d ' + ','.join(bdevs)))
         TestRun.LOGGER.info("Started tracing of: " + ','.join(bdevs))
 
     def get_trace_repository_path(self) -> str:
@@ -52,10 +54,15 @@ class IotracePlugin(metaclass=Singleton):
         '''
         Check if tracing is active
 
-        :return: True if iotrace process found, False otherwise
+        :return: True if correct iotrace process found, False otherwise
         '''
         output = TestRun.executor.run('pgrep iotrace')
         if output.stdout == "":
+            TestRun.LOGGER.error("Iotrace processes not found.")
+            return False
+        elif self.pid != output.stdout:
+            TestRun.LOGGER.error(
+                f"Found other iotrace process with PID {output.stdout}")
             return False
         else:
             return True
@@ -68,22 +75,22 @@ class IotracePlugin(metaclass=Singleton):
         :raises Exception: if could not stop tracing which is active
         '''
         TestRun.LOGGER.info("Stopping tracing")
-        pid = TestRun.executor.run('pgrep iotrace')
-        if pid.stdout == "":
-            return False
 
         # Send sigints
         kill_attempts = 30
         attempt = 0
-        while pid.stdout != "" and attempt < kill_attempts:
-            TestRun.LOGGER.info("Sending sigint no. " + str(attempt))
+        iotrace_active = self.check_if_tracing_active()
+        while iotrace_active and attempt < kill_attempts:
+            TestRun.LOGGER.info("Sending sigint no. " + str(attempt + 1))
             attempt += 1
-            TestRun.executor.run(f'kill -s SIGINT {pid.stdout}')
+            TestRun.executor.run(f'kill -s SIGINT {self.pid}')
             time.sleep(2)
-            pid = TestRun.executor.run('pgrep iotrace')
+            iotrace_active = self.check_if_tracing_active()
 
-        if pid.stdout != "":
-            raise Exception("Could not kill iotrace")
+        self.pid = TestRun.executor.run('pgrep iotrace').stdout
+        if self.pid != "":
+            TestRun.LOGGER.error("Could not kill iotrace")
+            return False
 
         return True
 
