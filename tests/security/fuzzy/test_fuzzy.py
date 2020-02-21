@@ -126,7 +126,8 @@ def test_fuzz_trace_file():
     # Create trace files
     iotrace.start_tracing()
     iotrace.stop_tracing()
-    trace_repo_path = iotrace.parse_json(iotrace.get_trace_repository_path())[0]['path']
+    trace_repo_path = iotrace.parse_json(
+        IotracePlugin.get_trace_repository_path())[0]['path']
     trace_path = trace_repo_path + "/" + iotrace.get_latest_trace_path()
     tracefile_path = f'{trace_path}/octf.trace.0'
     copied_tracefile_path = f'{repo_path}/rootfs/var/lib/octf/trace/' + \
@@ -176,7 +177,8 @@ def test_fuzz_summary_file():
     # Create trace files
     iotrace.start_tracing()
     iotrace.stop_tracing()
-    trace_repo_path = iotrace.parse_json(iotrace.get_trace_repository_path())[0]['path']
+    trace_repo_path = iotrace.parse_json(
+        IotracePlugin.get_trace_repository_path())[0]['path']
     trace_path = trace_repo_path + "/" + iotrace.get_latest_trace_path()
     summary_path = f'{trace_path}/octf.summary'
     copied_summary_path = f'{repo_path}/rootfs/var/lib/octf/trace/' + \

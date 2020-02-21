@@ -11,6 +11,8 @@ from random import randrange
 from math import floor
 
 # iotrace uses 512B sector size, even if underlying disk has larger sectors
+from utils.iotrace import IotracePlugin
+
 iotrace_lba_len = 512
 
 
@@ -135,7 +137,7 @@ def test_lba_histogram():
             iotrace.stop_tracing()
         with TestRun.step("Verify histogram correctness"):
             trace_path = iotrace.get_latest_trace_path()
-            histogram = iotrace.get_lba_histogram(trace_path, bucket_size, start_lba, end_lba)
+            histogram = IotracePlugin.get_lba_histogram(trace_path, bucket_size, start_lba, end_lba)
             json = iotrace.parse_json(histogram)
             TestRun.LOGGER.info(str(json[0]['histogram'][0]))
             TestRun.LOGGER.info \

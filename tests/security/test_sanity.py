@@ -59,7 +59,7 @@ def test_trace_start_stop():
         raise Exception("Could not stop active tracing.")
 
     trace_path = iotrace.get_latest_trace_path()
-    summary = iotrace.get_trace_summary(trace_path)
+    summary = IotracePlugin.get_trace_summary(trace_path)
     summary_parsed = iotrace.parse_json(summary)
 
     if summary_parsed[0]['state'] != "COMPLETE":
