@@ -54,7 +54,7 @@ def test_fuzz_args():
     # Run script which will launch parallel fuzzers in separate 'screen'
     # windows in the background
     TestRun.LOGGER.info('Starting fuzzing argv. This should take ' +
-                        str(fuzzing_time_seconds/60) + ' minutes')
+                        str(fuzzing_time_seconds / 60) + ' minutes')
     TestRun.executor.run(f'cd {repo_path} && ./tests/security/fuzzy/fuzz.sh '
                          'rootfs/bin/iotrace')
 
@@ -101,14 +101,14 @@ def test_fuzz_config():
     TestRun.LOGGER.info("Trying 'list-traces' command")
     TestRun.executor.run(f'cd {repo_path} && ./tests/security/fuzzy/fuzz.sh '
                          '"rootfs/bin/iotrace -L" --one-job')
-    output = wait_for_completion(fuzzing_time_seconds/2, repo_path)
+    output = wait_for_completion(fuzzing_time_seconds / 2, repo_path)
     TestRun.executor.run(f'cd {repo_path} && ./tests/security/fuzzy/fuzz.sh clean')
     detect_crashes(output.stdout)
 
     TestRun.LOGGER.info("Trying 'get-trace-repository-path' command")
     TestRun.executor.run(f'cd {repo_path} && ./tests/security/fuzzy/fuzz.sh '
                          '"rootfs/bin/iotrace --get-trace-repository" --one-job')
-    output = wait_for_completion(fuzzing_time_seconds/2, repo_path)
+    output = wait_for_completion(fuzzing_time_seconds / 2, repo_path)
     TestRun.executor.run(f'cd {repo_path} && ./tests/security/fuzzy/fuzz.sh clean')
     detect_crashes(output.stdout)
 
@@ -135,23 +135,28 @@ def test_fuzz_trace_file():
 
     # Create patch file for redirecting fuzzed stdin to trace file
     new_patch_path: str = f'{iotrace.working_dir}/redirect_to_tracefile.patch'
-    create_patch_redirect_fuzz_to_file(f'{copied_tracefile_path}', new_patch_path)
+    create_patch_redirect_fuzz_to_file(
+        f'{copied_tracefile_path}', new_patch_path)
 
     # Install iotrace locally with AFL support and redirect patch
     install_iotrace_with_afl_support(new_patch_path)
 
     # Copy trace files to local instalation of iotrace
-    TestRun.executor.run_expect_success(f'cp -r {trace_repo_path}/kernel '
-                                        f'{repo_path}/rootfs/var/lib/octf/trace/')
+    TestRun.executor.run_expect_success(
+        f'cp -r {trace_repo_path}/kernel '
+        f'{repo_path}/rootfs/var/lib/octf/trace/')
 
     # Instruct the system to output coredumps as files instead of sending them
     # to a specific crash handler app
     TestRun.LOGGER.info('Setting up system for fuzzing')
-    TestRun.executor.run_expect_success('echo core > /proc/sys/kernel/core_pattern')
-    TestRun.executor.run_expect_success(f'cd {repo_path} && mkdir -p afl-i afl-o')
+    TestRun.executor.run_expect_success(
+        'echo core > /proc/sys/kernel/core_pattern')
+    TestRun.executor.run_expect_success(
+        f'cd {repo_path} && mkdir -p afl-i afl-o')
 
     # Add input seed which shall be mutated
-    TestRun.executor.run_expect_success(f'cd {repo_path} && echo "0" > afl-i/case0')
+    TestRun.executor.run_expect_success(
+        f'cd {repo_path} && echo "0" > afl-i/case0')
 
     TestRun.LOGGER.info(f'Starting fuzzing {tracefile_path} This should take ' +
                         str(fuzzing_time_seconds / 60) + ' minutes')
@@ -159,7 +164,8 @@ def test_fuzz_trace_file():
                          '"rootfs/bin/iotrace --get-trace-statistics -p '
                          f'{iotrace.get_latest_trace_path()}" --one-job')
     output = wait_for_completion(fuzzing_time_seconds, repo_path)
-    TestRun.executor.run(f'cd {repo_path} && ./tests/security/fuzzy/fuzz.sh clean')
+    TestRun.executor.run(
+        f'cd {repo_path} && ./tests/security/fuzzy/fuzz.sh clean')
     detect_crashes(output.stdout)
 
 
@@ -182,7 +188,7 @@ def test_fuzz_summary_file():
     trace_path = trace_repo_path + "/" + iotrace.get_latest_trace_path()
     summary_path = f'{trace_path}/octf.summary'
     copied_summary_path = f'{repo_path}/rootfs/var/lib/octf/trace/' + \
-                            f'{iotrace.get_latest_trace_path()}/octf.summary'
+                          f'{iotrace.get_latest_trace_path()}/octf.summary'
 
     # Create patch file for redirecting fuzzed stdin to trace file
     new_patch_path: str = f'{iotrace.working_dir}/redirect_to_summary.patch'
@@ -192,14 +198,17 @@ def test_fuzz_summary_file():
     install_iotrace_with_afl_support(new_patch_path)
 
     # Copy trace files to local installation of iotrace
-    TestRun.executor.run_expect_success(f'cp -r {trace_repo_path}/kernel '
-                                        f'{repo_path}/rootfs/var/lib/octf/trace/')
+    TestRun.executor.run_expect_success(
+        f'cp -r {trace_repo_path}/kernel '
+        f'{repo_path}/rootfs/var/lib/octf/trace/')
 
     # Instruct the system to output coredumps as files instead of sending them
     # to a specific crash handler app
     TestRun.LOGGER.info('Setting up system for fuzzing')
-    TestRun.executor.run_expect_success('echo core > /proc/sys/kernel/core_pattern')
-    TestRun.executor.run_expect_success(f'cd {repo_path} && mkdir -p afl-i afl-o')
+    TestRun.executor.run_expect_success(
+        'echo core > /proc/sys/kernel/core_pattern')
+    TestRun.executor.run_expect_success(
+        f'cd {repo_path} && mkdir -p afl-i afl-o')
 
     # Add input seed which shall be mutated
     TestRun.executor.run_expect_success(f'cd {repo_path} ' +
@@ -211,7 +220,8 @@ def test_fuzz_summary_file():
                          '"rootfs/bin/iotrace --get-trace-statistics -p '
                          f'{iotrace.get_latest_trace_path()}" --one-job')
     output = wait_for_completion(fuzzing_time_seconds, repo_path)
-    TestRun.executor.run(f'cd {repo_path} && ./tests/security/fuzzy/fuzz.sh clean')
+    TestRun.executor.run(
+        f'cd {repo_path} && ./tests/security/fuzzy/fuzz.sh clean')
     detect_crashes(output.stdout)
 
 
@@ -230,8 +240,10 @@ def test_fuzz_procfs():
     # Instruct the system to output coredumps as files instead of sending them
     # to a specific crash handler app
     TestRun.LOGGER.info('Setting up system for fuzzing')
-    TestRun.executor.run_expect_success('echo core > /proc/sys/kernel/core_pattern')
-    TestRun.executor.run_expect_success(f'cd {repo_path} && mkdir -p afl-i afl-o')
+    TestRun.executor.run_expect_success(
+        'echo core > /proc/sys/kernel/core_pattern')
+    TestRun.executor.run_expect_success(
+        f'cd {repo_path} && mkdir -p afl-i afl-o')
 
     # Procfs files and their initial seed
     fuzzed_files = {"/proc/iotrace/add_device": "/dev/sdb",
@@ -243,38 +255,44 @@ def test_fuzz_procfs():
     # consumer header procfile. This is because procfiles may have a limit
     # on applications which mmap them, and iotrace -S may block other mmaps
     disk = TestRun.dut.disks[0].system_path
-    TestRun.executor.run_expect_success(f'echo {disk} > /proc/iotrace/add_device')
+    TestRun.executor.run_expect_success(
+        f'echo {disk} > /proc/iotrace/add_device')
     TestRun.executor.run_expect_success(f'echo 1024 > /proc/iotrace/size')
-    fio_pid = TestRun.executor.run_in_background(f'fio --name=job --direct=0 --ioengine=mmap '
-                                                 f'--filename=/proc/iotrace/consumer_hdr.0 '
-                                                 f"--buffer_pattern=\\'/dev/urandom\\' "
-                                                 f'--time_based --runtime=30s --bs=4k '
-                                                 f'--iodepth=128 --rw=randwrite')
+    fio_pid = TestRun.executor.run_in_background(
+        f'fio --name=job --direct=0 --ioengine=mmap '
+        f'--filename=/proc/iotrace/consumer_hdr.0 '
+        f"--buffer_pattern=\\'/dev/urandom\\' "
+        f'--time_based --runtime=30s --bs=4k '
+        f'--iodepth=128 --rw=randwrite')
 
     # Also start some workload on traced device to generate trace traffic
-    workload_pid = TestRun.executor.run_in_background(f'fio --direct=1'
-                                                 f'--filename={disk} '
-                                                 f'--time_based --runtime=24h --bs=4k '
-                                                 f'--iodepth=1 --rw=randwrite')
+    workload_pid = TestRun.executor.run_in_background(
+        f'fio --direct=1'
+        f'--filename={disk} '
+        f'--time_based --runtime=24h --bs=4k '
+        f'--iodepth=1 --rw=randwrite')
 
     for procfile, seed in fuzzed_files.items():
         # Create patch file for redirecting fuzzed stdin to proc file
-        new_patch_path: str = f'{iotrace.working_dir}/redirect_to_procfile.patch'
+        new_patch_path: str = \
+            f'{iotrace.working_dir}/redirect_to_procfile.patch'
         create_patch_redirect_fuzz_to_file(f'{procfile}', new_patch_path)
 
         # Install iotrace locally with AFL support and redirect patch
         install_iotrace_with_afl_support(new_patch_path)
 
         # Add input seed which shall be mutated
-        TestRun.executor.run_expect_success(f'cd {repo_path} && echo {seed} > afl-i/case0')
+        TestRun.executor.run_expect_success(
+            f'cd {repo_path} && echo {seed} > afl-i/case0')
 
         TestRun.LOGGER.info(f'Starting fuzzing {procfile} This should take ' +
                             str(fuzzing_time_seconds / 60 / len(fuzzed_files))
                             + ' minutes')
 
-        TestRun.executor.run_in_background(f'cd {repo_path} && screen -S master -d -m &&'
-                                           f'screen -S master -X stuff "afl-fuzz -n -i '
-                                           f'afl-i -o afl-o {repo_path}/rootfs/bin/iotrace -H\n"')
+        TestRun.executor.run_in_background(
+            f'cd {repo_path} && screen -S master -d -m &&'
+            f'screen -S master -X stuff "afl-fuzz -n -i '
+            f'afl-i -o afl-o {repo_path}/rootfs/bin/iotrace -H\n"')
         elapsed = 0
         start_time = time.time()
         while elapsed < fuzzing_time_seconds / len(fuzzed_files):
@@ -289,7 +307,8 @@ def test_fuzz_procfs():
             current_time = time.time()
             elapsed = current_time - start_time
 
-        TestRun.executor.run_expect_success('killall afl-fuzz && screen -X -S master kill')
+        TestRun.executor.run_expect_success(
+            'killall afl-fuzz && screen -X -S master kill')
 
     # Stop tracing
     TestRun.executor.run_expect_success(f'kill {fio_pid}')

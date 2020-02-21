@@ -4,7 +4,6 @@
 #
 from datetime import timedelta
 
-from log.logger import Log
 from core.test_run_utils import TestRun
 
 
@@ -24,7 +23,8 @@ def install_iotrace_with_afl_support(patch_path: str):
 
     iotrace = TestRun.plugins['iotrace']
     tracing_patch_path: str = "tests/security/fuzzy/immediate-tracing.patch"
-    modprobe_disable_patch_path: str = "tests/security/fuzzy/disable_modprobe.patch"
+    modprobe_disable_patch_path: str = \
+        "tests/security/fuzzy/disable_modprobe.patch"
     repo_path = f"{iotrace.working_dir}/slit-afl"
 
     TestRun.executor.rsync(
@@ -35,19 +35,22 @@ def install_iotrace_with_afl_support(patch_path: str):
         exclude_list=['build'])
 
     # Copy neccessary files for patching
-    TestRun.executor.run_expect_success(f'cp {iotrace.working_dir}/AFL/'
-                                        f'experimental/argv_fuzzing/argv-fuzz-inl.h '
-                                        f'{iotrace.working_dir}/slit-afl/source/userspace/')
-    TestRun.executor.run_expect_success(f'cp {iotrace.working_dir}/tests/'
-                                        f'security/fuzzy/afl-fuzzer-utils.h '
-                                        f'{iotrace.working_dir}/slit-afl/source/userspace/')
+    TestRun.executor.run_expect_success(
+        f'cp {iotrace.working_dir}/AFL/'
+        f'experimental/argv_fuzzing/argv-fuzz-inl.h '
+        f'{iotrace.working_dir}/slit-afl/source/userspace/')
+    TestRun.executor.run_expect_success(
+        f'cp {iotrace.working_dir}/tests/'
+        f'security/fuzzy/afl-fuzzer-utils.h '
+        f'{iotrace.working_dir}/slit-afl/source/userspace/')
 
     TestRun.LOGGER.info("Applying code patches")
-    output = TestRun.executor.run(f'cd {repo_path} '
-                                  f'&& patch -f -p0 -F4 <{tracing_patch_path} '
-                                  f'&& patch -f -p0 -F4 <{modprobe_disable_patch_path} '
-                                  f'&& patch -f -p0 -F4 <{patch_path}',
-                                  timeout=timedelta(minutes=1))
+    output = TestRun.executor.run(
+        f'cd {repo_path} '
+        f'&& patch -f -p0 -F4 <{tracing_patch_path} '
+        f'&& patch -f -p0 -F4 <{modprobe_disable_patch_path} '
+        f'&& patch -f -p0 -F4 <{patch_path}',
+        timeout=timedelta(minutes=1))
 
     if output.exit_code != 0:
         raise Exception("Could not patch files with AFL patch, it's possible "

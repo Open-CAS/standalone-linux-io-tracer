@@ -6,9 +6,7 @@
 import json
 import re
 import time
-from datetime import timedelta
 from core.test_run_utils import TestRun
-from test_utils.singleton import Singleton
 from utils.installer import check_if_installed
 
 NOT_WHITESPACE = re.compile(r'[^\s]')
@@ -25,8 +23,9 @@ class IotracePlugin:
         '''
         Start tracing given block devices. Trace all available if none given.
 
-        :param dev_list: Block devices to trace, can be empty (for all available)
-        :type dev_list: list of strings
+        :param: dev_list: Block devices to trace, can be empty
+        (for all available)
+        :type: dev_list: list of strings
 
         :raises Exception: if iotrace binary exited early
         '''
@@ -49,7 +48,7 @@ class IotracePlugin:
         :raises Exception: when cannot find the path
         '''
         return TestRun.executor.run_expect_success(
-                                'iotrace --get-trace-repository-path').stdout
+            'iotrace --get-trace-repository-path').stdout
 
     def check_if_tracing_active(self) -> bool:
         '''
@@ -59,7 +58,7 @@ class IotracePlugin:
         '''
         output = TestRun.executor.run('pgrep iotrace')
         if output.stdout == "":
-            TestRun.LOGGER.error("Iotrace processes not found.")
+            TestRun.LOGGER.info("Iotrace processes not found.")
             return False
         elif self.pid != output.stdout:
             TestRun.LOGGER.error(
@@ -125,13 +124,19 @@ class IotracePlugin:
         :return: Summary of trace in JSON format
         :raises Exception: if summary is invalid
         '''
-        output = TestRun.executor.run(f'iotrace --get-trace-summary -p {trace_path}')
-        if (output.stdout == ""):
+        output = TestRun.executor.run(
+            f'iotrace --get-trace-summary -p {trace_path}')
+        if output.stdout == "":
             raise Exception("Invalid summary")
 
         return output.stdout
 
     @staticmethod
+    def get_lba_histogram(
+            trace_path: str,
+            bucket_size=0,
+            subrange_start=0,
+            subrange_end=0) -> str:
         '''
         Get lba histogram of given trace path
 
@@ -142,8 +147,10 @@ class IotracePlugin:
         :return: LBA histogram in JSON format
         :raises Exception: if histogram is invalid
         '''
-        output = TestRun.executor.run(f'iotrace --get-lba-histogram -p {trace_path} -b {bucket_size} -s {subrange_start} -e {subrange_end}')
-        if (output.stdout == ""):
+        output = TestRun.executor.run(
+            f'iotrace --get-lba-histogram -p {trace_path} -b {bucket_size} '
+            f'-s {subrange_start} -e {subrange_end}')
+        if output.stdout == "":
             raise Exception("Invalid histogram")
 
         return output.stdout
@@ -158,7 +165,7 @@ class IotracePlugin:
         :raises Exception: if traces are invalid
         '''
         output = TestRun.executor.run(f'iotrace --parse-trace -p {trace_path}')
-        if (output.stdout == ""):
+        if output.stdout == "":
             raise Exception("Invalid traces")
 
         return output.stdout
@@ -173,7 +180,7 @@ class IotracePlugin:
         '''
         output = TestRun.executor.run(
                 f'iotrace --get-trace-statistics -p {trace_path}')
-        if (output.stdout == ""):
+        if output.stdout == "":
             raise Exception("Invalid traces")
 
         return self.parse_json(output.stdout)[0]['statistics'][0]

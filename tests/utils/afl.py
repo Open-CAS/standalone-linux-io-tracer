@@ -42,11 +42,11 @@ def create_patch_redirect_fuzz_to_file(file_path: str, patch_path: str):
     repo_path: str = f"{iotrace.working_dir}/slit-afl"
 
     # Create new patch file
-    TestRun.executor.run_expect_success(f'cp {TestRun.plugins["iotrace"].working_dir}'
-                                        '/tests/security/fuzzy/redirect-fuzz.patch'
-                                        f' {patch_path}')
+    TestRun.executor.run_expect_success(
+        f'cp {TestRun.plugins["iotrace"].working_dir}/tests/security/'
+        f'fuzzy/redirect-fuzz.patch {patch_path}')
 
     # Modify patch to use supplied fuzzed file path
-    TestRun.executor.run_expect_success("sed -i 's@FUZZED_FILE_PATH@"+file_path+"@g'"
-                                        f' {patch_path}')
+    TestRun.executor.run_expect_success(
+        "sed -i 's@FUZZED_FILE_PATH@"+file_path+"@g' {patch_path}")
 

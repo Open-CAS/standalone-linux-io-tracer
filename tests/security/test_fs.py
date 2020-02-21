@@ -9,12 +9,14 @@ import time
 
 
 def test_files_privileges():
-    TestRun.LOGGER.info("Testing iotrace config owner and trace file privileges")
+    TestRun.LOGGER.info(
+        "Testing iotrace config owner and trace file privileges")
     iotrace = TestRun.plugins['iotrace']
 
     # Find paths in manifest since their location is OS dependent
-    out = TestRun.executor.run_expect_success('find /usr -name install_manifest_octf-install.txt'
-                                              ' | xargs cat | grep octf.conf$')
+    out = TestRun.executor.run_expect_success(
+        'find /usr -name install_manifest_octf-install.txt'
+        ' | xargs cat | grep octf.conf$')
     config_path = out.stdout
     if config_path == "":
         raise Exception("Could not find octf config path")
@@ -26,7 +28,8 @@ def test_files_privileges():
     out = TestRun.executor.run_expect_success(f'stat -c "%a" {config_path}')
     config_privileges = out.stdout
     if config_privileges != "644":
-        TestRun.fail(f"Invalid permissions on config file, found: {config_privileges}")
+        TestRun.fail(
+            f"Invalid permissions on config file, found: {config_privileges}")
 
     out = TestRun.executor.run_expect_success(f'stat -c "%U" {config_path}')
     config_owner = out.stdout
@@ -103,15 +106,15 @@ def test_procfs_privileges():
             TestRun.fail(f"Can't find file: {file_path}")
 
         if file_permissions != permissions:
-            TestRun.fail(f"Invalid permissions on {file_path}, found {file_permissions},"
-                         f" expected {permissions}")
+            TestRun.fail(
+                f"Invalid permissions on {file_path}, "
+                f"found {file_permissions}, expected {permissions}")
 
         # Attempt to write to read-only files
         if file_permissions == "400":
             if attempt_to_write(file_path) is True:
                 TestRun.fail(f'File {file_path} could be written to with '
                              f'read-only permissions')
-
 
     # Check per cpu files
     for file, permissions in procfs_files_per_cpu.items():
@@ -125,7 +128,8 @@ def test_procfs_privileges():
                 TestRun.fail(f"Can't find file: {file_path}")
 
             if file_permissions != permissions:
-                TestRun.fail(f"Invalid permissions on {file_path}, found {file_permissions},"
+                TestRun.fail(f"Invalid permissions on {file_path},"
+                             f" found {file_permissions},"
                              f" expected {permissions}")
 
             # Attempt to write to read-only files
@@ -152,8 +156,8 @@ def attempt_to_write(file_path: str) -> bool:
 
     echo_result = TestRun.executor.run(f'echo "1" > {file_path}')
 
-    if ("Operation not permitted" in fio_result.stderr \
-            or "Permission denied" in fio_result.stdout)\
+    if ("Operation not permitted" in fio_result.stderr
+        or "Permission denied" in fio_result.stdout) \
             and echo_result.exit_code != 0:
         return False
     else:
