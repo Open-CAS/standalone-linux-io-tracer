@@ -40,7 +40,8 @@ class IotracePlugin:
             'iotrace -S -d ' + ','.join(bdevs)))
         TestRun.LOGGER.info("Started tracing of: " + ','.join(bdevs))
 
-    def get_trace_repository_path(self) -> str:
+    @staticmethod
+    def get_trace_repository_path() -> str:
         '''
         Get the path to trace repository from iotrace
 
@@ -115,7 +116,8 @@ class IotracePlugin:
         else:
             return ""
 
-    def get_trace_summary(self, trace_path: str) -> str:
+    @staticmethod
+    def get_trace_summary(trace_path: str) -> str:
         '''
         Get trace summary of given trace path
 
@@ -129,7 +131,7 @@ class IotracePlugin:
 
         return output.stdout
 
-    def get_lba_histogram(self, trace_path: str, bucket_size=0, subrange_start=0, subrange_end=0) -> str:
+    @staticmethod
         '''
         Get lba histogram of given trace path
 
@@ -146,7 +148,8 @@ class IotracePlugin:
 
         return output.stdout
 
-    def get_trace_events(self, trace_path: str) -> str:
+    @staticmethod
+    def get_trace_events(trace_path: str) -> str:
         '''
         Get all trace events of given trace path
 
@@ -197,7 +200,8 @@ class IotracePlugin:
     # position. Unfortunately, the Python json module doesn't accept strings
     # that have prefixing whitespace. So we need to search to find the first
     # none-whitespace part of your document.
-    def __decode_json_stream(self, document, pos=0, decoder=json.JSONDecoder()):
+    @staticmethod
+    def __decode_json_stream(document, pos=0, decoder=json.JSONDecoder()):
         while True:
             # Create json stream without whitespace
             match = NOT_WHITESPACE.search(document, pos)
