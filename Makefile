@@ -5,8 +5,6 @@ SHELL := /bin/bash
 .DEFAULT_GOAL := all
 CMAKE_FILE=CMakeLists.txt
 
-OPT_DIR=/opt/octf
-
 ifdef DEBUG
 	BUILD_DIR=build/debug
 	BUILD_TYPE=DEBUG
@@ -21,14 +19,12 @@ else
 	endif
 endif
 
-ifneq ("$(wildcard $(OPT_DIR)/cmake/bin/cmake)","")
-	# Found our installation of cmake in opt dir
-	CMAKE=$(OPT_DIR)/cmake/bin/cmake
-else
-	CMAKE=cmake
-endif
-
 SOURCE_PATH:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+CMAKE:="$(SOURCE_PATH)/modules/open-cas-telemetry-framework/tools/third_party/cmake/bin/cmake"
+ifeq ("$(wildcard $(CMAKE))","")
+   $(info Using system $(shell cmake --version | grep version))
+   CMAKE=cmake
+endif
 
 .PHONY: init all clean
 
@@ -45,7 +41,6 @@ install: all
 	$(CMAKE) -DCOMPONENT=octf-post-install -P $(BUILD_DIR)/cmake_install.cmake
 	$(CMAKE) -DCOMPONENT=iotrace-install -P $(BUILD_DIR)/cmake_install.cmake
 	$(CMAKE) -DCOMPONENT=iotrace-post-install -P $(BUILD_DIR)/cmake_install.cmake
-
 
 uninstall: init
 	cd $(BUILD_DIR) && $(CMAKE) $(SOURCE_PATH) -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) -DCMAKE_INSTALL_PREFIX=$(PREFIX)

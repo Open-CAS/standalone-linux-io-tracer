@@ -3,40 +3,9 @@
 # Copyright(c) 2012-2018 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause-Clear
 
-
-#
-# Usage: check_result <RESULT> <ERROR_MESSAGE>
-#
-function check_result ()
-{
-    local result=$1
-    local message=$2
-
-    if [ ${result} -ne 0 ]
-    then
-        echo "[OCTF][ERROR] ${message}" 1>&2
-        exit ${result}
-    fi
-}
-
-#
-# Usage: error <ERROR_MESSAGE_1> [ <ERROR_MESSAGE_2> ... ]
-# Note: exits with error
-#
-function error () {
-    check_result 255 "$*"
-}
-
-#
-# Usage: info <INFO_MESSAGE_1> [ <INFO_MESSAGE_2> ... ]
-#
-function info () {
-    echo "[OCTF][INFO] $*" 1>&2
-}
-
 function detect_distribution ()
 {
-    if [ -f /etc/redhat-release ] || [ -f /etc/centos-release ]
+    if [ -f /etc/redhat-release ]
     then
         if ( cat /etc/redhat-release | grep "Red Hat Enterprise Linux Server release 7." &>/dev/null )
         then
@@ -45,7 +14,7 @@ function detect_distribution ()
         fi
     fi
 
-    if [ -f /etc/redhat-release ] || [ -f /etc/centos-release ]
+    if [ -f /etc/centos-release ]
     then
         if ( cat /etc/centos-release | grep "CentOS Linux release 7." &>/dev/null )
         then
@@ -56,18 +25,18 @@ function detect_distribution ()
 
     if [ -f /etc/fedora-release ]
     then
-        if ( cat /etc/fedora-release | grep "Fedora release 30" &>/dev/null )
+        if ( cat /etc/fedora-release | grep "Fedora release" &>/dev/null )
         then
-            echo FEDORA30
+            echo FEDORA
             return 0
         fi
     fi
 
     if [ -f /etc/os-release ]
     then
-        if ( cat /etc/os-release | grep "Ubuntu 18" &>/dev/null )
+        if ( cat /etc/os-release | grep "Ubuntu" &>/dev/null )
         then
-            echo UBUNTU18
+            echo UBUNTU
             return 0
         fi
     fi
@@ -75,84 +44,125 @@ function detect_distribution ()
     return 1
 }
 
-function setup_other_deps
+#
+# Usage: iotrace_check_result <RESULT> <ERROR_MESSAGE>
+#
+function iotrace_check_result ()
 {
-    if [ -f $(dirname "$0")/modules/open-cas-telemetry-framework/setup_dependencies.sh ]
+    local result=$1
+    local message=$2
+
+    if [ ${result} -ne 0 ]
     then
-        $(dirname "$0")/modules/open-cas-telemetry-framework/setup_dependencies.sh
-        check_result $? "Could not install dependencies"
-    else
-        info "No OCTF in the project source tree, assuming OCTF and dependencies are installed systemwide"
+        printf "[IOTRACE][ERROR] ${message}\n" 1>&2
+        exit ${result}
     fi
 }
 
+#
+# Usage: iotrace_error <ERROR_MESSAGE_1> [ <ERROR_MESSAGE_2> ... ]
+# Note: exits with error
+#
+function iotrace_error () {
+    iotrace_check_result 255 "$*"
+}
+
+#
+# Usage: iotrace_info <INFO_MESSAGE_1> [ <INFO_MESSAGE_2> ... ]
+#
+function iotrace_info () {
+    echo "[IOTRACE][INFO] $*" 1>&2
+}
+
+function iotrace_get_kernel_package () {
+    distro=$(detect_distribution)
+    case "${distro}" in
+    "RHEL7"|"CENTOS7")
+        echo "kernel-devel"
+        ;;
+    "FEDORA")
+        echo "kernel-devel"
+        ;;
+    "UBUNTU")
+        echo "linux-headers"
+        ;;
+    *)
+        iotrace_error "Unknown Linux distribution"
+        ;;
+    esac
+}
+
+function iotrace_get_distribution_pkg_depndenices () {
+    distro=$(detect_distribution)
+    case "${distro}" in
+    "RHEL7"|"CENTOS7"|"FEDORA"|"UBUNTU")
+        echo "rpm-build dpkg"
+        ;;
+    *)
+        iotrace_error "Unknown Linux distribution"
+        ;;
+    esac
+}
+
+function iotrace_setup_kernel_headers () {
+    local kernel_version=$(uname -r)
+    local kernel_dir=$(readlink -f /lib/modules/${kernel_version}/build)
+
+    if [ -d "${kernel_dir}" ]
+    then
+        iotrace_info "Kernel headers already available: ${kernel_dir}"
+        return 0
+    fi
+
+    iotrace_info "Install kernel headers"
+    ${PKG_INSTALLER} $(iotrace_get_kernel_package)
+    iotrace_check_result $? "Cannot install kernel headers"
+
+    kernel_dir=$(readlink -f /lib/modules/${kernel_version}/build)
+    if [ ! -d "${kernel_dir}" ]
+    then
+        iotrace_info "Please run the kernel appropriate to the kernel headers"
+        iotrace_error "Installed kernel headers do not match to the running kernel version."
+    fi
+
+    return 0
+}
+
+function iotrace_get_distribution_pkg_manager () {
+    distro=$(detect_distribution)
+    case "${distro}" in
+    "RHEL7"|"CENTOS7"|"FEDORA")
+        echo "yum -y install"
+        ;;
+    "UBUNTU")
+        echo "apt-get -y install"
+        ;;
+    *)
+        error "Unknown Linux distribution"
+        ;;
+    esac
+}
 
 if [ "$EUID" -ne 0 ]
 then
-    echo "Please run as root to alllow using apt/yum and installing to /opt"
+    iotrace_error "Please run as root to allow using pakcage manager"
+fi
+
+# Include and execute OCTF setup dependencies
+IOTRACE_SCRIPT_DIR="$(cd $(dirname ${BASH_SOURCE[0]}) && pwd)"
+bash -c ${IOTRACE_SCRIPT_DIR}/modules/open-cas-telemetry-framework/setup_dependencies.sh
+if [ $? -ne 0 ]
+then
+    iotrace_error "Cannot setup OCTF submodule dependencies"
     exit 1
 fi
 
-distro=$(detect_distribution)
-case "${distro}" in
-"RHEL7")
-    info "RHEL7.x detected"
-    packages="kernel-devel-$(uname -r)"
+iotrace_setup_kernel_headers
 
-    info "Installing packages: ${packages}"
-    yum -y install ${packages}
-    check_result $? "Cannot install required dependencies"
+PKGS=$(iotrace_get_distribution_pkg_depndenices)
+PKG_INSTALLER=$(iotrace_get_distribution_pkg_manager)
+iotrace_info "Installing packages: ${PKGS}"
+${PKG_INSTALLER} ${PKGS}
+iotrace_check_result $? "Cannot install required dependencies"
 
-    if [ ! -d /usr/src/kernels/$(uname -r) ]
-    then
-        error "Linux kernel headers were not properly installed."
-    fi
-
-    setup_other_deps
-    ;;
-"CENTOS7")
-    info "CentOS7.x detected"
-    packages="kernel-devel-$(uname -r)"
-
-    info "Installing packages: ${packages}"
-    yum -y install ${packages}
-    check_result $? "Cannot install required dependencies"
-
-    if [ ! -d /usr/src/kernels/$(uname -r) ]
-    then
-        error "Linux kernel headers were not properly installed."
-    fi
-
-    setup_other_deps
-    ;;
-"FEDORA30")
-    info "Fedora 30 detected"
-    packages="kernel-devel-$(uname -r)"
-
-    info "Installing packages: ${packages}"
-    dnf -y install ${packages}
-    check_result $? "Cannot install required dependencies"
-
-    setup_other_deps
-    ;;
-"UBUNTU18")
-    info "Ubuntu 18 detected"
-    packages="linux-headers-$(uname -r)"
-
-    info "Installing packages: ${packages}"
-    apt -y install ${packages}
-    check_result $? "Cannot install required dependencies"
-
-    if [ ! -d /usr/src/linux-headers-$(uname -r) ]
-    then
-        error "Linux kernel headers were not properly installed."
-    fi
-
-    setup_other_deps
-    ;;
-*)
-    error "Unknown linux distribution"
-    exit 1
-    ;;
-esac
-
+exit 0
