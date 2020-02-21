@@ -122,9 +122,6 @@ def dut_prepare(force_reinstall):
     TestRun.LOGGER.info("Killing all IO")
     kill_all_io()
 
-    TestRun.LOGGER.info("Probing module")
-    insert_module()
-
 
 def dut_cleanup():
     iotrace: IotracePlugin = TestRun.plugins['iotrace']
@@ -133,9 +130,7 @@ def dut_cleanup():
     TestRun.executor.run(f'{iotrace.working_dir}/tests/'
                          'security/fuzzy/fuzz.sh clean')
 
-    TestRun.LOGGER.info("Removing iotrace module")
     iotrace.stop_tracing()
-    remove_module()
 
     TestRun.LOGGER.info("Removing existing traces")
     trace_repository_path: str = iotrace.parse_json(
