@@ -12,9 +12,9 @@ add_custom_command(
 )
 
 install(
-	FILES ${CMAKE_CURRENT_BINARY_DIR}/iotrace.8.gz
+	FILES ${CMAKE_CURRENT_SOURCE_DIR}/MAN.md
 	DESTINATION ${CMAKE_INSTALL_MANDIR}/man8
-	COMPONENT iotrace-install
+	COMPONENT iotrace-install-man
 )
 
 # Run mandb and hide output when VERBOSE is unspecified
@@ -26,7 +26,7 @@ install(
 		mandb
 	fi
 	\")"
-	COMPONENT iotrace-install
+	COMPONENT iotrace-install-man
 )
 
 # Install LICENSE

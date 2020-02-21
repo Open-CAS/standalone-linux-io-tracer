@@ -42,10 +42,15 @@ all: init
 install: all
 	$(MAKE) uninstall
 	$(CMAKE) -DCOMPONENT=octf-install -P $(BUILD_DIR)/cmake_install.cmake
+	$(CMAKE) -DCOMPONENT=octf-install-headers -P $(BUILD_DIR)/cmake_install.cmake
+	$(CMAKE) -DCOMPONENT=octf-install-cmake -P $(BUILD_DIR)/cmake_install.cmake
 	$(CMAKE) -DCOMPONENT=octf-post-install -P $(BUILD_DIR)/cmake_install.cmake
 	$(CMAKE) -DCOMPONENT=iotrace-install -P $(BUILD_DIR)/cmake_install.cmake
+	$(CMAKE) -DCOMPONENT=iotrace-install-man -P $(BUILD_DIR)/cmake_install.cmake
 	$(CMAKE) -DCOMPONENT=iotrace-post-install -P $(BUILD_DIR)/cmake_install.cmake
 
+package: all
+	$(MAKE) -C $(BUILD_DIR) package
 
 uninstall: init
 	cd $(BUILD_DIR) && $(CMAKE) $(SOURCE_PATH) -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) -DCMAKE_INSTALL_PREFIX=$(PREFIX)

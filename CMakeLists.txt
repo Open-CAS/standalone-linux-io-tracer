@@ -22,3 +22,5 @@ endif()
 
 add_subdirectory(source)
 add_subdirectory(doc)
+
+include(package.cmake)
