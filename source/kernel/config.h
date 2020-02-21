@@ -243,10 +243,8 @@ typedef int iotrace_vm_fault_t;
 /* Block device lookup */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0)
 #define IOTRACE_LOOKUP_BDEV(path) lookup_bdev(path)
-#elif LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 0)
-#define IOTRACE_LOOKUP_BDEV(path) lookup_bdev(path, 0)
 #else
-#define IOTRACE_LOOKUP_BDEV(path) lookup_bdev(path)
+#define IOTRACE_LOOKUP_BDEV(path) lookup_bdev(path, 0)
 #endif
 
 #endif  // SOURCE_KERNEL_INTERNAL_CONFIG_H
