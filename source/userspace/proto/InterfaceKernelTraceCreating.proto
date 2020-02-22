@@ -68,8 +68,8 @@ service InterfaceKernelTraceCreating {
 
         option (opts_command).cli_short_key = "S";
 
-        option (opts_command).cli_long_key = "start-trace";
+        option (opts_command).cli_long_key = "start-tracing";
 
-        option (opts_command).cli_desc = "Start IO tracing";
+        option (opts_command).cli_desc = "Starts IO tracing";
     }
 }
