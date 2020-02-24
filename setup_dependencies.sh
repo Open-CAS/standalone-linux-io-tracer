@@ -77,10 +77,7 @@ function iotrace_info () {
 function iotrace_get_kernel_package () {
     distro=$(detect_distribution)
     case "${distro}" in
-    "RHEL7"|"CENTOS7")
-        echo "kernel-devel"
-        ;;
-    "FEDORA")
+    "RHEL7"|"CENTOS7"|"FEDORA")
         echo "kernel-devel"
         ;;
     "UBUNTU")
@@ -92,7 +89,7 @@ function iotrace_get_kernel_package () {
     esac
 }
 
-function iotrace_get_distribution_pkg_depndenices () {
+function iotrace_get_distribution_pkg_dependencies () {
     distro=$(detect_distribution)
     case "${distro}" in
     "RHEL7"|"CENTOS7"|"FEDORA"|"UBUNTU")
@@ -121,8 +118,8 @@ function iotrace_setup_kernel_headers () {
     kernel_dir=$(readlink -f /lib/modules/${kernel_version}/build)
     if [ ! -d "${kernel_dir}" ]
     then
-        iotrace_info "Please run the kernel appropriate to the kernel headers"
-        iotrace_error "Installed kernel headers do not match to the running kernel version."
+        iotrace_info "Consider updating the system kernel to match available headers"
+        iotrace_error "The installed kernel headers do not match to the running kernel version."
     fi
 
     return 0
@@ -145,7 +142,7 @@ function iotrace_get_distribution_pkg_manager () {
 
 if [ "$EUID" -ne 0 ]
 then
-    iotrace_error "Please run as root to allow using pakcage manager"
+    iotrace_error "Please run as root to allow using package manager"
 fi
 
 # Include and execute OCTF setup dependencies
@@ -159,7 +156,7 @@ fi
 
 iotrace_setup_kernel_headers
 
-PKGS=$(iotrace_get_distribution_pkg_depndenices)
+PKGS=$(iotrace_get_distribution_pkg_dependencies)
 PKG_INSTALLER=$(iotrace_get_distribution_pkg_manager)
 iotrace_info "Installing packages: ${PKGS}"
 ${PKG_INSTALLER} ${PKGS}
