@@ -12,7 +12,7 @@ add_custom_command(
 )
 
 install(
-	FILES ${CMAKE_CURRENT_SOURCE_DIR}/MAN.md
+	FILES ${CMAKE_CURRENT_SOURCE_DIR}/iotrace.8.gz
 	DESTINATION ${CMAKE_INSTALL_MANDIR}/man8
 	COMPONENT iotrace-install-man
 )
