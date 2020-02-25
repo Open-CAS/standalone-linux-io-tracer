@@ -54,7 +54,7 @@ typedef void (*iotrace_bio_complete_fn)(void *ignore,
 /* BIO flags macros (flush, fua, ...) */
 #define IOTRACE_BIO_IS_FLUSH(bio) ((IOTRACE_BIO_OP_FLAGS(bio)) & REQ_FLUSH)
 /* Gets BIO device  */
-#define IOTRACE_BIO_GET_DEV(bio) bio->bi_bdev->bd_disk
+#define IOTRACE_BIO_GET_DEV(bio) (bio)->bi_bdev ? (bio)->bi_bdev->bd_disk : NULL
 
 static inline int iotrace_register_trace_block_bio_queue(
         void (*fn)(void *ignore, struct request_queue *, struct bio *)) {

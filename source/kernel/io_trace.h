@@ -43,7 +43,7 @@ uint64_t iotrace_get_buffer_size(struct iotrace_context *iotrace);
 
 int iotrace_trace_desc(struct iotrace_context *iotrace,
                        unsigned cpu,
-                       uint32_t dev_id,
+                       uint64_t dev_id,
                        const char *dev_name,
                        uint64_t dev_size);
 
