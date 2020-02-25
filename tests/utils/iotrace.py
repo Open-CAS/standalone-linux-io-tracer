@@ -11,6 +11,8 @@ from core.test_run_utils import TestRun
 from test_utils.singleton import Singleton
 from utils.installer import check_if_installed
 
+from test_utils.size import Unit, Size
+
 NOT_WHITESPACE = re.compile(r'[^\s]')
 
 # Singleton class to provide test-session wide scope
@@ -19,13 +21,29 @@ class IotracePlugin(metaclass=Singleton):
         self.repo_dir = repo_dir  # Test controller's repo, copied to DUT
         self.working_dir = working_dir  # DUT's make/install work directory
         self.installed = check_if_installed()  # Was iotrace installed already
+        self.pid = None
 
-    def start_tracing(self, bdevs=[]):
+    def start_tracing(self,
+                      bdevs: list = [],
+                      buffer: Size = None,
+                      trace_file_size: Size = None,
+                      timeout: timedelta = None,
+                      label: str = None,
+                      shortcut: bool = False):
         '''
         Start tracing given block devices. Trace all available if none given.
 
-        :param dev_list: Block devices to trace, can be empty (for all available)
-        :type dev_list: list of strings
+        :param: dev_list: Block devices to trace, can be empty
+        (for all available)
+        :param: buffer: Size of the internal trace buffer in MiB
+        :param: trace_file_size: Max size of trace file in MiB
+        :param: timeout: Max trace duration time in seconds
+        :param: label: User defined custom label
+        :type: dev_list: list of strings
+        :type: buffer: Size
+        :type: trace_file_size: Size
+        :type: timeout: timedelta
+        :type: label: str
 
         :raises Exception: if iotrace binary exited early
         '''
@@ -35,7 +53,32 @@ class IotracePlugin(metaclass=Singleton):
             for disk in disks:
                 bdevs.append(disk.system_path)
 
-        TestRun.executor.run_in_background('iotrace -S -d ' + ','.join(bdevs))
+        buffer_range = range(1, 1024)
+        trace_file_size_range = range(1, 100000000)
+        timeout_range = range(1, 4294967295)
+
+        command = 'iotrace'
+        + ' -S' if shortcut else ' --start-tracing'
+        + ' -d ' if shortcut else ' --devices ' + ','.join(bdevs)
+        if buffer is not None \
+                and int(buffer.get_value(Unit.MebiByte)) in buffer_range:
+            command += \
+                ' -b ' if shortcut else ' --buffer '
+            + f'{str(int(buffer.get_value(Unit.MebiByte)))}'
+        if trace_file_size is not None\
+            and int(trace_file_size.get_value(Unit.MebiByte)) \
+                in trace_file_size_range:
+            command += \
+                ' -s ' if shortcut else ' --size '
+            + f'{str(int(trace_file_size.get_value(Unit.MebiByte)))}'
+        if timeout and int(timeout.total_seconds()) in timeout_range:
+            command += \
+                ' -t ' if shortcut else ' --time '
+            + f'{str(int(timeout.total_seconds()))}'
+        if label is not None:
+            command += ' -l ' if shortcut else ' --label ' + f'{label}'
+
+        self.pid = str(TestRun.executor.run_in_background(command))
         TestRun.LOGGER.info("Started tracing of: " + ','.join(bdevs))
 
     def get_trace_repository_path(self) -> str:
