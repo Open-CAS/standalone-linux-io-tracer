@@ -92,8 +92,11 @@ function iotrace_get_kernel_package () {
 function iotrace_get_distribution_pkg_dependencies () {
     distro=$(detect_distribution)
     case "${distro}" in
-    "RHEL7"|"CENTOS7"|"FEDORA"|"UBUNTU")
+    "RHEL7"|"CENTOS7"|"FEDORA")
         echo "rpm-build dpkg"
+        ;;
+    "UBUNTU")
+        echo "rpm dpkg"
         ;;
     *)
         iotrace_error "Unknown Linux distribution"
