@@ -7,6 +7,8 @@ import json
 import re
 import time
 from datetime import timedelta
+
+from api.iotrace_lat_hist_parser import HistogramEntry, LatencyHistogram
 from core.test_run_utils import TestRun
 from test_utils.singleton import Singleton
 from utils.installer import check_if_installed
@@ -69,7 +71,7 @@ class IotracePlugin(metaclass=Singleton):
         '''
         TestRun.LOGGER.info("Stopping tracing")
         pid = TestRun.executor.run('pgrep iotrace')
-        if pid.stdout == "":
+        if pid.exit_code != 0:
             return False
 
         # Send sigints
@@ -179,7 +181,7 @@ class IotracePlugin(metaclass=Singleton):
         out = TestRun.executor.run_expect_success(
                 f'iotrace --get-latency-histogram -p {trace_path}').stdout
 
-        return self.parse_json(out)[0]['histogram'][0]
+        return LatencyHistogram(self.parse_json(out)[0]['histogram'][0])
 
     def parse_json(self, output: str):
         '''
