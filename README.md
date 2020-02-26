@@ -104,7 +104,7 @@ sudo make install
 
 * Start tracing two block devices for 1 hour, or until trace file is 1GiB:
   ~~~{.sh}
-  sudo iotrace --start-trace --devices /dev/sda,/dev/sdb1 --time 3600 --size 1024
+  sudo iotrace --start-tracing --devices /dev/sda,/dev/sdb1 --time 3600 --size 1024
   ~~~
 
   > **NOTE:**  To allow tracing of block devices, Linux kernel tracing
@@ -133,7 +133,7 @@ sudo make install
 * Parse traces (note usage of path returned in --list-traces):
 
   ~~~{.sh}
-  iotrace --parse-trace --path "kernel/2019-05-10_15:24:21" --format json
+  iotrace --trace-parsing --parse-trace --path "kernel/2019-05-10_15:24:21" --format json
   ~~~
 
   Output:

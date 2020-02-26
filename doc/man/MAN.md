@@ -1,7 +1,7 @@
 # iotrace - collect and manage block I/O traces
 
 ```
-iotrace --start-trace -d device[,device,...] [-b buffer_size] [-s max_file_size] [-t seconds]
+iotrace --start-tracing -d device[,device,...] [-b buffer_size] [-s max_file_size] [-t seconds]
 iotrace --parse-trace [--format json] --path path
 iotrace --get-trace-summary --path path
 iotrace --list-traces [--prefix prefix]
@@ -17,7 +17,7 @@ iotrace provides block device IO tracing and trace management capabilities. For 
 # Commands
 
 
-* --start-trace, -S
+* --start-tracing, -S
   Start collecting IO traces.
 * --parse-trace, -P
   Convert collected trace to human readable form.
@@ -77,7 +77,7 @@ Traces are stored in location specified in OCTF configuration file /etc/octf/oct
 
 ~~~{.sh}
 # Start tracing
-iotrace --start-trace -d /dev/vda,/dev/vdb -b 10 -s 100 -t 20
+iotrace --start-tracing -d /dev/vda,/dev/vdb -b 10 -s 100 -t 20
 
 # List all traces
 iotrace --list-traces

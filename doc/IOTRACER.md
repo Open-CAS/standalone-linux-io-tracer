@@ -31,28 +31,24 @@ this instruction. Let's get a trace. Any time you can call the tool's help:
 
 ~~~{.sh}
 iotrace --help
-Usage: iotrace command [options...]
+Usage: iotrace [module] command [options...]
+
+Available modules:
+     -C    --trace-config                        Manages trace configuration
+     -M    --trace-management                    Manages available traces
+     -P    --trace-parsing                       Parses traces
 
 Available commands:
-           --get-fs-statistics                   Gets filesystem statistics
-           --get-latency-histogram               Gets latency histogram
-           --get-lba-histogram                   Returns a histogram of LBA hits
-           --get-trace-repository-path           Returns location of trace repository path
-     -T    --get-trace-statistics                Gets trace statistics
-     -G    --get-trace-summary                   Returns summary of specified trace
-     -H    --help                                Print help
-     -L    --list-traces                         Lists available traces
-     -P    --parse-trace                         Parses trace files to human readable form
-     -R    --remove-traces                       Removes specified trace(s)
-           --set-trace-repository-path           Sets location of trace repository path
-     -S    --start-trace                         Start IO tracing
-     -V    --version                             Print version
+     -H    --help                                Prints help
+     -S    --start-tracing                       Starts IO tracing
+     -V    --version                             Prints version
+
 ~~~
 
-We have to invoke _--start-trace_ command. Its help is: 
+We have to invoke _--start-tracing_ command. Its help is:
 
 ~~~{.sh}
-Usage: iotrace --start-trace  --devices <VALUE>[,VALUE]  [options...]
+Usage: iotrace --start-tracing  --devices <VALUE>[,VALUE]  [options...]
 
 Start IO tracing
 
@@ -69,7 +65,7 @@ We would like to trace them for 1 hour, or until trace file is 1GiB. Also you
 can label the trace with your name. We are going to call:
 
 ~~~{.sh}
-sudo iotrace --start-trace --devices /dev/nvme0n1,/dev/nvme1n1 --time 3600 --size 1024 --label "My cool first trace"
+sudo iotrace --start-tracing --devices /dev/nvme0n1,/dev/nvme1n1 --time 3600 --size 1024 --label "My cool first trace"
 ~~~
 
 But any time you can interrupt the trace collection by pressing Ctrl+C or sending 
@@ -103,11 +99,12 @@ processing.
 ## Parsing traces
 
 The iotrace parser converts IO traces from binary format to CSV or JSON format.
-To parse you trace we are going to invoke _--parse-trace_ command.
+To parse you trace we are going to invoke _--parse-trace_ command from
+_--trace-parsing_ module.
 
 ~~~{.sh}
-iotrce --parse-trace --help
-Usage: iotrace --parse-trace  --path <VALUE>  [options...]
+iotrace --trace-parsing --parse-trace --help
+Usage: iotrace --trace-parsing --parse-trace  --path <VALUE>  [options...]
 
 Parse trace files to human readable form
 
@@ -120,7 +117,7 @@ Options that are valid with {-P | --parse-trace}
 To get CSV, call:
 
 ~~~{.sh}
-iotrace --parse-trace --path kernel/2019-08-13_12:35:22 --format csv
+iotrace --trace-parsing --parse-trace --path kernel/2019-08-13_12:35:22 --format csv
 ~~~
 
 You should get the CSV output:
@@ -223,7 +220,7 @@ included our future plans for tracing.
 Having IO trace, you can get basic IO statistics. To get it, please call:
 
 ~~~{.sh}
-iotrace --get-trace-statistics --path kernel/2019-08-13_12:35:22 --format json
+iotrace --trace-parsing --get-trace-statistics --path kernel/2019-08-13_12:35:22 --format json
 ~~~
 
 The JSON output as following:
