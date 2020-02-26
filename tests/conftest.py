@@ -105,7 +105,7 @@ def pytest_addoption(parser):
 
 def dut_prepare(force_reinstall):
     if not TestRun.plugins['iotrace'].installed or force_reinstall:
-        TestRun.LOGGER.info("Installing iotrace")
+        TestRun.LOGGER.info("Installing iotrace:")
         install_iotrace()
     else:
         TestRun.LOGGER.info("iotrace is already installed by previous test")
