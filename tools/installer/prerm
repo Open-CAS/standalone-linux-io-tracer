@@ -1,1 +1,3 @@
-find /lib/modules -name "iotrace.ko" | weak-modules --remove-modules --no-initramfs
+if [ -x "$(command -v weak-modules)" ]; then
+	find /lib/modules -name "iotrace.ko" | weak-modules --remove-modules --no-initramfs
+fi
