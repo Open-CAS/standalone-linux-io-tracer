@@ -103,7 +103,7 @@ def check_if_installed():
 
 def uninstall_iotrace():
     TestRun.LOGGER.info("Uninstalling previous iotrace")
-    TestRun.executor.run_expect_success(
+    TestRun.executor.run(
         f"cd {TestRun.plugins['iotrace'].working_dir} && "
         "make uninstall")
 
