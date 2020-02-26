@@ -122,23 +122,6 @@ class IotracePlugin(metaclass=Singleton):
 
         return output.stdout
 
-    def get_lba_histogram(self, trace_path: str, bucket_size=0, subrange_start=0, subrange_end=0) -> str:
-        '''
-        Get lba histogram of given trace path
-
-        :param trace_path: trace path
-        :param bucket_size: bucket size
-        :param subrange_start: subrange start
-        :param subrange_end: subrange end
-        :return: LBA histogram in JSON format
-        :raises Exception: if histogram is invalid
-        '''
-        output = TestRun.executor.run(f'iotrace --get-lba-histogram -p {trace_path} -b {bucket_size} -s {subrange_start} -e {subrange_end}')
-        if (output.stdout == ""):
-            raise Exception("Invalid histogram")
-
-        return output.stdout
-
     def get_trace_events(self, trace_path: str) -> str:
         '''
         Get all trace events of given trace path
