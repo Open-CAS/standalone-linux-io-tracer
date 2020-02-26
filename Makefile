@@ -46,7 +46,6 @@ install: all
 	$(CMAKE) -DCOMPONENT=octf-install-cmake -P $(BUILD_DIR)/cmake_install.cmake
 	$(CMAKE) -DCOMPONENT=octf-post-install -P $(BUILD_DIR)/cmake_install.cmake
 	$(CMAKE) -DCOMPONENT=iotrace-install -P $(BUILD_DIR)/cmake_install.cmake
-	$(CMAKE) -DCOMPONENT=iotrace-install-man -P $(BUILD_DIR)/cmake_install.cmake
 	$(CMAKE) -DCOMPONENT=iotrace-post-install -P $(BUILD_DIR)/cmake_install.cmake
 
 package: all
