@@ -53,8 +53,7 @@ void static iotrace_bdev_add_oncpu(void *info) {
     BUG_ON(trace_bdev->num >= SATRACE_MAX_DEVICES);
     per_cpu_ptr(trace_bdev->list, cpu)[trace_bdev->num] = data->bdev;
 
-    iotrace_trace_desc(iotrace, cpu, (uint64_t) gd->queue->dev, gd->disk_name,
-                       bdev_size);
+    iotrace_trace_desc(iotrace, cpu, disk_devt(gd), gd->disk_name, bdev_size);
 }
 
 /**

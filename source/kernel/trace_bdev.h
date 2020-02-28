@@ -31,7 +31,7 @@ struct iotrace_bdev {
 };
 
 /**
- * @brief Check if device with given queue is added to trace list
+ * @brief Gets device with given queue, if it was added to trace list
  *
  * @usage This function is designed to be called with preemption disabled.
  *
@@ -39,9 +39,10 @@ struct iotrace_bdev {
  * @param cpu running CPU
  * @param q request queue
  */
-static bool inline iotrace_bdev_is_added(struct iotrace_bdev *trace_bdev,
-                                         unsigned cpu,
-                                         struct request_queue *q) {
+static inline struct block_device *iotrace_get_bdev_from_queue(
+        struct iotrace_bdev *trace_bdev,
+        unsigned cpu,
+        struct request_queue *q) {
     struct block_device **bdev_list;
     unsigned i;
 
@@ -49,10 +50,10 @@ static bool inline iotrace_bdev_is_added(struct iotrace_bdev *trace_bdev,
 
     for (i = 0; i < SATRACE_MAX_DEVICES && bdev_list[i] != NULL; i++) {
         if (bdev_list[i]->bd_queue == q)
-            return true;
+            return bdev_list[i];
     }
 
-    return false;
+    return NULL;
 }
 
 int iotrace_bdev_list(struct iotrace_bdev *trace_bdev,
