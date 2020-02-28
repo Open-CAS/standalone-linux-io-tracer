@@ -114,7 +114,7 @@ sudo make install
 * List created traces:
 
   ~~~{.sh}
-  iotrace --list-traces
+  iotrace --trace-management --list-traces
   ~~~
 
   Output:
