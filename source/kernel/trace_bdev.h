@@ -38,6 +38,11 @@ struct iotrace_bdev {
  * @param trace_bdev iotrace device list
  * @param cpu running CPU
  * @param q request queue
+ *
+ * @return Block device associated with request queue
+ * @retval NULL if block device isn't registered in iotracer
+ * @retval block_device associated with request_queue if it was registered
+ * in iotracer
  */
 static inline struct block_device *iotrace_get_bdev_from_queue(
         struct iotrace_bdev *trace_bdev,
