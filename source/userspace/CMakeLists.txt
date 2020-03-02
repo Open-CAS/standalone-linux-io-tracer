@@ -1,4 +1,3 @@
-set(CMAKE_PREFIX_PATH "/opt/octf/protobuf;${CMAKE_PREFIX_PATH}")
 find_package(Protobuf 3.0 REQUIRED)
 
 set(protoSources ${CMAKE_CURRENT_LIST_DIR}/proto/InterfaceKernelTraceCreating.proto)
