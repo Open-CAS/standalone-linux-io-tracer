@@ -1,5 +1,4 @@
 # Build rpm/deb package using CPack included with CMake
-set(VERSION "20.3")
 set(rpmName "iotrace")
 
 # RPM and DEB only
@@ -38,8 +37,8 @@ set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
 # which causes installation/uninstallation errors. This fixes it.
 set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION
 	"/;/usr/local;/usr/local/include;/usr/local/lib;/run;/var;/var/lib;/lib;/lib/modules;/lib/modules/${UNAME_R};/lib/modules/${UNAME_R}/extra")
-set(CPACK_PACKAGE_VERSION ${VERSION})
-set(CPACK_PACKAGE_NAME ${rpmName})
+set(CPACK_PACKAGE_VERSION "${IOTRACE_VERSION}")
+set(CPACK_PACKAGE_NAME "${rpmName}")
 set(CPACK_PACKAGE_RELEASE 1)
 set(CPACK_PACKAGE_VENDOR "Intel Corporation")
 set(CPACK_PACKAGE_CONTACT "https://github.com/Open-CAS")
