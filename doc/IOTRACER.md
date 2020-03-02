@@ -45,7 +45,7 @@ Available commands:
 
 ~~~
 
-We have to invoke _--start-tracing_ command. Its help is:
+To start trace collection use _--start-tracing_ command. Command usage:
 
 ~~~{.sh}
 Usage: iotrace --start-tracing  --devices <VALUE>[,VALUE]  [options...]
