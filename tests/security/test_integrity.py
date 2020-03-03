@@ -10,7 +10,7 @@ import time
 import pytest
 
 from core.test_run import TestRun
-from iotrace import IotracePlugin
+from utils.iotrace import IotracePlugin
 from utils.fio import run_workload, setup_workload
 
 seconds = 20

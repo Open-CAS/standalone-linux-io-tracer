@@ -7,6 +7,7 @@ import pytest
 from core.test_run import TestRun
 import time
 
+from utils.iotrace import parse_json
 
 def test_files_privileges():
     TestRun.LOGGER.info("Testing iotrace config owner and trace file privileges")

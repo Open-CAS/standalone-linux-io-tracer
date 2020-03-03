@@ -10,6 +10,7 @@ import time
 from random import randrange
 from math import floor
 
+from utils.iotrace import IotracePlugin
 # iotrace uses 512B sector size, even if underlying disk has larger sectors
 iotrace_lba_len = 512
 
@@ -47,9 +48,8 @@ def test_io_events():
         with TestRun.step("Stop tracing"):
             iotrace.stop_tracing()
         with TestRun.step("Verify trace correctness"):
-            trace_path = iotrace.get_latest_trace_path()
-            events = iotrace.get_trace_events(trace_path)
-            events_parsed = iotrace.parse_json(events)
+            trace_path = IotracePlugin.get_latest_trace_path()
+            events_parsed = IotracePlugin.get_trace_events(trace_path)
             result = any(
                 'io' in event and
                 'operation' in event['io'] and
@@ -90,7 +90,7 @@ def test_lba_histogram():
     TestRun.LOGGER.info("Testing lba histogram")
     iotrace = TestRun.plugins['iotrace']
     number_buckets = 32
-    bucket_size = 256
+    bucket_size = Size(256)
     start_lba = 10240
     end_lba = start_lba + number_buckets * bucket_size
     for disk in TestRun.dut.disks:
@@ -134,9 +134,9 @@ def test_lba_histogram():
         with TestRun.step("Stop tracing"):
             iotrace.stop_tracing()
         with TestRun.step("Verify histogram correctness"):
-            trace_path = iotrace.get_latest_trace_path()
-            histogram = iotrace.get_lba_histogram(trace_path, bucket_size, start_lba, end_lba)
-            json = iotrace.parse_json(histogram)
+            trace_path = IotracePlugin.get_latest_trace_path()
+            json = IotracePlugin.get_lba_histogram(
+                trace_path, bucket_size, start_lba, end_lba)
             TestRun.LOGGER.info(str(json[0]['histogram'][0]))
             TestRun.LOGGER.info \
                 (str(json[0]['histogram'][0]['total']['range'][4]))

@@ -8,7 +8,7 @@ from test_tools.disk_utils import Filesystem
 from test_utils.os_utils import sync
 from test_tools.fs_utils import create_directory, create_file, move, remove, \
     write_file, ls
-import time
+from utils.iotrace import IotracePlugin
 
 mountpoint = "/mnt"
 
@@ -55,9 +55,8 @@ def test_fs_operations():
                 sync()
                 iotrace.stop_tracing()
             with TestRun.step("Verify trace correctness"):
-                trace_path = iotrace.get_latest_trace_path()
-                events = iotrace.get_trace_events(trace_path)
-                events_parsed = iotrace.parse_json(events)
+                trace_path = IotracePlugin.get_latest_trace_path()
+                events_parsed = IotracePlugin.get_trace_events(trace_path)
                 result = any(
                     'file' in event and event['file']['eventType'] == 'Create' and
                     event['file']['id'] == test_file2_inode for event in events_parsed)
