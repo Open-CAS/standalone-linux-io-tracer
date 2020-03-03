@@ -15,6 +15,7 @@ if (hasApt)
 else()
     set(CPACK_DEB_COMPONENT_INSTALL OFF)
 endif()
+execute_process(OUTPUT_VARIABLE uname_r OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND uname -r)
 
 
 # Separate install and post-install components need to be specified because
@@ -27,27 +28,37 @@ endif()
 # Set components to be installed with package
 set(CPACK_COMPONENTS_ALL iotrace-install octf-install)
 
-set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE ${CMAKE_SOURCE_DIR}/tools/installer/postinst)
-set(CPACK_RPM_PRE_UNINSTALL_SCRIPT_FILE ${CMAKE_SOURCE_DIR}/tools/installer/prerm)
+# Generate postinst/prerm scripts with build-time kernel version variable added
+set(destPostinst ${CMAKE_CURRENT_BINARY_DIR}/postinst)
+file(WRITE ${destPostinst} "uname_r=\"${uname_r}\"\n")
+file(READ ${CMAKE_SOURCE_DIR}/tools/installer/postinst postinstContent)
+file(APPEND ${destPostinst} "${postinstContent}")
+
+set(destPrerm ${CMAKE_CURRENT_BINARY_DIR}/prerm)
+file(WRITE ${destPrerm} "uname_r=\"${uname_r}\"\n")
+file(READ ${CMAKE_SOURCE_DIR}/tools/installer/prerm prermContent)
+file(APPEND ${destPrerm} "${prermContent}")
+
+set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE ${destPostinst})
+set(CPACK_RPM_PRE_UNINSTALL_SCRIPT_FILE ${destPrerm})
 set(CPACK_RPM_POST_UNINSTALL_SCRIPT_FILE ${CMAKE_SOURCE_DIR}/tools/installer/postrm)
 set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
-    "${CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA};${CMAKE_CURRENT_SOURCE_DIR}/tools/installer/postinst")
+    "${CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA};${destPostinst}")
 set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
-    "${CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA};${CMAKE_CURRENT_SOURCE_DIR}/tools/installer/prerm")
+    "${CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA};${destPrerm}")
 set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
     "${CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA};${CMAKE_CURRENT_SOURCE_DIR}/tools/installer/postrm")
 
 # All components are to be installed with one rpm
 set(CPACK_COMPONENTS_ALL_IN_ONE_PACKAGE 1)
 
-execute_process(OUTPUT_VARIABLE UNAME_R OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND uname -r)
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Standalone Linux I/O tracer for kernel ${UNAME_R}")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Standalone Linux I/O tracer for kernel ${uname_r}")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
 
 # CPack wrongly assumes we want to create these directories as our own, beause we copy files there
 # which causes installation/uninstallation errors. This fixes it.
 set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION
-	"/;/usr/local;/usr/local/include;/usr/local/lib;/run;/var;/var/lib;/lib;/lib/modules;/lib/modules/${UNAME_R};/lib/modules/${UNAME_R}/extra")
+	"/;/usr/local;/usr/local/include;/usr/local/lib;/run;/var;/var/lib;/lib;/lib/modules;/lib/modules/${uname_r};/lib/modules/${uname_r}/extra")
 set(CPACK_PACKAGE_VERSION "${IOTRACE_VERSION}")
 set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
 set(CPACK_PACKAGE_RELEASE 1)
