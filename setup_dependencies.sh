@@ -143,11 +143,6 @@ function iotrace_get_distribution_pkg_manager () {
     esac
 }
 
-if [ "$EUID" -ne 0 ]
-then
-    iotrace_error "Please run as root to allow using package manager"
-fi
-
 # Include and execute OCTF setup dependencies
 IOTRACE_SCRIPT_DIR="$(cd $(dirname ${BASH_SOURCE[0]}) && pwd)"
 bash -c ${IOTRACE_SCRIPT_DIR}/modules/open-cas-telemetry-framework/setup_dependencies.sh
@@ -155,6 +150,11 @@ if [ $? -ne 0 ]
 then
     iotrace_error "Cannot setup OCTF submodule dependencies"
     exit 1
+fi
+
+if [ "$EUID" -ne 0 ]
+then
+    iotrace_error "Please run as root to allow using package manager"
 fi
 
 iotrace_setup_kernel_headers
