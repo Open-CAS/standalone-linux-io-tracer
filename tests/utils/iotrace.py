@@ -140,7 +140,7 @@ class IotracePlugin(metaclass=Singleton):
         :raises Exception: if histogram is invalid
         '''
         output = TestRun.executor.run(
-            f'iotrace --trace-parsing --get-lba-histogram -p {trace_path} -b {bucket_size} -s {subrange_start} -e {subrange_end}')
+            f'iotrace --trace-parser --lba-histogram -p {trace_path} -b {bucket_size} -s {subrange_start} -e {subrange_end}')
         if (output.stdout == ""):
             raise Exception("Invalid histogram")
 
@@ -155,7 +155,7 @@ class IotracePlugin(metaclass=Singleton):
         :raises Exception: if traces are invalid
         '''
         output = TestRun.executor.run(
-            f'iotrace --trace-parsing --parse-trace -p {trace_path}')
+            f'iotrace --trace-parser --io -p {trace_path}')
         if (output.stdout == ""):
             raise Exception("Invalid traces")
 
@@ -170,7 +170,7 @@ class IotracePlugin(metaclass=Singleton):
         :raises Exception: if traces are invalid
         '''
         output = TestRun.executor.run(
-            f'iotrace --trace-parsing --get-trace-statistics -p {trace_path}')
+            f'iotrace --trace-parser --statistics -p {trace_path}')
         if (output.stdout == ""):
             raise Exception("Invalid traces")
 
@@ -185,7 +185,7 @@ class IotracePlugin(metaclass=Singleton):
         :raises Exception: if traces are invalid
         '''
         out = TestRun.executor.run_expect_success(
-                f'iotrace --get-latency-histogram -p {trace_path}').stdout
+                f'iotrace --trace-parser --latency-histogram -p {trace_path}').stdout
 
         return LatencyHistogram(self.parse_json(out)[0]['histogram'][0])
 
