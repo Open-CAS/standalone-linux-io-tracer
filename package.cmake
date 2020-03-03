@@ -18,14 +18,44 @@ endif()
 execute_process(OUTPUT_VARIABLE uname_r OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND uname -r)
 
 
+# Source package
+set(CPACK_SOURCE_GENERATOR TGZ)
+# Exclude untracked and ignored files, including those in submodules
+execute_process(
+    COMMAND bash -c "git clean --dry-run -xd -e VERSION | cut -d ' ' -f 3- | xargs -I{} printf {}\; \
+    && git submodule foreach --recursive --quiet 'git ls-files --ignored --directory --others --exclude-standard \
+    | sed \"s|^|$path/|\"' | xargs -I{} printf {}\; \
+    && git submodule foreach --recursive --quiet 'git ls-files --others --directory --exclude-standard \
+    | sed \"s|^|$path/|\"' | xargs -I{} printf {}\;"
+    OUTPUT_VARIABLE CPACK_SOURCE_IGNORE_FILES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+    ERROR_QUIET
+)
+
+message(STATUS "${CPACK_SOURCE_IGNORE_FILES}")
+
+
+# Exclude untracked files from submodules
+#execute_process(
+#    COMMAND bash -c "git submodule foreach --quiet 'git ls-files --ignored --others --exclude-standard | sed \"s|^|$path/|\"'"
+#    OUTPUT_VARIABLE SRC_PKG_EXCLUDE_LIST2
+#    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+#    ERROR_QUIET
+#)
+#
+#list(APPEND SRC_PKG_EXCLUDE_LIST ${SRC_PKG_EXCLUDE_LIST2})
+
+
 # Separate install and post-install components need to be specified because
 # install(CODE) and install(SCRIPT) code is run at "make install" time. By
 # default, CPack does a "make install" to an intermediate location in the build
 # tree (underneath _CPack_Packages in your build tree) as part of building the
 # final installer. We dont't want 'make install' code (e.g. depmod) to be run
 # during 'make package' We add such code as a post install script.
+set(CPACK_RPM_COMPONENT_INSTALL ON)
+set(CPACK_DEB_COMPONENT_INSTALL ON)
 
-# Set components to be installed with package
+# Set components to be installed with binary package
 set(CPACK_COMPONENTS_ALL iotrace-install octf-install)
 
 # Generate postinst/prerm scripts with build-time kernel version variable added
