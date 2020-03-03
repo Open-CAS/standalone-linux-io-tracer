@@ -62,6 +62,6 @@ install(FILES "${traceModulePath}"
 if (${CMAKE_INSTALL_PREFIX} STREQUAL "/")
 	install(
 	   CODE "execute_process(COMMAND depmod)"
-        COMPONENT iotrace-install
+        COMPONENT iotrace-post-install
     )
 endif()            
