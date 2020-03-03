@@ -7,6 +7,8 @@ import json
 import re
 import time
 from datetime import timedelta
+
+from api.iotrace_lat_hist_parser import HistogramEntry, LatencyHistogram
 from core.test_run_utils import TestRun
 from test_utils.singleton import Singleton
 from utils.installer import check_if_installed
@@ -70,7 +72,7 @@ class IotracePlugin(metaclass=Singleton):
         '''
         TestRun.LOGGER.info("Stopping tracing")
         pid = TestRun.executor.run('pgrep iotrace')
-        if pid.stdout == "":
+        if pid.exit_code != 0:
             return False
 
         # Send sigints
@@ -138,7 +140,7 @@ class IotracePlugin(metaclass=Singleton):
         :raises Exception: if histogram is invalid
         '''
         output = TestRun.executor.run(
-            f'iotrace --trace-parsing --get-lba-histogram -p {trace_path} -b {bucket_size} -s {subrange_start} -e {subrange_end}')
+            f'iotrace --trace-parser --lba-histogram -p {trace_path} -b {bucket_size} -s {subrange_start} -e {subrange_end}')
         if (output.stdout == ""):
             raise Exception("Invalid histogram")
 
@@ -153,7 +155,7 @@ class IotracePlugin(metaclass=Singleton):
         :raises Exception: if traces are invalid
         '''
         output = TestRun.executor.run(
-            f'iotrace --trace-parsing --parse-trace -p {trace_path}')
+            f'iotrace --trace-parser --io -p {trace_path}')
         if (output.stdout == ""):
             raise Exception("Invalid traces")
 
@@ -168,7 +170,7 @@ class IotracePlugin(metaclass=Singleton):
         :raises Exception: if traces are invalid
         '''
         output = TestRun.executor.run(
-            f'iotrace --trace-parsing --get-trace-statistics -p {trace_path}')
+            f'iotrace --trace-parser --statistics -p {trace_path}')
         if (output.stdout == ""):
             raise Exception("Invalid traces")
 
@@ -183,9 +185,9 @@ class IotracePlugin(metaclass=Singleton):
         :raises Exception: if traces are invalid
         '''
         out = TestRun.executor.run_expect_success(
-                f'iotrace --get-latency-histogram -p {trace_path}').stdout
+                f'iotrace --trace-parser --latency-histogram -p {trace_path}').stdout
 
-        return self.parse_json(out)[0]['histogram'][0]
+        return LatencyHistogram(self.parse_json(out)[0]['histogram'][0])
 
     def parse_json(self, output: str):
         '''
