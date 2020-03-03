@@ -1,9 +1,20 @@
-# Build rpm/deb package using CPack included with CMake
-set(rpmName "iotrace")
+find_program (hasYum yum)
+find_program (hasDnf dnf)
+find_program (hasApt apt)
 
-# RPM and DEB only
-set(CPACK_RPM_COMPONENT_INSTALL ON)
-set(CPACK_DEB_COMPONENT_INSTALL ON)
+if (hasYum OR hasDnf)
+    set(CPACK_RPM_COMPONENT_INSTALL ON)
+    list(APPEND CPACK_GENERATOR "RPM")
+else()
+    set(CPACK_RPM_COMPONENT_INSTALL OFF)
+endif()
+
+if (hasApt)
+    set(CPACK_DEB_COMPONENT_INSTALL ON)
+    list(APPEND CPACK_GENERATOR "DEB")
+else()
+    set(CPACK_DEB_COMPONENT_INSTALL OFF)
+endif()
 
 
 # Separate install and post-install components need to be specified because
@@ -38,13 +49,12 @@ set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
 set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION
 	"/;/usr/local;/usr/local/include;/usr/local/lib;/run;/var;/var/lib;/lib;/lib/modules;/lib/modules/${UNAME_R};/lib/modules/${UNAME_R}/extra")
 set(CPACK_PACKAGE_VERSION "${IOTRACE_VERSION}")
-set(CPACK_PACKAGE_NAME "${rpmName}")
+set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
 set(CPACK_PACKAGE_RELEASE 1)
 set(CPACK_PACKAGE_VENDOR "Intel Corporation")
 set(CPACK_PACKAGE_CONTACT "https://github.com/Open-CAS")
 set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
 set(CPACK_PACKAGE_FILE_NAME
  "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CPACK_PACKAGE_RELEASE}.${CMAKE_SYSTEM_PROCESSOR}")
-set(CPACK_GENERATOR "RPM;DEB")
 
 include(CPack)
