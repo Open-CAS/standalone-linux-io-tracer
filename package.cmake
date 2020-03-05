@@ -25,7 +25,7 @@ execute_process(
     COMMAND bash -c "git ls-files --directory --others --exclude-standard -x VERSION | xargs -I{} printf \`pwd\`/{}\; \
     && git ls-files --directory --ignored --others --exclude-standard | xargs -I{} printf {}\; \
     && git submodule foreach --recursive --quiet 'git ls-files --ignored --directory --others --exclude-standard \
-    | xargs -I{} printf \`pwd\`/{}\;'\
+    | grep -v tools/third_party | xargs -I{} printf \`pwd\`/{}\;'\
     && git submodule foreach --recursive --quiet 'git ls-files --others --directory --exclude-standard \
     | xargs -I{} printf \`pwd\`/{}\;'"
     OUTPUT_VARIABLE CPACK_SOURCE_IGNORE_FILES

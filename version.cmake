@@ -13,7 +13,7 @@ execute_process(
 if (NOT IOTRACE_VERSION_LABEL)
     message(STATUS "git repository not found, trying label from VERSION file")
     execute_process(
-        COMMAND bash -c "tail -n 1 ${CMAKE_CURRENT_LIST_DIR}/VERSION | awk -F '=' '{print $2}' \
+        COMMAND bash -c "grep LABEL < ${CMAKE_CURRENT_LIST_DIR}/VERSION | awk -F '=' '{print $2}' \
         | tr -d '\n'"
         OUTPUT_VARIABLE IOTRACE_VERSION_LABEL
         WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
