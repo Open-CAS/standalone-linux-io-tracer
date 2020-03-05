@@ -223,7 +223,8 @@ static inline int iotrace_unregister_trace_block_bio_complete(
 #endif
 
 /* Memory access OK */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0) || \
+    (defined(RHEL_MAJOR) && RHEL_MAJOR >= 8)
 #define IOTRACE_ACCESS_OK(type, addr, size) access_ok(addr, size)
 #else
 #define IOTRACE_ACCESS_OK(type, addr, size) access_ok(type, addr, size)
