@@ -18,13 +18,27 @@ endif()
 execute_process(OUTPUT_VARIABLE uname_r OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND uname -r)
 
 
+# Source package
+set(CPACK_SOURCE_GENERATOR TGZ)
+# Exclude untracked and ignored files, including those in submodules
+execute_process(
+    COMMAND bash -c "git ls-files --directory --others --exclude-standard -x VERSION | xargs -I{} printf \`pwd\`/{}\; \
+    && git ls-files --directory --ignored --others --exclude-standard | xargs -I{} printf {}\; \
+    && git submodule foreach --recursive --quiet 'git ls-files --ignored --directory --others --exclude-standard \
+    | grep -v tools/third_party | xargs -I{} printf \`pwd\`/{}\;'\
+    && git submodule foreach --recursive --quiet 'git ls-files --others --directory --exclude-standard \
+    | xargs -I{} printf \`pwd\`/{}\;'"
+    OUTPUT_VARIABLE CPACK_SOURCE_IGNORE_FILES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+    ERROR_QUIET
+)
+
 # Separate install and post-install components need to be specified because
 # install(CODE) and install(SCRIPT) code is run at "make install" time. By
 # default, CPack does a "make install" to an intermediate location in the build
 # tree (underneath _CPack_Packages in your build tree) as part of building the
 # final installer. We dont't want 'make install' code (e.g. depmod) to be run
 # during 'make package' We add such code as a post install script.
-
 # Set components to be installed with package
 set(CPACK_COMPONENTS_ALL iotrace-install octf-install)
 
