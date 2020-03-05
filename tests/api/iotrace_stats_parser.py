@@ -3,34 +3,107 @@
 # SPDX-License-Identifier: BSD-3-Clause-Clear
 #
 
-import pytest
+from typing import List
 
 from test_utils.size import Size, Unit, parse_unit
-from core.test_run import TestRun
-
-from iotrace import IotracePlugin
 
 
-class TraceStatistics:
+class BaseTraceStatistics:
     def __init__(self, trace):
-        self.device = DeviceStats(trace["desc"]["device"])
         self.duration = int(trace["duration"])
         self.read = IOStatistics(trace["read"])
         self.write = IOStatistics(trace["write"])
-        self.discard = ServiceStats(trace["discard"])
-        self.flush = ServiceStats(trace["flush"])
         self.total = IOStatistics(trace["total"])
 
     def __str__(self):
-        ret = f"{self.device}"
-        ret += f"duration: {self.duration}\n"
+        ret = f"duration: {self.duration}\n"
         ret += f"READ: {self.read}"
         ret += f"WRITE: {self.write}"
-        ret += f"DISCARD: {self.discard}"
-        ret += f"FLUSH: {self.flush}"
         ret += f"TOTAL: {self.total}"
 
         return ret
+
+
+class DeviceTraceStatistics(BaseTraceStatistics):
+    def __init__(self, trace):
+        super().__init__(trace)
+        self.device = DeviceStats(trace["desc"]["device"])
+        self.discard = ServiceStats(trace["discard"])
+        self.flush = ServiceStats(trace["flush"])
+
+    def __str__(self):
+        ret = f"{self.device}"
+        ret += super().__str__()
+        ret += f"DISCARD: {self.discard}"
+        ret += f"FLUSH: {self.flush}"
+
+        return ret
+
+
+class FsTraceStatistics:
+    def __init__(self, trace):
+        self.device_id = trace["deviceId"]
+        self.partition_id = trace["partitionId"]
+        self.statistics = BaseTraceStatistics(trace["statistics"])
+
+    def __str__(self):
+        ret = f"Device ID: {self.device_id}"
+        ret += f"Partition ID: {self.partition_id}"
+        ret += str(self.statistics)
+
+        return ret
+
+
+class DirectoryTraceStatistics(FsTraceStatistics):
+    def __init__(self, trace):
+        super().__init__(trace)
+        self.directory = trace["directory"]
+
+    def __str__(self):
+        ret = f"Directory: {self.directory}"
+        ret += super().__str__()
+
+        return ret
+
+
+class FileTraceStatistics(FsTraceStatistics):
+    def __init__(self, trace):
+        super().__init__(trace)
+        self.file_name_prefix = trace["fileNamePrefix"]
+
+    def __str__(self):
+        ret = f"File name prefix: {self.file_name_prefix}"
+        ret += super().__str__()
+
+        return ret
+
+
+class ExtensionTraceStatistics(FsTraceStatistics):
+    def __init__(self, trace):
+        super().__init__(trace)
+        self.extension = trace["fileExtension"]
+
+    def __str__(self):
+        ret = f"Extension: {self.extension}"
+        ret += super().__str__()
+
+        return ret
+
+
+def parse_fs_stats(stats: list) -> List[FsTraceStatistics]:
+    parsed = []
+
+    for entry in stats:
+        if "directory" in entry:
+            parsed.append(DirectoryTraceStatistics(entry))
+        elif "fileExtension" in entry:
+            parsed.append(ExtensionTraceStatistics(entry))
+        elif "fileNamePrefix" in entry:
+            parsed.append(FileTraceStatistics(entry))
+        else:
+            raise Exception("Unrecognized FS statistics")
+
+    return parsed
 
 
 class DeviceStats:
@@ -46,15 +119,15 @@ class DeviceStats:
 class IOStatistics:
     def __init__(self, trace):
         self.size = SectorStat(trace["size"])
-        self.latency = TimeStat(trace["latency"])
+        self.latency = TimeStat(trace["latency"]) if "latency" in trace else None
         self.metrics = Metrics(trace["metrics"])
-        self.errors = int(trace["errors"])
+        self.errors = int(trace["errors"]) if "errors" in trace else None
 
     def __str__(self):
         ret = f"{self.size}"
-        ret += f"{self.latency}"
+        ret += f"{self.latency}" if self.latency else ""
         ret += f"{self.metrics}"
-        ret += f"errors {self.errors}"
+        ret += f"{self.errors}" if self.errors else ""
 
         return ret
 
@@ -87,7 +160,7 @@ class SectorStat:
         self.average = Size(float(trace["average"]), Unit.Blocks512)
         self.min = Size(float(trace["min"]), Unit.Blocks512)
         self.max = Size(float(trace["max"]), Unit.Blocks512)
-        self.count = Size(float(trace["count"]), Unit.Blocks512)
+        self.count = int(trace["count"])
         self.total = Size(float(trace["total"]), Unit.Blocks512)
         self.percentiles = Percentiles(
             trace["percentiles"], "of reqs touches no more sectors than"
@@ -151,9 +224,16 @@ class Metrics:
             self.workset = Size(0)
             self.bandwidth_per_sec = Size(0)
 
+        if "write invalidation factor" in trace:
+            self.wif = float(trace["write invalidation factor"]["value"])
+        else:
+            self.wif = None
+
     def __str__(self):
         ret = f"metrics: IOPS: {self.iops}\n"
         ret += f"workset: {self.workset}\n"
         ret += f"bandwidth: {self.bandwidth_per_sec}/s\n"
+        if self.wif:
+            ret += f"write invalidation factor: {self.wif}\n"
 
         return ret
