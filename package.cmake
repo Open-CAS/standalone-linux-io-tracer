@@ -45,17 +45,17 @@ set(CPACK_COMPONENTS_ALL iotrace-install octf-install)
 # Generate postinst/prerm scripts with build-time kernel version variable added
 set(destPostinst ${CMAKE_CURRENT_BINARY_DIR}/postinst)
 file(WRITE ${destPostinst} "uname_r=\"${uname_r}\"\n")
-file(READ ${CMAKE_SOURCE_DIR}/tools/installer/postinst postinstContent)
+file(READ ${CMAKE_CURRENT_SOURCE_DIR}/tools/installer/postinst postinstContent)
 file(APPEND ${destPostinst} "${postinstContent}")
 
 set(destPrerm ${CMAKE_CURRENT_BINARY_DIR}/prerm)
 file(WRITE ${destPrerm} "uname_r=\"${uname_r}\"\n")
-file(READ ${CMAKE_SOURCE_DIR}/tools/installer/prerm prermContent)
+file(READ ${CMAKE_CURRENT_SOURCE_DIR}/tools/installer/prerm prermContent)
 file(APPEND ${destPrerm} "${prermContent}")
 
 set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE ${destPostinst})
 set(CPACK_RPM_PRE_UNINSTALL_SCRIPT_FILE ${destPrerm})
-set(CPACK_RPM_POST_UNINSTALL_SCRIPT_FILE ${CMAKE_SOURCE_DIR}/tools/installer/postrm)
+set(CPACK_RPM_POST_UNINSTALL_SCRIPT_FILE ${CMAKE_CURRENT_SOURCE_DIR}/tools/installer/postrm)
 set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
     "${CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA};${destPostinst}")
 set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
@@ -72,13 +72,14 @@ set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
 # CPack wrongly assumes we want to create these directories as our own, beause we copy files there
 # which causes installation/uninstallation errors. This fixes it.
 set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION
-	"/;/usr/local;/usr/local/include;/usr/local/lib;/run;/var;/var/lib;/lib;/lib/modules;/lib/modules/${uname_r};/lib/modules/${uname_r}/extra")
+    "/;/usr/local;/usr/local/include;/usr/local/lib;/run;/var;/var/lib;/lib;/lib/modules;/lib/modules/${uname_r};/lib/modules/${uname_r}/extra")
 set(CPACK_PACKAGE_VERSION "${IOTRACE_VERSION}")
 set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
 set(CPACK_PACKAGE_RELEASE 1)
 set(CPACK_PACKAGE_VENDOR "Intel Corporation")
 set(CPACK_PACKAGE_CONTACT "https://github.com/Open-CAS")
 set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
+set(CPACK_PACKAGE_CHECKSUM SHA256)
 set(CPACK_PACKAGE_FILE_NAME
  "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CPACK_PACKAGE_RELEASE}.${CMAKE_SYSTEM_PROCESSOR}")
 
