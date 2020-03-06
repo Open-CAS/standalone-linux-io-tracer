@@ -107,7 +107,7 @@ function iotrace_get_distribution_pkg_dependencies () {
         echo "rpm-build elfutils-libelf-devel"
         ;;
     "UBUNTU")
-        echo "rpm dpkg"
+        echo "dpkg"
         ;;
     *)
         iotrace_error "Unknown Linux distribution"
