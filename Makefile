@@ -47,12 +47,11 @@ install: all
 package: all
 	$(MAKE) -C $(BUILD_DIR) package
 
-src-package: init
+package_source: init
 	$(CMAKE) -P version.cmake
 	make -C $(BUILD_DIR) package_source
 
 uninstall: init
-	cd $(BUILD_DIR) && $(CMAKE) $(SOURCE_PATH) -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) -DCMAKE_INSTALL_PREFIX=$(PREFIX)
 	$(MAKE) -C $(BUILD_DIR) iotrace-uninstall
 	$(MAKE) -C $(BUILD_DIR) octf-uninstall
 
