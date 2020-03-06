@@ -12,6 +12,7 @@ from api.iotrace_lat_hist_parser import HistogramEntry, LatencyHistogram
 from core.test_run_utils import TestRun
 from test_utils.singleton import Singleton
 from utils.installer import check_if_installed
+from test_utils.size import Size, Unit
 
 NOT_WHITESPACE = re.compile(r'[^\s]')
 
@@ -23,12 +24,14 @@ class IotracePlugin(metaclass=Singleton):
         self.working_dir = working_dir  # DUT's make/install work directory
         self.installed = check_if_installed()  # Was iotrace installed already
 
-    def start_tracing(self, bdevs=[]):
+    def start_tracing(self, bdevs=[], buf=None):
         '''
         Start tracing given block devices. Trace all available if none given.
 
         :param dev_list: Block devices to trace, can be empty (for all available)
         :type dev_list: list of strings
+        :param buf: Size of tracing buffer
+        :type buf: Size
 
         :raises Exception: if iotrace binary exited early
         '''
@@ -38,7 +41,12 @@ class IotracePlugin(metaclass=Singleton):
             for disk in disks:
                 bdevs.append(disk.system_path)
 
-        TestRun.executor.run_in_background('iotrace -S -d ' + ','.join(bdevs))
+        opts = ""
+        if buf:
+            buf = int(buf.get_value(Unit.MiB))
+            opts += f" -b {buf}"
+
+        TestRun.executor.run_in_background('iotrace -S -d ' + ','.join(bdevs) + opts)
         TestRun.LOGGER.info("Started tracing of: " + ','.join(bdevs))
 
     def get_trace_repository_path(self) -> str:
@@ -160,6 +168,20 @@ class IotracePlugin(metaclass=Singleton):
             raise Exception("Invalid traces")
 
         return output.stdout
+
+    def get_fs_statistics(self, trace_path: str) -> list:
+        '''
+        Get FS statistics for given trace
+
+        :param trace_path: trace_path
+        :return: Statistics in JSON format
+        :raises Exception: if statistics couldn't be retrieved
+        '''
+        output = TestRun.executor.run_expect_success(f"iotrace -P -F -p {trace_path}")
+        if (output.stdout == ""):
+            raise Exception("Couldn't retrieve statistics")
+
+        return self.parse_json(output.stdout)[0]["entries"]
 
     def get_trace_statistics(self, trace_path: str) -> str:
         '''
