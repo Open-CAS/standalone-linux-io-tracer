@@ -1,11 +1,11 @@
 #
-# Copyright(c) 2019 Intel Corporation
+# Copyright(c) 2019-2020 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause-Clear
 #
 
 import pytest
 from core.test_run import TestRun
-from iotrace import IotracePlugin
+from utils.iotrace import IotracePlugin
 from utils.installer import insert_module
 from utils.iotrace import parse_json
 

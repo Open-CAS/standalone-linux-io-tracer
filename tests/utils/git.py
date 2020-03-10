@@ -1,10 +1,9 @@
 #
-# Copyright(c) 2019 Intel Corporation
+# Copyright(c) 2019-2020 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause-Clear
 #
 
 from connection.local_executor import LocalExecutor
-from log.logger import create_log, Log
 from core.test_run_utils import TestRun
 
 

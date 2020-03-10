@@ -1,13 +1,11 @@
 #
-# Copyright(c) 2019 Intel Corporation
+# Copyright(c) 2019-2020 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause-Clear
 #
 
-import pytest
 from core.test_run import TestRun
 import time
 
-from utils.iotrace import parse_json
 
 def test_files_privileges():
     TestRun.LOGGER.info("Testing iotrace config owner and trace file privileges")
@@ -110,9 +108,7 @@ def test_procfs_privileges():
         # Attempt to write to read-only files
         if file_permissions == "400":
             if attempt_to_write(file_path) is True:
-                TestRun.fail(f'File {file_path} could be written to with '
-                             f'read-only permissions')
-
+                TestRun.fail(f'File {file_path} could be written to with read-only permissions')
 
     # Check per cpu files
     for file, permissions in procfs_files_per_cpu.items():
@@ -141,9 +137,9 @@ def test_procfs_privileges():
 
 
 def attempt_to_write(file_path: str) -> bool:
-    '''
+    """
     Attempt to write to file and return result
-    '''
+    """
     TestRun.LOGGER.info(f'Attempting to write to {file_path}')
     fio_result = TestRun.executor.run(
         f'fio --name=job --direct=0 --ioengine=mmap '
@@ -153,9 +149,8 @@ def attempt_to_write(file_path: str) -> bool:
 
     echo_result = TestRun.executor.run(f'echo "1" > {file_path}')
 
-    if ("Operation not permitted" in fio_result.stderr \
-            or "Permission denied" in fio_result.stdout)\
-            and echo_result.exit_code != 0:
+    if (("Operation not permitted" in fio_result.stderr
+         or "Permission denied" in fio_result.stdout) and echo_result.exit_code != 0):
         return False
     else:
         return True

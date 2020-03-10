@@ -1,12 +1,10 @@
 #
-# Copyright(c) 2019 Intel Corporation
+# Copyright(c) 2019-2020 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause-Clear
 #
 
-import random
 import datetime
 import time
-
 import pytest
 
 from core.test_run import TestRun
@@ -45,8 +43,10 @@ def test_data_integrity_restart_tracing():
             TestRun.executor.wait_cmd_finish(pid)
             results = fio_run.get_results(
                 TestRun.executor.run(f"cat {fio_run.fio.fio_file}").stdout)
-            TestRun.LOGGER.info("Recorded " + str(sum(job.read_iops() for job in results)) + " read IOPS")
-            TestRun.LOGGER.info("Recorded " + str(sum(job.write_iops() for job in results)) + " write IOPS")
+            TestRun.LOGGER.info(
+                "Recorded " + str(sum(job.read_iops() for job in results)) + " read IOPS")
+            TestRun.LOGGER.info(
+                "Recorded " + str(sum(job.write_iops() for job in results)) + " write IOPS")
             errors = sum(job.total_errors() for job in results)
             if errors != 0:
                 raise Exception("Errors found during io")
