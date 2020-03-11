@@ -147,7 +147,9 @@ static void _trace_bio_fs_meta(octf_trace_t trace,
                            ktime_to_ns(ktime_get()), sizeof(*ev));
 
     ev->ref_sid = ref_sid;
-    ev->file_id = info->inode->i_ino;
+    ev->file_id.id = info->inode->i_ino;
+    ev->file_id.ctime.tv_nsec = info->inode->i_ctime.tv_nsec;
+    ev->file_id.ctime.tv_sec = info->inode->i_ctime.tv_sec;
     ev->file_offset = info->page->index << (PAGE_SHIFT - SECTOR_SHIFT);
     ev->file_size = info->inode->i_size >> SECTOR_SHIFT;
     ev->partition_id = info->inode->i_sb->s_dev;
