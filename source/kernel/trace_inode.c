@@ -521,6 +521,15 @@ static void _map(iotrace_inode_tracer_t inode_tracer, struct inode *inode) {
     debug("Map %lu", inode->i_ino);
 }
 
+static void _remove_entry(iotrace_inode_tracer_t inode_tracer,
+                          struct cache_entry *entry) {
+    debug("Remove %llu", entry->inode_id);
+
+    list_del(&entry->lru);
+    hash_del(&entry->hash);
+    list_add_tail(&entry->lru, &inode_tracer->lru_list);
+}
+
 static struct cache_entry *_lookup(iotrace_inode_tracer_t inode_tracer,
                                    struct inode *inode) {
     struct cache_entry *entry = NULL;
@@ -528,12 +537,17 @@ static struct cache_entry *_lookup(iotrace_inode_tracer_t inode_tracer,
     hash_for_each_possible(inode_tracer->hash_table, entry, hash,
                            inode->i_ino) {
         if (inode->i_ino == entry->inode_id &&
-            inode->i_sb->s_dev == entry->device_id &&
-            inode->i_ctime.tv_sec == entry->ctime.tv_sec &&
-            inode->i_ctime.tv_nsec == entry->ctime.tv_nsec) {
-            debug("Hit %lu", inode->i_ino);
-            _set_hot(inode_tracer, entry);
-            return entry;
+            inode->i_sb->s_dev == entry->device_id) {
+            // If creation time is same, that's the wanted entry
+            if (inode->i_ctime.tv_sec == entry->ctime.tv_sec &&
+                inode->i_ctime.tv_nsec == entry->ctime.tv_nsec) {
+                debug("Hit %lu", inode->i_ino);
+                _set_hot(inode_tracer, entry);
+                return entry;
+            } else {
+                // Otherwise the inode was reused and we can remove it
+                _remove_entry(inode_tracer, entry);
+            }
         }
     }
 
