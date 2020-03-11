@@ -7,11 +7,11 @@ function detect_distribution ()
 {
     if [ -f /etc/redhat-release ]
     then
-        if ( cat /etc/redhat-release | grep "Red Hat Enterprise Linux Server release 7." &>/dev/null )
+        if ( cat /etc/redhat-release | grep "Red Hat Enterprise Linux" | grep "release 7." &>/dev/null )
         then
             echo RHEL7
             return 0
-        elif ( cat /etc/redhat-release | grep "Red Hat Enterprise Linux Server release 8." &>/dev/null )
+        elif ( cat /etc/redhat-release | grep "Red Hat Enterprise Linux" | grep "release 8." &>/dev/null )
         then
             echo RHEL8
             return 0
@@ -149,7 +149,7 @@ function iotrace_get_distribution_pkg_manager () {
         echo "apt-get -y install"
         ;;
     *)
-        error "Unknown Linux distribution"
+        iotrace_error "Unknown Linux distribution"
         ;;
     esac
 }
