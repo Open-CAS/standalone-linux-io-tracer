@@ -58,6 +58,11 @@ struct cache_entry {
     uint64_t inode_id;
 
     /**
+     * inode creation date stored in entry
+     */
+    struct timespec ctime;
+
+    /**
      * device ID for which indoe belongs to
      */
     dev_t device_id;
@@ -211,9 +216,10 @@ static void _fs_add_mark(struct fsnotify_group *group, struct inode *inode) {
     debug("Mark added, inode id = %lu", inode->i_ino);
 }
 
-static void _trace_file_event(uint64_t part_id,
-                              uint64_t file_id,
+static void _trace_file_event(struct inode *inode,
                               iotrace_fs_event_type eventType) {
+    uint64_t part_id = inode->i_sb->s_dev;
+    uint64_t file_id = inode->i_ino;
     octf_trace_event_handle_t ev_hndl;
     uint64_t sid;
     unsigned int cpu;
@@ -234,8 +240,10 @@ static void _trace_file_event(uint64_t part_id,
                            ktime_to_ns(ktime_get()), sizeof(*ev));
 
     ev->partition_id = part_id;
-    ev->file_id = file_id;
+    ev->file_id.id = file_id;
     ev->fs_event_type = eventType;
+    ev->file_id.ctime.tv_nsec = inode->i_ctime.tv_nsec;
+    ev->file_id.ctime.tv_sec = inode->i_ctime.tv_sec;
 
     octf_trace_commit_wr_buffer(trace, ev_hndl);
     put_cpu();
@@ -265,19 +273,16 @@ static int _fs_handle_event(struct fsnotify_group *group,
     }
 
     if (mask & FS_MOVED_FROM & IOTRACE_FSNOTIFY_EVENTS) {
-        _trace_file_event(child_inode->i_sb->s_dev, child_inode->i_ino,
-                          iotrace_fs_event_move_from);
+        _trace_file_event(child_inode, iotrace_fs_event_move_from);
     }
     if (mask & FS_MOVED_TO & IOTRACE_FSNOTIFY_EVENTS) {
-        _trace_file_event(child_inode->i_sb->s_dev, child_inode->i_ino,
-                          iotrace_fs_event_move_to);
+        _trace_file_event(child_inode, iotrace_fs_event_move_to);
     }
     if (mask & FS_CREATE) {
         _fs_add_mark(group, child_inode);
 
         if (mask & IOTRACE_FSNOTIFY_EVENTS) {
-            _trace_file_event(child_inode->i_sb->s_dev, child_inode->i_ino,
-                              iotrace_fs_event_create);
+            _trace_file_event(child_inode, iotrace_fs_event_create);
         }
     }
 
@@ -286,8 +291,7 @@ static int _fs_handle_event(struct fsnotify_group *group,
          * We have no information here about parent inode - it is in a separate
          * event - FS_DELETE
          */
-        _trace_file_event(child_inode->i_sb->s_dev, child_inode->i_ino,
-                          iotrace_fs_event_delete);
+        _trace_file_event(child_inode, iotrace_fs_event_delete);
     }
 
     if (mask & FS_OPEN) {
@@ -508,11 +512,22 @@ static void _map(iotrace_inode_tracer_t inode_tracer, struct inode *inode) {
 
     entry->inode_id = inode->i_ino;
     entry->device_id = inode->i_sb->s_dev;
+    entry->ctime.tv_nsec = inode->i_ctime.tv_nsec;
+    entry->ctime.tv_sec = inode->i_ctime.tv_sec;
 
     list_add(&entry->lru, &inode_tracer->lru_list);
     hash_add(inode_tracer->hash_table, &entry->hash, inode->i_ino);
 
     debug("Map %lu", inode->i_ino);
+}
+
+static void _remove_entry(iotrace_inode_tracer_t inode_tracer,
+                          struct cache_entry *entry) {
+    debug("Remove %llu", entry->inode_id);
+
+    list_del(&entry->lru);
+    hash_del(&entry->hash);
+    list_add_tail(&entry->lru, &inode_tracer->lru_list);
 }
 
 static struct cache_entry *_lookup(iotrace_inode_tracer_t inode_tracer,
@@ -523,9 +538,16 @@ static struct cache_entry *_lookup(iotrace_inode_tracer_t inode_tracer,
                            inode->i_ino) {
         if (inode->i_ino == entry->inode_id &&
             inode->i_sb->s_dev == entry->device_id) {
-            debug("Hit %lu", inode->i_ino);
-            _set_hot(inode_tracer, entry);
-            return entry;
+            // If creation time is same, that's the wanted entry
+            if (inode->i_ctime.tv_sec == entry->ctime.tv_sec &&
+                inode->i_ctime.tv_nsec == entry->ctime.tv_nsec) {
+                debug("Hit %lu", inode->i_ino);
+                _set_hot(inode_tracer, entry);
+                return entry;
+            } else {
+                // Otherwise the inode was reused and we can remove it
+                _remove_entry(inode_tracer, entry);
+            }
         }
     }
 
@@ -538,6 +560,8 @@ int _trace_filename(struct iotrace_state *state,
                     uint64_t part_id,
                     uint64_t file_id,
                     uint64_t parent_id,
+                    struct timespec ctime,
+                    struct timespec parentctime,
                     struct dentry *dentry) {
     struct iotrace_event_fs_file_name *ev = NULL;
     uint64_t sid = atomic64_inc_return(&state->sid);
@@ -553,8 +577,10 @@ int _trace_filename(struct iotrace_state *state,
                            ktime_to_ns(ktime_get()), sizeof(*ev));
 
     ev->partition_id = part_id;
-    ev->file_id = file_id;
-    ev->file_parent_id = parent_id;
+    ev->file_id.id = file_id;
+    ev->file_parent_id.id = parent_id;
+    ev->file_id.ctime = ctime;
+    ev->file_parent_id.ctime = parentctime;
 
     // Copy file name
     {
@@ -577,6 +603,8 @@ void iotrace_trace_inode(struct iotrace_state *state,
     struct cache_entry *entry;
     struct dentry *this_dentry = NULL, *parent_dentry = NULL;
     struct inode *parent_inode = NULL;
+    struct timespec zero_timespec = {0}, inode_timespec = {0},
+                    parent_timespec = {0};
 
     // Get dentry from inode
     this_dentry = d_find_alias(this_inode);
@@ -606,10 +634,19 @@ void iotrace_trace_inode(struct iotrace_state *state,
 
         // Trace dentry name (file or directory name)
         debug("ID = %lu, name = %s", this_inode->i_ino, this_dentry->d_iname);
+        // Direct tv_sec/nsec assignment due to timespec/timespec64 mismatch in
+        // different kernels
+        if (parent_inode) {
+            parent_timespec.tv_sec = parent_inode->i_ctime.tv_sec;
+            parent_timespec.tv_nsec = parent_inode->i_ctime.tv_nsec;
+        }
 
+        inode_timespec.tv_sec = this_inode->i_ctime.tv_sec;
+        inode_timespec.tv_nsec = this_inode->i_ctime.tv_nsec;
         result = _trace_filename(
                 state, trace, this_inode->i_sb->s_dev, this_inode->i_ino,
-                parent_inode ? parent_inode->i_ino : 0, this_dentry);
+                parent_inode ? parent_inode->i_ino : 0, inode_timespec,
+                parent_inode ? parent_timespec : zero_timespec, this_dentry);
 
         if (0 == result) {
             // event traced successfully, add inode to the cache
