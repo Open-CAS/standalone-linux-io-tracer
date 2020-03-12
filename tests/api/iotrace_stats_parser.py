@@ -122,12 +122,14 @@ class IOStatistics:
         self.latency = TimeStat(trace["latency"]) if "latency" in trace else None
         self.metrics = Metrics(trace["metrics"])
         self.errors = int(trace["errors"]) if "errors" in trace else None
+        self.count = int(trace["count"])
 
     def __str__(self):
         ret = f"{self.size}"
         ret += f"{self.latency}" if self.latency else ""
         ret += f"{self.metrics}"
         ret += f"{self.errors}" if self.errors else ""
+        ret += f"count: {self.count}\n"
 
         return ret
 
@@ -138,7 +140,6 @@ class TimeStat:
         self.average = int(trace["average"])
         self.min = int(trace["min"])
         self.max = int(trace["max"])
-        self.count = int(trace["count"])
         self.total = int(trace["total"])
         self.percentiles = Percentiles(
             trace["percentiles"], "of reqs have latency lower than"
@@ -148,7 +149,6 @@ class TimeStat:
         ret = f"average latency: {self.average} ns\n"
         ret += f"min latency: {self.min} ns\n"
         ret += f"max latency: {self.max} ns\n"
-        ret += f"count: {self.count}\n"
         ret += f"total: {self.total} ns\n"
         ret += f"{self.percentiles}"
 
@@ -160,7 +160,6 @@ class SectorStat:
         self.average = Size(float(trace["average"]), Unit.Blocks512)
         self.min = Size(float(trace["min"]), Unit.Blocks512)
         self.max = Size(float(trace["max"]), Unit.Blocks512)
-        self.count = int(trace["count"])
         self.total = Size(float(trace["total"]), Unit.Blocks512)
         self.percentiles = Percentiles(
             trace["percentiles"], "of reqs touches no more sectors than"
@@ -170,7 +169,6 @@ class SectorStat:
         ret = f"average size: {self.average}\n"
         ret += f"min size: {self.min}\n"
         ret += f"max size: {self.max}\n"
-        ret += f"count: {self.count}\n"
         ret += f"total: {self.total}\n"
         ret += f"{self.percentiles}"
 
