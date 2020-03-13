@@ -72,10 +72,9 @@ def test_fs_statistics(fs):
             .io_engine(IoEngine.libaio)
             .sync(True)
             .read_write(ReadWrite.write)
-            .group_reporting(False)
         )
 
-        dir_Ax_size = Size(3, Unit.MiB)
+        dir_Ax_size = Size(3, Unit.MebiByte)
         dir_Ax_WiF = 2
         dir_Ax_written = dir_Ax_size * dir_Ax_WiF
 
@@ -83,11 +82,11 @@ def test_fs_statistics(fs):
             fio_cfg.add_job("test_dir/A.x")
             .target(f"{test_dir}/A.x")
             .file_size(dir_Ax_size)
-            .block_size(Size(4, Unit.KiB))
+            .block_size(Size(4, Unit.KibiByte))
             .loops(dir_Ax_WiF)
         )
 
-        dir_By_size = Size(16, Unit.KiB)
+        dir_By_size = Size(16, Unit.KibiByte)
         dir_By_WiF = 2
         dir_By_written = dir_By_size * dir_By_WiF
 
@@ -95,11 +94,11 @@ def test_fs_statistics(fs):
             fio_cfg.add_job("test_dir/B.y")
             .target(f"{test_dir}/B.y")
             .file_size(dir_By_size)
-            .block_size(Size(16, Unit.KiB))
+            .block_size(Size(16, Unit.KibiByte))
             .loops(dir_By_WiF)
         )
 
-        Ay_size = Size(2, Unit.MiB)
+        Ay_size = Size(2, Unit.MebiByte)
         Ay_WiF = 5
         Ay_written = Ay_size * Ay_WiF
 
@@ -107,11 +106,11 @@ def test_fs_statistics(fs):
             fio_cfg.add_job("A.y")
             .target(f"{filesystem}/A.y")
             .file_size(Ay_size)
-            .block_size(Size(64, Unit.KiB))
+            .block_size(Size(64, Unit.KibiByte))
             .loops(Ay_WiF)
         )
 
-        Bx_size = Size(5, Unit.MiB)
+        Bx_size = Size(5, Unit.MebiByte)
         Bx_WiF = 1
         Bx_written = Bx_size * Bx_WiF
 
@@ -119,7 +118,7 @@ def test_fs_statistics(fs):
             fio_cfg.add_job("B.x")
             .target(f"{filesystem}/B.x")
             .file_size(Bx_size)
-            .block_size(Size(128, Unit.KiB))
+            .block_size(Size(128, Unit.KibiByte))
         )
 
     with TestRun.step("Prepare directory and files for test"):
@@ -132,7 +131,7 @@ def test_fs_statistics(fs):
         fio_cfg.run()
 
     with TestRun.step("Start tracing"):
-        iotrace.start_tracing([disk.system_path], Size(1, Unit.GiB))
+        iotrace.start_tracing([disk.system_path], Size(1, Unit.GibiByte))
         time.sleep(3)
 
     with TestRun.step("Run workload"):
