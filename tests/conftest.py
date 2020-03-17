@@ -3,7 +3,6 @@ import os
 import sys
 import yaml
 import traceback
-from IPy import IP
 
 # Path to test-framework
 sys.path.append(os.path.join(os.path.dirname(__file__),
@@ -13,10 +12,9 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "./utils"))
 
 from log.logger import create_log, Log
 from core.test_run_utils import TestRun
-from connection.local_executor import LocalExecutor
 from utils.git import get_current_commit_hash, get_current_commit_message
 from utils.git import get_current_octf_hash
-from utils.installer import remove_module, insert_module, install_iotrace
+from utils.installer import install_iotrace
 from utils.misc import kill_all_io
 from utils.iotrace import IotracePlugin
 from test_tools.fio.fio import Fio
@@ -35,8 +33,7 @@ def pytest_runtest_setup(item):
         TestRun.prepare(item, dut_config)
 
         test_name = item.name.split('[')[0]
-        TestRun.LOGGER = create_log(item.config.getoption('--log-path'),
-                                    test_name)
+        TestRun.LOGGER = create_log(item.config.getoption('--log-path'), test_name)
 
         TestRun.setup()
 
@@ -127,12 +124,9 @@ def dut_cleanup():
     iotrace: IotracePlugin = TestRun.plugins['iotrace']
 
     TestRun.LOGGER.info("Stopping fuzzing")
-    TestRun.executor.run(f'{iotrace.working_dir}/tests/'
-                         'security/fuzzy/fuzz.sh clean')
+    TestRun.executor.run(f'{iotrace.working_dir}/tests/security/fuzzy/fuzz.sh clean')
 
     iotrace.stop_tracing()
 
     TestRun.LOGGER.info("Removing existing traces")
-    trace_repository_path: str = iotrace.parse_json(
-        iotrace.get_trace_repository_path())[0]['path']
-    TestRun.executor.run_expect_success(f'rm -rf {trace_repository_path}/kernel')
+    trace_repository_path: str = IotracePlugin.get_trace_repository_path()
