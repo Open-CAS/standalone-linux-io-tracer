@@ -7,7 +7,7 @@ import pytest
 from core.test_run import TestRun
 from utils.afl import is_afl_installed, install_afl
 from utils.afl import create_patch_redirect_fuzz_to_file
-from installer import install_iotrace_with_afl_support
+from utils.installer import install_iotrace_with_afl_support
 from utils.iotrace import IotracePlugin
 from datetime import datetime
 
@@ -115,11 +115,12 @@ def test_fuzz_trace_file():
     # Create trace files
     iotrace.start_tracing()
     iotrace.stop_tracing()
-    trace_repo_path = iotrace.parse_json(iotrace.get_trace_repository_path())[0]['path']
-    trace_path = trace_repo_path + "/" + iotrace.get_latest_trace_path()
+    trace_repo_path = IotracePlugin.get_trace_repository_path()
+    trace_path = trace_repo_path + "/" + IotracePlugin.get_latest_trace_path()
     tracefile_path = f'{trace_path}/octf.trace.0'
     copied_tracefile_path = f'{repo_path}/rootfs/var/lib/octf/trace/' + \
-                            f'{iotrace.get_latest_trace_path()}/octf.trace.0'
+                            f'{IotracePlugin.get_latest_trace_path()}' \
+                            f'/octf.trace.0'
 
     # Create patch file for redirecting fuzzed stdin to trace file
     new_patch_path: str = f'{iotrace.working_dir}/redirect_to_tracefile.patch'
@@ -139,7 +140,7 @@ def test_fuzz_trace_file():
                         str(fuzzing_time_seconds / 60) + ' minutes')
     TestRun.executor.run(f'cd {repo_path} && ./tests/security/fuzzy/fuzz.sh '
                          '"rootfs/bin/iotrace --get-trace-statistics -p '
-                         f'{iotrace.get_latest_trace_path()}" --one-job')
+                         f'{IotracePlugin.get_latest_trace_path()}" --one-job')
     output = wait_for_completion(fuzzing_time_seconds, repo_path)
     TestRun.executor.run(f'cd {repo_path} && ./tests/security/fuzzy/fuzz.sh clean')
     TestRun.executor.run_expect_success(f'rm -rf {repo_path}/afl-i')
@@ -155,11 +156,12 @@ def test_fuzz_summary_file():
     # Create trace files
     iotrace.start_tracing()
     iotrace.stop_tracing()
-    trace_repo_path = iotrace.parse_json(iotrace.get_trace_repository_path())[0]['path']
-    trace_path = trace_repo_path + "/" + iotrace.get_latest_trace_path()
+    trace_repo_path = IotracePlugin.get_trace_repository_path()
+    trace_path = trace_repo_path + "/" + IotracePlugin.get_latest_trace_path()
     summary_path = f'{trace_path}/octf.summary'
     copied_summary_path = f'{repo_path}/rootfs/var/lib/octf/trace/' + \
-                            f'{iotrace.get_latest_trace_path()}/octf.summary'
+                          f'{IotracePlugin.get_latest_trace_path()}' \
+                          f'/octf.summary'
 
     # Create patch file for redirecting fuzzed stdin to trace file
     new_patch_path: str = f'{iotrace.working_dir}/redirect_to_summary.patch'
@@ -180,7 +182,7 @@ def test_fuzz_summary_file():
                         str(fuzzing_time_seconds / 60) + ' minutes')
     TestRun.executor.run(f'cd {repo_path} && ./tests/security/fuzzy/fuzz.sh '
                          '"rootfs/bin/iotrace --get-trace-statistics -p '
-                         f'{iotrace.get_latest_trace_path()}" --one-job')
+                         f'{IotracePlugin.get_latest_trace_path()}" --one-job')
     output = wait_for_completion(fuzzing_time_seconds, repo_path)
     TestRun.executor.run(f'cd {repo_path} && ./tests/security/fuzzy/fuzz.sh clean')
     TestRun.executor.run_expect_success(f'rm -rf {repo_path}/afl-i')

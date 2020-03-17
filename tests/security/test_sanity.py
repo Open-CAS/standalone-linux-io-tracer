@@ -1,12 +1,13 @@
 #
-# Copyright(c) 2019 Intel Corporation
+# Copyright(c) 2019-2020 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause-Clear
 #
 
 import pytest
 from core.test_run import TestRun
-from iotrace import IotracePlugin
+from utils.iotrace import IotracePlugin
 from utils.installer import insert_module
+from utils.iotrace import parse_json
 
 
 def test_help():
@@ -22,7 +23,7 @@ def test_version():
     TestRun.LOGGER.info("Testing cli version")
     output = TestRun.executor.run('iotrace -V')
 
-    parsed = TestRun.plugins['iotrace'].parse_json(output.stdout)
+    parsed = parse_json(output.stdout)
     bin_version = parsed[0]['trace']
 
     TestRun.LOGGER.info("iotrace binary version is: " + str(parsed[0]['trace']))
@@ -58,11 +59,10 @@ def test_trace_start_stop():
     if not stopped:
         raise Exception("Could not stop active tracing.")
 
-    trace_path = iotrace.get_latest_trace_path()
-    summary = iotrace.get_trace_summary(trace_path)
-    summary_parsed = iotrace.parse_json(summary)
+    trace_path = IotracePlugin.get_latest_trace_path()
+    summary_parsed = IotracePlugin.get_trace_summary(trace_path)
 
-    if summary_parsed[0]['state'] != "COMPLETE":
+    if summary_parsed['state'] != "COMPLETE":
         raise Exception("Trace state is not complete")
 
 
