@@ -33,6 +33,8 @@ execute_process(
     ERROR_QUIET
 )
 
+set(CPACK_SOURCE_IGNORE_FILES "${CPACK_SOURCE_IGNORE_FILES}.git;")
+
 # Separate install and post-install components need to be specified because
 # install(CODE) and install(SCRIPT) code is run at "make install" time. By
 # default, CPack does a "make install" to an intermediate location in the build
