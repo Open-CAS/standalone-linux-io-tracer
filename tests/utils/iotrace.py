@@ -47,8 +47,6 @@ class IotracePlugin:
         :type timeout: timedelta
         :type label: str
         :type shortcut: bool
-
-        :raises Exception: if iotrace command is invalid
         """
 
         if len(bdevs) == 0:
@@ -100,8 +98,7 @@ class IotracePlugin:
         command = 'iotrace' + (' -C' if shortcut else ' --trace-config')
         command += ' -G ' if shortcut else ' --get-trace-repository-path '
 
-        return parse_json(
-            TestRun.executor.run_expect_success(command).stdout)[0]["path"]
+        return parse_json(TestRun.executor.run_expect_success(command).stdout)[0]["path"]
 
     def check_if_tracing_active(self) -> bool:
         """
@@ -117,8 +114,7 @@ class IotracePlugin:
             return False
 
         elif self.pid != output.stdout:
-            TestRun.LOGGER.info(
-                f"Found other iotrace process with PID {output.stdout}")
+            TestRun.LOGGER.info(f"Found other iotrace process with PID {output.stdout}")
             return False
 
         else:
@@ -206,7 +202,7 @@ class IotracePlugin:
 
         output = TestRun.executor.run(command)
         if output.stdout == "":
-            raise CmdException("Invalid summary")
+            raise CmdException("Invalid summary", output)
 
         return parse_json(output.stdout)[0]
 
@@ -263,7 +259,7 @@ class IotracePlugin:
 
         output = TestRun.executor.run(command)
         if output.stdout == "":
-            raise CmdException("Invalid histogram")
+            raise CmdException("Invalid histogram", output)
 
         return parse_json(output.stdout)
 
@@ -285,14 +281,14 @@ class IotracePlugin:
         command += (' -p ' if shortcut else ' --path ') + f'{trace_path}'
         command += (' -f ' if shortcut else ' --format ') + 'json'
 
-        output = TestRun.executor.run(command).stdout
-        if output == "":
-            raise CmdException("Invalid histogram")
+        output = TestRun.executor.run(command)
+        if output.stdout == "":
+            raise CmdException("Invalid histogram", output)
 
-        return LatencyHistogram(parse_json(output)[0]['histogram'][0])
+        return LatencyHistogram(parse_json(output.stdout)[0]['histogram'][0])
 
     @staticmethod
-    def get_fs_stats(trace_path: str, shortcut: bool = False) -> list:
+    def get_fs_statistics(trace_path: str, shortcut: bool = False) -> list:
         """
         Get filesystem statistics of given trace path
 
@@ -308,9 +304,9 @@ class IotracePlugin:
         command += (' -p ' if shortcut else ' --path ') + f'{trace_path}'
         command += (' -f ' if shortcut else ' --format ') + 'json'
 
-        output = TestRun.executor.run(command).stdout
-        if output == "":
-            raise CmdException("Invalid statistics")
+        output = TestRun.executor.run(command)
+        if output.stdout == "":
+            raise CmdException("Invalid filesystem statistics", output)
 
         return parse_json(output.stdout)
 
@@ -336,9 +332,9 @@ class IotracePlugin:
         if raw:
             command += ' -r ' if shortcut else ' --raw '
 
-        output = parse_json(TestRun.executor.run(command).stdout)
-        if output == "":
-            raise CmdException("Invalid traces")
+        output = TestRun.executor.run(command)
+        if output.stdout == "":
+            raise CmdException("Invalid traces", output)
 
         return parse_json(output.stdout)
 
@@ -361,7 +357,7 @@ class IotracePlugin:
 
         output = TestRun.executor.run(command)
         if output.stdout == "":
-            raise CmdException("Invalid traces")
+            raise CmdException("Invalid IO statistics", output)
 
         return parse_json(output.stdout)
 
@@ -385,9 +381,10 @@ class IotracePlugin:
         if force:
             command += ' -f ' if shortcut else ' --force '
 
-        error_output = parse_json(TestRun.executor.run(command).stderr)
-        if error_output[0]['trace'] == "No traces removed.":
-            raise CmdException("Invalid traces removal")
+        output = TestRun.executor.run(command)
+        error_output = parse_json(output.stderr)[0]['trace']
+        if error_output == "No traces removed.":
+            raise CmdException("Invalid traces removal", output)
 
     @staticmethod
     def set_trace_repository_path(trace_path: str, shortcut: bool = False):
@@ -402,9 +399,10 @@ class IotracePlugin:
         command += ' -S ' if shortcut else ' --set-trace-repository-path '
         command += (' -p ' if shortcut else ' --path ') + f'{trace_path}'
 
-        error_output = parse_json(TestRun.executor.run(command).stderr)[0]["trace"]
+        output = TestRun.executor.run(command)
+        error_output = parse_json(output.stderr)[0]["trace"]
         if error_output == "No access to trace directory":
-            raise CmdException("Invalid setting of the trace repository path")
+            raise CmdException("Invalid setting of the trace repository path", output)
 
     @staticmethod
     def help(shortcut: bool = False) -> str:
@@ -423,7 +421,7 @@ class IotracePlugin:
         :param shortcut: Use shorter command
         :type shortcut: bool
         :return: io-tracer version
-        :rtype: dictionary
+        :rtype: dict {'iotrace': str, 'OCTF': str}
         :raises Exception: if command fails
         """
         output = parse_json(TestRun.executor.run_expect_success(
