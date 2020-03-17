@@ -26,7 +26,7 @@ execute_process(
     && git ls-files --directory --ignored --others --exclude-standard | xargs -I{} printf {}\; \
     && git submodule foreach --recursive --quiet 'git ls-files --ignored --directory --others --exclude-standard \
     | grep -v tools/third_party | xargs -I{} printf \`pwd\`/{}\;'\
-    && git submodule foreach --recursive --quiet 'git ls-files --others --directory --exclude-standard \
+    && git submodule foreach --recursive --quiet 'git ls-files --others --directory --exclude-standard -x VERSION \
     | xargs -I{} printf \`pwd\`/{}\;'"
     OUTPUT_VARIABLE CPACK_SOURCE_IGNORE_FILES
     WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}

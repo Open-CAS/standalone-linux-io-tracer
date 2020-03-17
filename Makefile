@@ -49,6 +49,7 @@ package: all
 
 package_source: init
 	$(CMAKE) -P version.cmake
+	cd modules/open-cas-telemetry-framework && $(CMAKE) -P octf-version.cmake
 	make -C $(BUILD_DIR) package_source
 
 uninstall: init
