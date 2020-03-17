@@ -127,7 +127,7 @@ def dut_cleanup():
     iotrace: IotracePlugin = TestRun.plugins['iotrace']
 
     TestRun.LOGGER.info("Stopping fuzzing")
-    TestRun.executor.run(f'{iotrace.working_dir}/tests/'
+    TestRun.executor.run(f'{iotrace.working_dir}/standalone-linux-io-tracer/tests/'
                          'security/fuzzy/fuzz.sh clean')
 
     iotrace.stop_tracing()
