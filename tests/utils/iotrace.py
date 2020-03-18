@@ -251,7 +251,7 @@ class IotracePlugin:
             command += (' -p ' if shortcut else ' --prefix ') + f'{prefix}'
         output = TestRun.executor.run_expect_success(command)
 
-        return parse_json(output.stdout)
+        return parse_json(output.stdout)[0]["trace"]
 
     @staticmethod
     def get_trace_count(prefix: str = None, shortcut: bool = False) -> int:
@@ -283,8 +283,8 @@ class IotracePlugin:
         paths_parsed = IotracePlugin.get_traces_list(prefix, shortcut)
 
         # Return the last element of trace list
-        if len(paths_parsed) and len(paths_parsed[0]['trace']):
-            return paths_parsed[0]['trace'][-1]['tracePath']
+        if len(paths_parsed):
+            return paths_parsed[-1]['tracePath']
         else:
             return ""
 
