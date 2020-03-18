@@ -10,6 +10,7 @@ from datetime import timedelta
 
 from api.iotrace_lat_hist_parser import LatencyHistogram
 from core.test_run_utils import TestRun
+from test_tools.fs_utils import check_if_directory_exists, create_directory
 from test_utils.output import CmdException
 from test_utils.size import Unit, Size
 from utils.installer import check_if_installed
@@ -395,6 +396,9 @@ class IotracePlugin:
         :type shortcut: bool
         :raises Exception: if setting path fails
         """
+        if not check_if_directory_exists(trace_path):
+            create_directory(trace_path)
+
         command = 'iotrace' + (' -C' if shortcut else ' --trace-config')
         command += ' -S ' if shortcut else ' --set-trace-repository-path '
         command += (' -p ' if shortcut else ' --path ') + f'{trace_path}'
