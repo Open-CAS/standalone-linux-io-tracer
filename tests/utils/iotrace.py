@@ -199,7 +199,7 @@ class IotracePlugin:
         while self.check_if_tracing_active() and attempt < kill_attempts:
             TestRun.LOGGER.info("Sending sigint no. " + str(attempt + 1))
             attempt += 1
-            TestRun.executor.run(f'kill -s SIGINT {self.pid}')
+            TestRun.executor.run(f'kill -2 {self.pid}')
             time.sleep(2)
 
         if self.check_if_tracing_active():
@@ -443,15 +443,16 @@ class IotracePlugin:
         return parse_json(output.stdout)
 
     @staticmethod
-    def get_trace_statistics(trace_path: str, shortcut: bool = False) -> list:
+    def get_trace_statistics(trace_path: str, dev_path: str = "", shortcut: bool = False) -> list:
         """
         Get statistics of particular trace
 
         :param trace_path: trace path
+        :param dev_path: path of device which should be retrieved
         :param shortcut: Use shorter command
         :type trace_path: str
         :type shortcut: bool
-        :return: trace statistics
+        :return: If @dev_path specified - trace statistics, list of trace stats otherwise
         :raises Exception: if statistics are invalid
         """
         command = 'iotrace' + (' -P' if shortcut else ' --trace-parser')
@@ -463,7 +464,18 @@ class IotracePlugin:
         if output.stdout == "":
             raise CmdException("Invalid IO statistics", output)
 
-        return parse_json(output.stdout)[0]['statistics']
+        if dev_path == "":
+            return parse_json(output.stdout)[0]['statistics']
+
+        expected_device_name  = dev_path.split('/dev/')[1].replace("/","")
+
+        for trace_stat in parse_json(output.stdout)[0]['statistics']:
+            traced_device = trace_stat["desc"]["device"]["name"]
+            if  traced_device == expected_device_name:
+                return trace_stat
+
+        raise CmdException(f"No trace stats for device {dev_path}", output)
+
 
     @staticmethod
     def remove_traces(prefix: str, force: bool = False, shortcut: bool = False):

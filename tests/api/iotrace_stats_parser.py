@@ -5,8 +5,9 @@
 
 from typing import List
 
-from test_utils.size import Size, Unit, parse_unit
-
+from test_utils.size import Size, Unit, UnitPerSecond, parse_unit
+from test_utils.time import Time
+from iotrace import IotracePlugin
 
 class BaseTraceStatistics:
     def __init__(self, trace):
@@ -136,20 +137,19 @@ class IOStatistics:
 
 class TimeStat:
     def __init__(self, trace):
-        # TODO class with nanoseconds needed
-        self.average = int(trace["average"])
-        self.min = int(trace["min"])
-        self.max = int(trace["max"])
-        self.total = int(trace["total"])
+        self.average = Time(nanoseconds=int(trace["average"]))
+        self.min = Time(nanoseconds=int(trace["min"]))
+        self.max = Time(nanoseconds=int(trace["max"]))
+        self.total = Time(nanoseconds=int(trace["total"]))
         self.percentiles = Percentiles(
             trace["percentiles"], "of reqs have latency lower than"
         )
 
     def __str__(self):
-        ret = f"average latency: {self.average} ns\n"
-        ret += f"min latency: {self.min} ns\n"
-        ret += f"max latency: {self.max} ns\n"
-        ret += f"total: {self.total} ns\n"
+        ret = f"average latency: {self.average.total_nanoseconds()} ns\n"
+        ret += f"min latency: {self.min.total_nanoseconds()} ns\n"
+        ret += f"max latency: {self.max.total_nanoseconds()} ns\n"
+        ret += f"total: {self.total.total_nanoseconds()} ns\n"
         ret += f"{self.percentiles}"
 
         return ret
@@ -178,6 +178,7 @@ class SectorStat:
 class ServiceStats:
     def __init__(self, trace):
         self.metrics = Metrics(trace["metrics"])
+        self.latency = TimeStat(trace["latency"])
         self.errors = int(trace["errors"])
 
     def __str__(self):
@@ -216,11 +217,11 @@ class Metrics:
                 trace["bandwidth"]["unit"].split("/")[0]
             )
             bandwidth_value = float(trace["bandwidth"]["value"])
-            self.bandwidth_per_sec = Size(bandwidth_value, bandwidth_unit)
+            self.bandwidth = Size(bandwidth_value, UnitPerSecond(bandwidth_unit))
         except KeyError:
             self.iops = 0
             self.workset = Size(0)
-            self.bandwidth_per_sec = Size(0)
+            self.bandwidth = Size(0)
 
         if "write invalidation factor" in trace:
             self.wif = float(trace["write invalidation factor"]["value"])
@@ -230,8 +231,8 @@ class Metrics:
     def __str__(self):
         ret = f"metrics: IOPS: {self.iops}\n"
         ret += f"workset: {self.workset}\n"
-        ret += f"bandwidth: {self.bandwidth_per_sec}/s\n"
         if self.wif:
             ret += f"write invalidation factor: {self.wif}\n"
+        ret += f"bandwidth: {self.bandwidth}\n"
 
         return ret
