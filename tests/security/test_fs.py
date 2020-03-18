@@ -6,6 +6,8 @@
 from core.test_run import TestRun
 import time
 
+from utils.iotrace import parse_json
+
 
 def test_files_privileges():
     TestRun.LOGGER.info("Testing iotrace config owner and trace file privileges")
@@ -19,7 +21,7 @@ def test_files_privileges():
         raise Exception("Could not find octf config path")
 
     out = TestRun.executor.run_expect_success(f"cat {config_path}")
-    config = iotrace.parse_json(out.stdout)
+    config = parse_json(out.stdout)
 
     TestRun.LOGGER.info(f"Checking permissions of: {config_path}")
     out = TestRun.executor.run_expect_success(f'stat -c "%a" {config_path}')
