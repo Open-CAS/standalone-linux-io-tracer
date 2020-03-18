@@ -8,11 +8,9 @@ import pytest
 
 from core.test_run import TestRun
 from test_tools.disk_utils import Filesystem
-from test_utils.os_utils import sync
 from test_tools.fs_utils import create_directory
 from test_tools.fio.fio import Fio
 from test_tools.fio.fio_param import ReadWrite, IoEngine
-from test_tools.fio.fio_result import FioResult
 from test_utils.size import Size, Unit
 from api.iotrace_stats_parser import (
     parse_fs_stats,
@@ -20,6 +18,7 @@ from api.iotrace_stats_parser import (
     FileTraceStatistics,
     ExtensionTraceStatistics,
 )
+from utils.iotrace import IotracePlugin
 
 
 @pytest.fixture(params=Filesystem)
@@ -160,8 +159,8 @@ def test_fs_statistics(fs):
         test_dir_WiF = (dir_Ax_written + dir_By_written) / test_dir_workset
         root_dir_WiF = (Ay_written + Bx_written) / root_dir_workset
 
-        trace_path = iotrace.get_latest_trace_path()
-        stats = parse_fs_stats(iotrace.get_fs_statistics(trace_path))
+        trace_path = IotracePlugin.get_latest_trace_path()
+        stats = parse_fs_stats(IotracePlugin.get_fs_statistics(trace_path)[0]['entries'])
 
         prefix_stats = {
             stat.file_name_prefix: stat for stat in stats if type(stat) == FileTraceStatistics
