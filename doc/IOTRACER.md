@@ -36,7 +36,7 @@ Usage: iotrace [module] command [options...]
 Available modules:
      -C    --trace-config                        Manages trace configuration
      -M    --trace-management                    Manages available traces
-     -P    --trace-parsing                       Parses traces
+     -P    --trace-parser                        Parses traces
 
 Available commands:
      -H    --help                                Prints help
@@ -103,8 +103,8 @@ To parse you trace we are going to invoke _--parse-trace_ command from
 _--trace-parsing_ module.
 
 ~~~{.sh}
-iotrace --trace-parsing --parse-trace --help
-Usage: iotrace --trace-parsing --parse-trace  --path <VALUE>  [options...]
+iotrace --trace-parser --io --help
+Usage: iotrace --trace-parser --io  --path <VALUE>  [options...]
 
 Parse trace files to human readable form
 
@@ -117,7 +117,7 @@ Options that are valid with {-P | --parse-trace}
 To get CSV, call:
 
 ~~~{.sh}
-iotrace --trace-parsing --parse-trace --path kernel/2019-08-13_12:35:22 --format csv
+iotrace --trace-parser --io --path kernel/2019-08-13_12:35:22 --format csv
 ~~~
 
 You should get the CSV output:
@@ -220,7 +220,7 @@ included our future plans for tracing.
 Having IO trace, you can get basic IO statistics. To get it, please call:
 
 ~~~{.sh}
-iotrace --trace-parsing --get-trace-statistics --path kernel/2019-08-13_12:35:22 --format json
+iotrace --trace-parser --statistics --path kernel/2019-08-13_12:35:22 --format json
 ~~~
 
 The JSON output as following:

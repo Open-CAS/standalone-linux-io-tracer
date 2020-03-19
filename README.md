@@ -34,9 +34,10 @@ following OSes:
 
 |OS                            | Version           | Comment
 |------------------------------|-------------------|-------------------
-|RHEL/CentOS                   | 7.6               |
-|Ubuntu                        | 18.04             | Experimental
-|Fedora                        | 30                | Experimental
+|RHEL/CentOS                   | 7.7               |
+|RHEL/CentOS                   | 8.1               |
+|Ubuntu                        | 18.04             |
+|Fedora                        | 31                |
 
 <a id="documentation"></a>
 
@@ -133,7 +134,7 @@ sudo make install
 * Parse traces (note usage of path returned in --list-traces):
 
   ~~~{.sh}
-  iotrace --trace-parsing --parse-trace --path "kernel/2019-05-10_15:24:21" --format json
+  iotrace --trace-parsing --io --path "kernel/2019-05-10_15:24:21" --format json
   ~~~
 
   Output:
