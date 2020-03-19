@@ -21,3 +21,5 @@ if (NOT "${CMAKE_INSTALL_PREFIX}" STREQUAL "/")
 endif()
 
 add_subdirectory(source)
+
+include(package.cmake)

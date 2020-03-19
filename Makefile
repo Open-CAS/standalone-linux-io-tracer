@@ -30,20 +30,29 @@ endif
 
 init:
 	mkdir -p $(BUILD_DIR)
+	cd $(BUILD_DIR) && $(CMAKE) $(SOURCE_PATH) -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) -DCMAKE_INSTALL_PREFIX=$(PREFIX)
 
 all: init
-	cd $(BUILD_DIR) && $(CMAKE) $(SOURCE_PATH) -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) -DCMAKE_INSTALL_PREFIX=$(PREFIX)
 	$(MAKE) -C $(BUILD_DIR) all
 
 install: all
 	$(MAKE) uninstall
 	$(CMAKE) -DCOMPONENT=octf-install -P $(BUILD_DIR)/cmake_install.cmake
+	$(CMAKE) -DCOMPONENT=octf-install-headers -P $(BUILD_DIR)/cmake_install.cmake
+	$(CMAKE) -DCOMPONENT=octf-install-cmake -P $(BUILD_DIR)/cmake_install.cmake
 	$(CMAKE) -DCOMPONENT=octf-post-install -P $(BUILD_DIR)/cmake_install.cmake
 	$(CMAKE) -DCOMPONENT=iotrace-install -P $(BUILD_DIR)/cmake_install.cmake
 	$(CMAKE) -DCOMPONENT=iotrace-post-install -P $(BUILD_DIR)/cmake_install.cmake
 
+package: all
+	$(MAKE) -C $(BUILD_DIR) package
+
+package_source: init
+	$(CMAKE) -P version.cmake
+	cd modules/open-cas-telemetry-framework && $(CMAKE) -P octf-version.cmake
+	make -C $(BUILD_DIR) package_source
+
 uninstall: init
-	cd $(BUILD_DIR) && $(CMAKE) $(SOURCE_PATH) -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) -DCMAKE_INSTALL_PREFIX=$(PREFIX)
 	$(MAKE) -C $(BUILD_DIR) iotrace-uninstall
 	$(MAKE) -C $(BUILD_DIR) octf-uninstall
 

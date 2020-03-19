@@ -7,9 +7,13 @@ function detect_distribution ()
 {
     if [ -f /etc/redhat-release ]
     then
-        if ( cat /etc/redhat-release | grep "Red Hat Enterprise Linux Server release 7." &>/dev/null )
+        if ( cat /etc/redhat-release | grep "Red Hat Enterprise Linux" | grep "release 7." &>/dev/null )
         then
             echo RHEL7
+            return 0
+        elif ( cat /etc/redhat-release | grep "Red Hat Enterprise Linux" | grep "release 8." &>/dev/null )
+        then
+            echo RHEL8
             return 0
         fi
     fi
@@ -19,6 +23,10 @@ function detect_distribution ()
         if ( cat /etc/centos-release | grep "CentOS Linux release 7." &>/dev/null )
         then
             echo CENTOS7
+            return 0
+        elif ( cat /etc/centos-release | grep "CentOS Linux release 8." &>/dev/null )
+        then
+            echo CENTOS8
             return 0
         fi
     fi
@@ -77,7 +85,7 @@ function iotrace_info () {
 function iotrace_get_kernel_package () {
     distro=$(detect_distribution)
     case "${distro}" in
-    "RHEL7"|"CENTOS7"|"FEDORA")
+    "RHEL7"|"RHEL8"|"CENTOS7"|"CENTOS8"|"FEDORA")
         echo "kernel-devel"
         ;;
     "UBUNTU")
@@ -93,10 +101,13 @@ function iotrace_get_distribution_pkg_dependencies () {
     distro=$(detect_distribution)
     case "${distro}" in
     "RHEL7"|"CENTOS7"|"FEDORA")
-        echo "rpm-build dpkg"
+        echo "rpm-build"
+        ;;
+    "RHEL8"|"CENTOS8")
+        echo "rpm-build elfutils-libelf-devel"
         ;;
     "UBUNTU")
-        echo "rpm dpkg"
+        echo "dpkg"
         ;;
     *)
         iotrace_error "Unknown Linux distribution"
@@ -131,22 +142,17 @@ function iotrace_setup_kernel_headers () {
 function iotrace_get_distribution_pkg_manager () {
     distro=$(detect_distribution)
     case "${distro}" in
-    "RHEL7"|"CENTOS7"|"FEDORA")
+    "RHEL7"|"RHEL8"|"CENTOS7"|"CENTOS8"|"FEDORA")
         echo "yum -y install"
         ;;
     "UBUNTU")
         echo "apt-get -y install"
         ;;
     *)
-        error "Unknown Linux distribution"
+        iotrace_error "Unknown Linux distribution"
         ;;
     esac
 }
-
-if [ "$EUID" -ne 0 ]
-then
-    iotrace_error "Please run as root to allow using package manager"
-fi
 
 # Include and execute OCTF setup dependencies
 IOTRACE_SCRIPT_DIR="$(cd $(dirname ${BASH_SOURCE[0]}) && pwd)"
@@ -157,10 +163,14 @@ then
     exit 1
 fi
 
-iotrace_setup_kernel_headers
+if [ "$EUID" -ne 0 ]
+then
+    iotrace_error "Please run as root to allow using package manager"
+fi
 
 PKGS=$(iotrace_get_distribution_pkg_dependencies)
 PKG_INSTALLER=$(iotrace_get_distribution_pkg_manager)
+iotrace_setup_kernel_headers
 iotrace_info "Installing packages: ${PKGS}"
 ${PKG_INSTALLER} ${PKGS}
 iotrace_check_result $? "Cannot install required dependencies"

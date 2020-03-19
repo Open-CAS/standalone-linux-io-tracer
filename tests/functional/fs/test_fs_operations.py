@@ -1,14 +1,14 @@
 #
-# Copyright(c) 2019 Intel Corporation
+# Copyright(c) 2019-2020 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause-Clear
 #
+import time
 
 from core.test_run import TestRun
 from test_tools.disk_utils import Filesystem
 from test_utils.os_utils import sync
-from test_tools.fs_utils import create_directory, create_file, move, remove, \
-    write_file, ls
-import time
+from test_tools.fs_utils import create_directory, create_file, move, remove, write_file, ls
+from utils.iotrace import IotracePlugin
 
 mountpoint = "/mnt"
 
@@ -38,8 +38,7 @@ def test_fs_operations():
                 create_directory(f"{mountpoint}/test_dir")
                 sync()
             with TestRun.step("Write to test file"):
-                write_file(f"{mountpoint}/test_file", overwrite=False,
-                           content="bar")
+                write_file(f"{mountpoint}/test_file", overwrite=False, content="bar")
                 sync()
             with TestRun.step("Create new test file"):
                 create_file(f"{mountpoint}/test_file2")
@@ -55,32 +54,31 @@ def test_fs_operations():
                 sync()
                 iotrace.stop_tracing()
             with TestRun.step("Verify trace correctness"):
-                trace_path = iotrace.get_latest_trace_path()
-                events = iotrace.get_trace_events(trace_path)
-                events_parsed = iotrace.parse_json(events)
+                trace_path = IotracePlugin.get_latest_trace_path()
+                events_parsed = IotracePlugin.get_trace_events(trace_path)
                 result = any(
-                    'file' in event and event['file']['eventType'] == 'Create' and
-                    event['file']['id'] == test_file2_inode for event in events_parsed)
+                    'file' in event and event['file']['eventType'] == 'Create'
+                    and event['file']['id'] == test_file2_inode for event in events_parsed)
                 if not result:
                     raise Exception("Could not find Create event")
                 result = any(
-                    'file' in event and event['file']['eventType'] == 'Delete' and
-                    event['file']['id'] == test_file_inode for event in events_parsed)
+                    'file' in event and event['file']['eventType'] == 'Delete'
+                    and event['file']['id'] == test_file_inode for event in events_parsed)
                 if not result:
                     raise Exception("Could not find Delete event")
                 result = any(
-                    'file' in event and event['file']['eventType'] == 'MoveTo' and
-                    event['file']['id'] == test_file_inode for event in events_parsed)
+                    'file' in event and event['file']['eventType'] == 'MoveTo'
+                    and event['file']['id'] == test_file_inode for event in events_parsed)
                 if not result:
                     raise Exception("Could not find MoveTo event")
                 result = any(
-                    'file' in event and event['file']['eventType'] == 'MoveFrom' and
-                    event['file']['id'] == test_file_inode for event in events_parsed)
+                    'file' in event and event['file']['eventType'] == 'MoveFrom'
+                    and event['file']['id'] == test_file_inode for event in events_parsed)
                 if not result:
                     raise Exception("Could not find MoveFrom event")
                 result = any(
-                    'file' in event and event['file']['eventType'] == 'Access' and
-                    event['file']['id'] == test_file_inode for event in events_parsed)
+                    'file' in event and event['file']['eventType'] == 'Access'
+                    and event['file']['id'] == test_file_inode for event in events_parsed)
                 if not result:
                     raise Exception("Could not find Access event")
         finally:
