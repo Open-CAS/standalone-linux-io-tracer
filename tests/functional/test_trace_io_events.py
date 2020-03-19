@@ -93,7 +93,7 @@ def test_lba_histogram():
     number_buckets = 32
     bucket_size = Size(256)
     start_lba = 10240
-    end_lba = start_lba + number_buckets * bucket_size
+    end_lba = start_lba + number_buckets * bucket_size.value
     for disk in TestRun.dut.disks:
         io_len = Size(1, disk.block_size)
         with TestRun.step("Start tracing"):
@@ -105,7 +105,8 @@ def test_lba_histogram():
                     # Generate IO for a given bucket. The LBA may need to be
                     # translated from 512B (which iotrace always uses) to 4KiB
                     # (if that's what the underlying disk surfaces)
-                    seek = ((start_lba + bucket_index * bucket_size + randrange(bucket_size))
+                    seek = ((start_lba + bucket_index * bucket_size.value
+                             + randrange(bucket_size.value))
                             * iotrace_lba_len / disk.block_size.get_value())
                     dd = (Dd().input("/dev/urandom")
                           .output(disk.system_path)
@@ -117,7 +118,8 @@ def test_lba_histogram():
         with TestRun.step("Send read commands"):
             for bucket_index in range(number_buckets):
                 for i in range(bucket_index + 1):
-                    seek = ((start_lba + bucket_index * bucket_size + randrange(bucket_size))
+                    seek = ((start_lba + bucket_index * bucket_size.value
+                             + randrange(bucket_size.value))
                             * iotrace_lba_len / disk.block_size.get_value())
                     dd = (Dd().input(disk.system_path)
                           .output("/dev/null")
@@ -129,7 +131,8 @@ def test_lba_histogram():
         with TestRun.step("Send discard commands"):
             for bucket_index in range(number_buckets):
                 for i in range(bucket_index + 1):
-                    seek = start_lba + bucket_index * bucket_size + randrange(bucket_size)
+                    seek = (start_lba + bucket_index * bucket_size.value
+                            + randrange(bucket_size.value))
                     seek = round_down(seek * iotrace_lba_len, disk.block_size.get_value())
                     TestRun.executor.run_expect_success(
                         f"blkdiscard -o {int(seek)} "
@@ -146,38 +149,38 @@ def test_lba_histogram():
                 write = json[0]['histogram'][0]['write']['range'][bucket_index]
                 discard = json[0]['histogram'][0]['discard']['range'][bucket_index]
                 total = json[0]['histogram'][0]['total']['range'][bucket_index]
-                if int(read['begin']) != start_lba + bucket_index * bucket_size:
+                if int(read['begin']) != start_lba + bucket_index * bucket_size.value:
                     TestRun.fail(
                         f"Invalid read begin range: {read['begin']} for index {bucket_index}")
-                if int(read['end']) != start_lba + (bucket_index + 1) * bucket_size - 1:
+                if int(read['end']) != start_lba + (bucket_index + 1) * bucket_size.value - 1:
                     TestRun.fail(
                         f"Invalid read end range: {read['end']} for index {bucket_index}")
                 if int(read['count']) != bucket_index + 1:
                     TestRun.fail(
                         f"Invalid read count: {read['count']} for index {bucket_index}")
-                if int(write['begin']) != start_lba + bucket_index * bucket_size:
+                if int(write['begin']) != start_lba + bucket_index * bucket_size.value:
                     TestRun.fail(
                         f"Invalid write begin range: {write['begin']} for index {bucket_index}")
-                if int(write['end']) != start_lba + (bucket_index + 1) * bucket_size - 1:
+                if int(write['end']) != start_lba + (bucket_index + 1) * bucket_size.value - 1:
                     TestRun.fail(
                         f"Invalid write end range: {write['end']} for index {bucket_index}")
                 if int(write['count']) != bucket_index + 1:
                     TestRun.fail(
                         f"Invalid write count: {write['count']} for index {bucket_index}")
-                if int(discard['begin']) != start_lba + bucket_index * bucket_size:
+                if int(discard['begin']) != start_lba + bucket_index * bucket_size.value:
                     TestRun.fail(
                         f"Invalid discard begin range: {discard['begin']} "
                         f"for index {bucket_index}")
-                if int(discard['end']) != start_lba + (bucket_index + 1) * bucket_size - 1:
+                if int(discard['end']) != start_lba + (bucket_index + 1) * bucket_size.value - 1:
                     TestRun.fail(
                         f"Invalid discard end range: {discard['end']} for index {bucket_index}")
                 if int(discard['count']) != bucket_index + 1:
                     TestRun.fail(
                         f"Invalid discard count: {discard['count']} for index {bucket_index}")
-                if int(total['begin']) != start_lba + bucket_index * bucket_size:
+                if int(total['begin']) != start_lba + bucket_index * bucket_size.value:
                     TestRun.fail(
                         f"Invalid total begin range: {total['begin']} for index {bucket_index}")
-                if int(total['end']) != start_lba + (bucket_index + 1) * bucket_size - 1:
+                if int(total['end']) != start_lba + (bucket_index + 1) * bucket_size.value - 1:
                     TestRun.fail(
                         f"Invalid total end range: {total['end']} for index {bucket_index}")
                 if int(total['count']) != 3 * (bucket_index + 1):
