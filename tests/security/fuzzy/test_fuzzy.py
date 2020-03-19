@@ -81,8 +81,9 @@ def test_fuzz_config():
                                        new_patch_path)
 
     # Install iotrace locally with AFL support and redirect patch
-    install_iotrace_with_afl_support(new_patch_path, ['modules', 'source/kernel'])
+    install_iotrace_with_afl_support(new_patch_path, ['modules/open-cas-telemetry-framework', 'modules/test-framework', 'source/kernel'])
 
+    TestRun.executor.run_expect_success(f'cd {repo_path} && mkdir -p afl-i afl-o')
     # Use config as seed to be mutated
     TestRun.executor.run_expect_success(f'cp {repo_path}/rootfs/etc/octf/octf.conf'
                                         f' {repo_path}/afl-i/case0')
@@ -127,12 +128,13 @@ def test_fuzz_trace_file():
     create_patch_redirect_fuzz_to_file(f'{copied_tracefile_path}', new_patch_path)
 
     # Install iotrace locally with AFL support and redirect patch
-    install_iotrace_with_afl_support(new_patch_path, ['modules', 'source/kernel'])
+    install_iotrace_with_afl_support(new_patch_path, ['modules/open-cas-telemetry-framework', 'modules/test-framework', 'source/kernel'])
 
     # Copy trace files to local instalation of iotrace
     TestRun.executor.run_expect_success(f'cp -r {trace_repo_path}/kernel '
                                         f'{repo_path}/rootfs/var/lib/octf/trace/')
 
+    TestRun.executor.run_expect_success(f'cd {repo_path} && mkdir -p afl-i afl-o')
     # Add input seed which shall be mutated
     TestRun.executor.run_expect_success(f'cd {repo_path} && echo "0" > afl-i/case0')
 
@@ -168,12 +170,13 @@ def test_fuzz_summary_file():
     create_patch_redirect_fuzz_to_file(f'{copied_summary_path}', new_patch_path)
 
     # Install iotrace locally with AFL support and redirect patch
-    install_iotrace_with_afl_support(new_patch_path, ['modules', 'source/kernel'])
+    install_iotrace_with_afl_support(new_patch_path, ['modules/open-cas-telemetry-framework', 'modules/test-framework', 'source/kernel'])
 
     # Copy trace files to local installation of iotrace
     TestRun.executor.run_expect_success(f'cp -r {trace_repo_path}/kernel '
                                         f'{repo_path}/rootfs/var/lib/octf/trace/')
 
+    TestRun.executor.run_expect_success(f'cd {repo_path} && mkdir -p afl-i afl-o')
     # Add input seed which shall be mutated
     TestRun.executor.run_expect_success(f'cd {repo_path} ' +
                                         '&& echo "{}" > afl-i/case0')
@@ -232,8 +235,10 @@ def test_fuzz_procfs():
 
         # Install iotrace locally with AFL support and redirect patch
         install_iotrace_with_afl_support(new_patch_path,
-                                         ['modules', 'source/kernel'])
+                                         ['modules/open-cas-telemetry-framework', 'modules/test-framework', 'source/kernel'])
 
+        TestRun.executor.run_expect_success(
+            f'cd {repo_path} && mkdir -p afl-i afl-o')
         # Add input seed which shall be mutated
         TestRun.executor.run_expect_success(f'cd {repo_path} && echo {seed} > afl-i/case0')
 
@@ -241,6 +246,9 @@ def test_fuzz_procfs():
                             str(fuzzing_time_seconds / 60 / len(fuzzed_files))
                             + ' minutes')
 
+        # May need to set CPU to performance mode beforehand:
+        # cd /sys/devices/system/cpu
+        # echo performance | tee cpu*/cpufreq/scaling_governor
         TestRun.executor.run_in_background(f'cd {repo_path} && screen -S master -d -m &&'
                                            f'screen -S master -X stuff "afl-fuzz -n -i '
                                            f'afl-i -o afl-o {repo_path}/rootfs/bin/iotrace -H\n"')
