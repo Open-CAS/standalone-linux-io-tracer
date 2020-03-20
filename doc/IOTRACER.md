@@ -99,8 +99,8 @@ processing.
 ## Parsing traces
 
 The iotrace parser converts IO traces from binary format to CSV or JSON format.
-To parse you trace we are going to invoke _--parse-trace_ command from
-_--trace-parsing_ module.
+To parse your trace we are going to invoke _--io_ command from
+_--trace-parser_ module.
 
 ~~~{.sh}
 iotrace --trace-parser --io --help
