@@ -65,8 +65,9 @@ def test_io_events():
                 TestRun.fail("Could not find write event")
             result = any(
                 'io' in event
-                # Read events don't have an operation field
-                and 'operation' not in event['io']
+                and 'operation' in event['io']
+                and event['io']['operation'] == 'Read'
+                # LBA 0 events don't have a lba field, so skip them
                 and 'lba' in event['io']
                 and int(event['io']['lba']) == int(read_offset / iotrace_lba_len)
                 and int(event['io']['len']) == int(read_length.get_value() / iotrace_lba_len)
@@ -78,6 +79,7 @@ def test_io_events():
                 'io' in event
                 and 'operation' in event['io']
                 and event['io']['operation'] == 'Discard'
+                # LBA 0 events don't have a lba field, so skip them
                 and 'lba' in event['io']
                 and int(event['io']['lba']) == int(discard_offset / iotrace_lba_len)
                 and int(event['io']['len']) == int(discard_length / iotrace_lba_len)
