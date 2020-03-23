@@ -130,3 +130,5 @@ def dut_cleanup():
 
     TestRun.LOGGER.info("Removing existing traces")
     trace_repository_path: str = IotracePlugin.get_trace_repository_path()
+    TestRun.executor.run_expect_success(
+        f'rm -rf {trace_repository_path}/kernel')
