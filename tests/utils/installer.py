@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: BSD-3-Clause-Clear
 #
 from datetime import timedelta
+from shutil import which
 
 from core.test_run_utils import TestRun
 
@@ -103,8 +104,17 @@ def check_if_installed():
     return output.exit_code == 0
 
 
+def check_if_ubuntu():
+    return which("apt") is not None
+
+
 def uninstall_iotrace():
     TestRun.LOGGER.info("Uninstalling previous iotrace")
+
+    if check_if_ubuntu():
+        TestRun.executor.run("apt remove -y iotrace")
+    else:
+        TestRun.executor.run("rpm -e iotrace")
     TestRun.executor.run(
         f"cd {TestRun.plugins['iotrace'].working_dir} && "
         "make uninstall")
