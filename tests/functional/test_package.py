@@ -69,10 +69,57 @@ def test_package_installation():
         else:
             TestRun.executor.run_expect_success("rpm -e iotrace")
 
-    with TestRun.step("Check if io trace was uninstalled"):
+    with TestRun.step("Check if iotrace was uninstalled"):
         TestRun.executor.run_expect_fail("iotrace -V")
 
     if iotrace_installed:
         with TestRun.step("Reinstall iotrace"):
             install_iotrace()
 
+
+def test_source_package_installation():
+    TestRun.LOGGER.info("Testing source package installation")
+
+    iotrace: IotracePlugin = TestRun.plugins['iotrace']
+    work_path: str = iotrace.working_dir
+
+    with TestRun.step("Building iotrace source package"):
+        TestRun.executor.run_expect_success(
+            f"cd {iotrace.working_dir} && "
+            "make package_source -j`nproc --all`")
+
+    iotrace_installed = check_if_installed()
+    if iotrace_installed:
+        with TestRun.step("Uninstall existing iotrace if needed"):
+            uninstall_iotrace()
+
+    with TestRun.step("Unpack and install source package"):
+        TestRun.executor.run_expect_success(
+            f"tar -xvf {work_path}/build/release/iotrace-*.tar.gz -C {work_path} &&"
+            f"cd {work_path}/iotrace-*-Source &&"
+            "make install -j`nproc --all`")
+
+    with TestRun.step("Check if iotrace is installed"):
+        iotrace.version()
+
+    iotrace.start_tracing()
+    stopped = iotrace.stop_tracing()
+
+    if not stopped:
+        raise Exception("Could not stop active tracing.")
+
+    trace_path = IotracePlugin.get_latest_trace_path()
+    summary_parsed = IotracePlugin.get_trace_summary(trace_path)
+
+    if summary_parsed['state'] != "COMPLETE":
+        TestRun.LOGGER.error("Trace state is not complete")
+
+    with TestRun.step("Uninstall iotrace"):
+        uninstall_iotrace()
+
+    with TestRun.step("Check if iotrace was uninstalled"):
+        TestRun.executor.run_expect_fail("iotrace -V")
+
+    if iotrace_installed:
+        with TestRun.step("Reinstall iotrace"):
+            install_iotrace()
