@@ -5,8 +5,11 @@
 
 from core.test_run import TestRun
 from test_tools.dd import Dd
-from test_utils.size import Size
+from test_tools.fio.fio import Fio
+from test_tools.fio.fio_param import IoEngine, ReadWrite
+from test_utils.size import Unit, Size
 import time
+import datetime
 from random import randrange
 from math import floor
 
@@ -188,3 +191,35 @@ def test_lba_histogram():
                 if int(total['count']) != 3 * (bucket_index + 1):
                     TestRun.fail(
                         f"Invalid total count: {total['count']} for index {bucket_index}")
+
+
+def test_verify_flushes():
+    TestRun.LOGGER.info("Testing io events during tracing")
+    iotrace = TestRun.plugins['iotrace']
+    for disk in TestRun.dut.disks:
+        with TestRun.step("Start tracing"):
+            iotrace.start_tracing([disk.system_path])
+            time.sleep(5)
+        with TestRun.step("Run test workload with sync"):
+            fio = (
+                Fio().create_command().io_engine(IoEngine.sync).
+                    block_size(Size(4, Unit.KibiByte)).time_based().
+                    read_write(ReadWrite.randwrite).
+                    target(disk.system_path).direct(value=False).
+                    run_time(datetime.timedelta(seconds=10)).fsync(value=1))
+            fio.run()
+        with TestRun.step("Stop tracing"):
+            iotrace.stop_tracing()
+        with TestRun.step("Verify trace correctness"):
+            trace_path = IotracePlugin.get_latest_trace_path()
+            events_parsed = IotracePlugin.get_trace_events(trace_path)
+            result = any('io' in event and 'fua' in event['io']
+                         and bool(event['io']['fua'] is True)
+                         for event in events_parsed)
+            if not result:
+                TestRun.fail("Could not find event with fua")
+            result = any('io' in event and 'flush' in event['io']
+                         and bool(event['io']['flush'] is True)
+                         for event in events_parsed)
+            if not result:
+                TestRun.fail("Could not find event with flush")
