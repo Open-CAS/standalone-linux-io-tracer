@@ -223,3 +223,12 @@ def test_verify_flushes():
                          for event in events_parsed)
             if not result:
                 TestRun.fail("Could not find event with flush")
+            result = all('flush' in event['io'] and
+                         bool(event['io']['flush']) is True
+                         for event in
+                         filter(lambda event:
+                                'io' in event and 'lba' in event['io'] and
+                                int(event['io']['lba']) == 0 and
+                                int(event['io']['len']) == 0, events_parsed))
+            if not result:
+                TestRun.fail("All events with lba 0 and len 0 should have flush")
