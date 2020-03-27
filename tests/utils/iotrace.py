@@ -145,6 +145,31 @@ class IotracePlugin:
 
         return True
 
+    def kill_tracing(self) -> bool:
+        """
+        Kill tracing.
+
+        :return: True if tracing was killed, False no tracing was active
+        :rtype: bool
+        """
+        TestRun.LOGGER.info("Stopping tracing")
+
+        # Send -9
+        kill_attempts = 30
+        attempt = 0
+
+        while self.check_if_tracing_active() and attempt < kill_attempts:
+            TestRun.LOGGER.info("Sending -9 no. " + str(attempt + 1))
+            attempt += 1
+            TestRun.executor.run(f'kill -9 {self.pid}')
+            time.sleep(2)
+
+        if self.check_if_tracing_active():
+            TestRun.LOGGER.error("Could not kill iotrace")
+            return False
+
+        return True
+
     @staticmethod
     def get_traces_list(prefix: str = None, shortcut: bool = False) -> list:
         """
@@ -166,6 +191,22 @@ class IotracePlugin:
         return parse_json(output.stdout)
 
     @staticmethod
+    def get_trace_count(prefix: str = None, shortcut: bool = False) -> int:
+        """
+        Returns number of traces
+
+        :param prefix: Trace path or trace path's prefix when ended with '*'
+        :param shortcut: Use shorter command
+        :type prefix: str
+        :type shortcut: bool
+        :return: number of traces
+        """
+        paths_parsed = IotracePlugin.get_traces_list(prefix, shortcut)
+        if len(paths_parsed):
+            return len(paths_parsed[0]['trace'])
+        return 0
+
+    @staticmethod
     def get_latest_trace_path(prefix: str = None, shortcut: bool = False) -> list:
         """
         Returns trace path of the most recent trace
@@ -179,7 +220,7 @@ class IotracePlugin:
         paths_parsed = IotracePlugin.get_traces_list(prefix, shortcut)
 
         # Return the last element of trace list
-        if len(paths_parsed):
+        if len(paths_parsed) and len(paths_parsed[0]['trace']):
             return paths_parsed[0]['trace'][-1]['tracePath']
         else:
             return ""
@@ -362,7 +403,7 @@ class IotracePlugin:
         return parse_json(output.stdout)
 
     @staticmethod
-    def remove_traces(prefix: str, force: bool = False, shortcut: bool = False):
+    def remove_traces(prefix: str, force: bool = False, shortcut: bool = False, ):
         """
         Removes record of the most recent trace
 
@@ -382,9 +423,7 @@ class IotracePlugin:
             command += ' -f ' if shortcut else ' --force '
 
         output = TestRun.executor.run(command)
-        error_output = parse_json(output.stderr)[0]['trace']
-        if error_output == "No traces removed.":
-            raise CmdException("Invalid traces removal", output)
+        return parse_json(output.stderr)
 
     @staticmethod
     def set_trace_repository_path(trace_path: str, shortcut: bool = False):
