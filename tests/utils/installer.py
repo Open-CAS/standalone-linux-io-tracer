@@ -105,7 +105,8 @@ def check_if_installed():
 
 
 def check_if_ubuntu():
-    return which("apt") is not None
+    output = TestRun.executor.run("apt")
+    return output.exit_code == 0
 
 
 def uninstall_iotrace():
