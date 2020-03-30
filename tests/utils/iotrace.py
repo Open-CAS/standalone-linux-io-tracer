@@ -4,25 +4,92 @@
 #
 
 import json
+import os
 import re
 import time
+import yaml
 from datetime import timedelta
 
 from api.iotrace_lat_hist_parser import LatencyHistogram
 from core.test_run_utils import TestRun
 from test_utils.output import CmdException
 from test_utils.size import Unit, Size
-from utils.installer import check_if_installed
+from utils.git import get_current_commit_hash, get_current_commit_message
+from utils.git import get_current_octf_hash
+from log.logger import create_log, Log
 
 NOT_WHITESPACE = re.compile(r'[^\s]')
 
 
 class IotracePlugin:
-    def __init__(self, repo_dir, working_dir):
-        self.repo_dir = repo_dir  # Test controller's repo, copied to DUT
-        self.working_dir = working_dir  # DUT's make/install work directory
-        self.installed = check_if_installed()  # Was iotrace installed already
+    def __init__(self):
+        # Test controller's repo, copied to DUT
+        self.repo_dir = os.path.join(os.path.dirname(__file__), "../../")
+
+        # DUT's make/install work directory
+        self.working_dir = "~"
+
+        # Flag indicating if install iotrace
+        self.reinstall = False
+
         self.pid = None
+
+    def runtest_setup(self, item) -> object:
+        try:
+            with open(item.config.getoption('--dut-config')) as cfg:
+                dut_config = yaml.safe_load(cfg)
+        except Exception:
+            raise Exception("You need to specify DUT config. "
+                            "See the example_dut_config.py file.")
+
+        try:
+            TestRun.prepare(item, dut_config)
+
+            test_name = item.name.split('[')[0]
+            TestRun.LOGGER = create_log(item.config.getoption('--log-path'), test_name)
+            TestRun.setup()
+
+            self.working_dir = dut_config['working_dir']
+            self.reinstall = item.config.getoption('--force-reinstall')
+        except Exception as ex:
+            raise Exception(f"Exception occurred during test setup:\n"
+                            f"{str(ex)}\n{traceback.format_exc()}")
+
+        TestRun.LOGGER.info(f"DUT info: {TestRun.dut}")
+
+        # Prepare DUT for test
+        TestRun.LOGGER.add_build_info(f'Commit hash:')
+        TestRun.LOGGER.add_build_info(f"{get_current_commit_hash()}")
+        TestRun.LOGGER.add_build_info(f'Commit message:')
+        TestRun.LOGGER.add_build_info(f'{get_current_commit_message()}')
+        TestRun.LOGGER.add_build_info(f'OCTF commit hash:')
+        TestRun.LOGGER.add_build_info(f'{get_current_octf_hash()}')
+
+        TestRun.LOGGER.info(f"DUT info: {TestRun.dut}")
+        TestRun.LOGGER.write_to_command_log("Test body")
+        TestRun.LOGGER.start_group("Test body")
+
+    @staticmethod
+    def runtest_makereport(item, call):
+        res = (yield).get_result()
+        TestRun.makereport(item, call, res)
+
+    @staticmethod
+    def runtest_teardown():
+        TestRun.LOGGER.end_all_groups()
+
+        with TestRun.LOGGER.step("Cleanup after test"):
+            try:
+                if TestRun.executor.is_active():
+                    TestRun.executor.wait_for_connection()
+            except Exception:
+                TestRun.LOGGER.warning("Exception occured during platform cleanup.")
+
+        TestRun.LOGGER.end()
+        if TestRun.executor:
+            TestRun.LOGGER.get_additional_logs()
+        Log.destroy()
+        TestRun.teardown()
 
     def start_tracing(self,
                       bdevs: list = [],
