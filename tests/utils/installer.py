@@ -69,7 +69,7 @@ def install_iotrace():
     iotrace = TestRun.plugins['iotrace']
 
     TestRun.LOGGER.info("Copying standalone-linux-io-tracer repository to DUT")
-    TestRun.executor.rsync(
+    TestRun.executor.rsync_to(
         f"{iotrace.repo_dir}/",
         f"{iotrace.working_dir}/",
         delete=True,
