@@ -3,8 +3,6 @@
 # SPDX-License-Identifier: BSD-3-Clause-Clear
 #
 from datetime import timedelta
-from shutil import which
-
 from core.test_run_utils import TestRun
 
 

@@ -21,7 +21,7 @@ def test_package_installation():
     work_path: str = f"{iotrace.working_dir}/iotrace_package"
 
     with TestRun.step("Copying iotrace repository to DUT"):
-        TestRun.executor.rsync(
+        TestRun.executor.rsync_to(
             f"{iotrace.repo_dir}/",
             work_path,
             delete=True,

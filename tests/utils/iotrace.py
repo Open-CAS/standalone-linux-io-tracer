@@ -70,11 +70,6 @@ class IotracePlugin:
         TestRun.LOGGER.start_group("Test body")
 
     @staticmethod
-    def runtest_makereport(item, call):
-        res = (yield).get_result()
-        TestRun.makereport(item, call, res)
-
-    @staticmethod
     def runtest_teardown():
         TestRun.LOGGER.end_all_groups()
 

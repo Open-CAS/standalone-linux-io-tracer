@@ -20,8 +20,8 @@ def pytest_runtest_setup(item):
 
 
 def pytest_runtest_makereport(item, call):
-    iotrace: IotracePlugin = TestRun.plugins['iotrace']
-    iotrace.runtest_makereport(item, call)
+    res = (yield).get_result()
+    TestRun.makereport(item, call, res)
 
 
 def pytest_runtest_teardown():
