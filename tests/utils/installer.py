@@ -3,8 +3,6 @@
 # SPDX-License-Identifier: BSD-3-Clause-Clear
 #
 from datetime import timedelta
-from shutil import which
-
 from core.test_run_utils import TestRun
 
 
@@ -27,7 +25,7 @@ def install_iotrace_with_afl_support(patch_path: str):
     modprobe_disable_patch_path: str = "tests/security/fuzzy/disable_modprobe.patch"
     repo_path = f"{iotrace.working_dir}/slit-afl"
 
-    TestRun.executor.rsync(
+    TestRun.executor.rsync_to(
         f"{iotrace.repo_dir}/",
         f"{iotrace.working_dir}/slit-afl",
         delete=True,
@@ -69,7 +67,7 @@ def install_iotrace():
     iotrace = TestRun.plugins['iotrace']
 
     TestRun.LOGGER.info("Copying standalone-linux-io-tracer repository to DUT")
-    TestRun.executor.rsync(
+    TestRun.executor.rsync_to(
         f"{iotrace.repo_dir}/",
         f"{iotrace.working_dir}/",
         delete=True,
