@@ -38,18 +38,18 @@ def test_remove_trace():
         full_trace_list = iotrace.get_traces_list()[0]['trace']
 
         trace_path = full_trace_list[0]['tracePath']
-        iotrace.remove_traces(prefix=trace_path[:-2]+"*")
+        iotrace.remove_traces(prefix =trace_path[:-2] + "*")
         count = iotrace.get_trace_count()
 
-        if count != len(full_trace_list)-1:
+        if count != len(full_trace_list) - 1:
             TestRun.fail(f"Only one trace should be removed. Expected "
                          f"{len(full_trace_list) - 1}, "
                          f"got {count}")
 
     with TestRun.step("Remove second trace using common prefix"):
-        iotrace.remove_traces(prefix=trace_path[:-2]+"*", force=True)
+        iotrace.remove_traces(prefix=trace_path[:-2] + "*", force=True)
         count = iotrace.get_trace_count()
-        if count != len(full_trace_list)-2:
+        if count != len(full_trace_list) - 2:
             TestRun.fail(f"Two traces should be removed. Expected "
                          f"{len(full_trace_list) - 2}, "
                          f"got {count}")

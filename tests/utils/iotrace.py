@@ -149,10 +149,11 @@ class IotracePlugin:
         """
         Kill tracing.
 
-        :return: True if tracing was killed, False no tracing was active
+        :return: True if tracing was killed
         :rtype: bool
+        :raises Exception: if failed to kill iotrace process
         """
-        TestRun.LOGGER.info("Stopping tracing")
+        TestRun.LOGGER.info("Killing tracing")
 
         # Send -9
         kill_attempts = 30
@@ -165,8 +166,7 @@ class IotracePlugin:
             time.sleep(2)
 
         if self.check_if_tracing_active():
-            TestRun.LOGGER.error("Could not kill iotrace")
-            return False
+            raise CmdException("Could not kill iotrace")
 
         return True
 
@@ -403,7 +403,7 @@ class IotracePlugin:
         return parse_json(output.stdout)
 
     @staticmethod
-    def remove_traces(prefix: str, force: bool = False, shortcut: bool = False, ):
+    def remove_traces(prefix: str, force: bool = False, shortcut: bool = False):
         """
         Removes record of the most recent trace
 
@@ -423,7 +423,12 @@ class IotracePlugin:
             command += ' -f ' if shortcut else ' --force '
 
         output = TestRun.executor.run(command)
-        return parse_json(output.stderr)
+        if output.exit_code == 0:
+            return parse_json(output.stdout)
+        error_output = parse_json(output.stderr)[0]['trace']
+        if error_output == "No traces removed.":
+            return ""
+        return error_output
 
     @staticmethod
     def set_trace_repository_path(trace_path: str, shortcut: bool = False):
