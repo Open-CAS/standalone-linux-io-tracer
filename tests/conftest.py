@@ -19,6 +19,7 @@ def pytest_runtest_setup(item):
     dut_prepare(item.config.getoption('--force-reinstall'))
 
 
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
 def pytest_runtest_makereport(item, call):
     res = (yield).get_result()
     TestRun.makereport(item, call, res)
