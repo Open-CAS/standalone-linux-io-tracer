@@ -25,7 +25,7 @@ def install_iotrace_with_afl_support(patch_path: str):
     modprobe_disable_patch_path: str = "tests/security/fuzzy/disable_modprobe.patch"
     repo_path = f"{iotrace.working_dir}/slit-afl"
 
-    TestRun.executor.rsync(
+    TestRun.executor.rsync_to(
         f"{iotrace.repo_dir}/",
         f"{iotrace.working_dir}/slit-afl",
         delete=True,
