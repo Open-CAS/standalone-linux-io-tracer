@@ -118,6 +118,7 @@ function iotrace_get_distribution_pkg_dependencies () {
 function iotrace_setup_kernel_headers () {
     local kernel_version=$(uname -r)
     local kernel_dir=$(readlink -f /lib/modules/${kernel_version}/build)
+    local distro=$(detect_distribution)
 
     if [ -d "${kernel_dir}" ]
     then
@@ -127,9 +128,25 @@ function iotrace_setup_kernel_headers () {
 
     iotrace_info "Install kernel headers"
     ${PKG_INSTALLER} $(iotrace_get_kernel_package)
-    iotrace_check_result $? "Cannot install kernel headers"
 
-    kernel_dir=$(readlink -f /lib/modules/${kernel_version}/build)
+    if [ ! -d "${kernel_dir}" ]
+    then
+        iotrace_info "Cannot install kernel headers appropriate to running kernel"
+        iotrace_info "Try to install specific kernel headers version: ${kernel_version}"
+
+        case "${distro}" in
+        "RHEL7"|"CENTOS7"|"RHEL8"|"CENTOS8"|"FEDORA")
+            ${PKG_INSTALLER} "kernel-devel-uname-r == $(uname -r)"
+            ;;
+        "UBUNTU")
+            ${PKG_INSTALLER} linux-headers-$(uname -r)
+            ;;
+        *)
+            iotrace_error "Unknown Linux distribution"
+            ;;
+        esac
+    fi
+
     if [ ! -d "${kernel_dir}" ]
     then
         iotrace_info "Consider updating the system kernel to match available headers"
