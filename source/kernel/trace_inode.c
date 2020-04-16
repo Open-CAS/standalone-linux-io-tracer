@@ -1,5 +1,6 @@
 #include "trace_inode.h"
 
+#include <generated/utsrelease.h>
 #include <linux/atomic.h>
 #include <linux/dcache.h>
 #include <linux/errno.h>
@@ -10,6 +11,7 @@
 #include <linux/list.h>
 #include <linux/refcount.h>
 #include <linux/slab.h>
+#include <linux/utsname.h>
 #include <linux/version.h>
 #include "config.h"
 #include "context.h"
@@ -107,6 +109,8 @@ struct iotrace_group_priv {
  * looked up.
  */
 struct fsnotify_backend_ops {
+    bool inited;
+
     typeof(&fsnotify_get_group) get_group;
     typeof(&fsnotify_put_group) put_group;
     typeof(&fsnotify_alloc_group) alloc_group;
@@ -379,10 +383,32 @@ struct fs_monitor *_fsm_try_get(void) {
     return NULL;
 }
 
+static bool _fsm_is_compatible_kernel(void) {
+    const char *built_kernel_release = UTS_RELEASE;
+    const char *current_kernel_release = init_utsname()->release;
+    const size_t len =
+            strnlen(current_kernel_release, sizeof(init_utsname()->release));
+
+    if (len != strlen(UTS_RELEASE)) {
+        return false;
+    }
+
+    return 0 == strncmp(built_kernel_release, current_kernel_release, len);
+}
+
 /** Allocate only one fsmonitor */
 static void _fsm_init(iotrace_inode_tracer_t inode_tracer) {
     struct fs_monitor *fsm = NULL;
     struct iotrace_group_priv *priv = NULL;
+
+    if (!_fsm_is_compatible_kernel()) {
+        if (smp_processor_id() == 0) {
+            printk(KERN_WARNING
+                   "Cannot setup FS monitor's because of incompatible kernel "
+                   "version\n");
+        }
+        return;
+    }
 
     /* Check if FS monitor operations have been resolved */
     if (NULL == fsnotify_ops.get_group) {
@@ -436,6 +462,7 @@ static void _fsm_init(iotrace_inode_tracer_t inode_tracer) {
     fsm->group->private = priv;
     inode_tracer->fsm = fsm;
 
+    fsnotify_ops.inited = true;
     debug("FS monitor created");
     return;
 
@@ -626,7 +653,7 @@ void iotrace_trace_inode(struct iotrace_state *state,
             parent_inode = d_inode(parent_dentry);
 
             if (S_ISDIR(parent_inode->i_mode)) {
-                if (inode_tracer->fsm) {
+                if (inode_tracer->fsm && fsnotify_ops.inited) {
                     _fs_add_mark(inode_tracer->fsm->group, parent_inode);
                 }
             }
