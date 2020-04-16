@@ -79,7 +79,7 @@ function iotrace_error () {
 # Usage: iotrace_info <INFO_MESSAGE_1> [ <INFO_MESSAGE_2> ... ]
 #
 function iotrace_info () {
-    echo "[IOTRACE][INFO] $*" 1>&2
+    echo "[IOTRACE][INFO] $*"
 }
 
 function iotrace_get_kernel_package () {
