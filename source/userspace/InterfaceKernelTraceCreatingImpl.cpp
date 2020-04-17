@@ -4,17 +4,17 @@
  */
 
 #include "InterfaceKernelTraceCreatingImpl.h"
+#include <sys/types.h>
+#include <chrono>
+#include <cstdio>
+#include <string>
+#include <thread>
 #include <octf/interface/TraceManager.h>
 #include <octf/plugin/NodePlugin.h>
 #include <octf/proto/trace.pb.h>
 #include <octf/trace/iotrace_event.h>
 #include <octf/utils/Exception.h>
 #include <octf/utils/Log.h>
-#include <sys/types.h>
-#include <chrono>
-#include <cstdio>
-#include <string>
-#include <thread>
 #include "KernelTraceExecutor.h"
 
 namespace octf {
@@ -83,8 +83,6 @@ void InterfaceKernelTraceCreatingImpl::StartTracing(
                                   response->tracepath());
         }
     } catch (Exception &e) {
-        controller->SetFailed(e.what());
-    } catch (std::exception &e) {
         controller->SetFailed(e.what());
     }
 
