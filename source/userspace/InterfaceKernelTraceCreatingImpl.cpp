@@ -84,6 +84,8 @@ void InterfaceKernelTraceCreatingImpl::StartTracing(
         }
     } catch (Exception &e) {
         controller->SetFailed(e.what());
+    } catch (std::exception &e) {
+        controller->SetFailed(e.what());
     }
 
     removeModule();
