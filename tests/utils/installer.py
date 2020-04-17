@@ -6,7 +6,7 @@ from datetime import timedelta
 from core.test_run_utils import TestRun
 
 
-def install_iotrace_with_afl_support(patch_path: str):
+def install_iotrace_with_afl_support(patch_path: str, rsync_exclude: list=[]):
     '''
         This copies the repository and applies diff patch from supplied path
         Then iotrace is built with AFL fuzzer support and installed locally
@@ -16,21 +16,23 @@ def install_iotrace_with_afl_support(patch_path: str):
         and may for example redirect fuzzed values from stdin to file.
 
         :param str patch_path: Path to patch file
+        :param rsync_exclude: List of paths not to rsync
     '''
-    TestRun.LOGGER.info("Copying standalone-linux-io-tracer repository to DUT"
-                        " for AFL fuzzy tests")
-
     iotrace = TestRun.plugins['iotrace']
     tracing_patch_path: str = "tests/security/fuzzy/immediate-tracing.patch"
     modprobe_disable_patch_path: str = "tests/security/fuzzy/disable_modprobe.patch"
     repo_path = f"{iotrace.working_dir}/slit-afl"
 
+    # TODO: rsync, but don't update changed time on files which content was not
+    #  modified to make compilation faster
+    TestRun.LOGGER.info("Copying standalone-linux-io-tracer repository to DUT"
+                        " for AFL fuzzy tests")
     TestRun.executor.rsync_to(
         f"{iotrace.repo_dir}/",
         f"{iotrace.working_dir}/slit-afl",
         delete=True,
         symlinks=True,
-        exclude_list=['build'])
+        exclude_list=(['build'] + rsync_exclude), timeout=timedelta(seconds=60))
 
     # Copy neccessary files for patching
     TestRun.executor.run_expect_success(
@@ -38,7 +40,7 @@ def install_iotrace_with_afl_support(patch_path: str):
         f'experimental/argv_fuzzing/argv-fuzz-inl.h '
         f'{iotrace.working_dir}/slit-afl/source/userspace/')
     TestRun.executor.run_expect_success(
-        f'cp {iotrace.working_dir}/tests/'
+        f'cp {iotrace.working_dir}/standalone-linux-io-tracer/tests/'
         f'security/fuzzy/afl-fuzzer-utils.h '
         f'{iotrace.working_dir}/slit-afl/source/userspace/')
 
@@ -53,7 +55,7 @@ def install_iotrace_with_afl_support(patch_path: str):
     if output.exit_code != 0:
         raise Exception("Could not patch files with AFL patch, it's possible "
                         "that the source files changed too much to be able to "
-                        "apply the patch. Apply patches manually. Failing test."
+                        "apply the patch. Update patches as needed."
                         " Error: " + output.stderr)
 
     TestRun.LOGGER.info("Calling make install with AFL compiler")
@@ -65,28 +67,31 @@ def install_iotrace_with_afl_support(patch_path: str):
 def install_iotrace():
     uninstall_iotrace()
     iotrace = TestRun.plugins['iotrace']
+    dest_repo_path = f'{iotrace.working_dir}/standalone-linux-io-tracer'
+
+    TestRun.executor.run_expect_success(f'mkdir -p {dest_repo_path}')
 
     TestRun.LOGGER.info("Copying standalone-linux-io-tracer repository to DUT")
     TestRun.executor.rsync_to(
         f"{iotrace.repo_dir}/",
-        f"{iotrace.working_dir}/",
+        f"{dest_repo_path}",
         delete=True,
         symlinks=True,
         exclude_list=['build'])
 
     TestRun.LOGGER.info("Installing dependencies")
     TestRun.executor.run_expect_success(
-        f"cd {iotrace.working_dir} && "
+        f"cd {dest_repo_path} && "
         "./setup_dependencies.sh")
 
     TestRun.LOGGER.info("Calling make all")
     TestRun.executor.run_expect_success(
-        f"cd {iotrace.working_dir} && "
+        f"cd {dest_repo_path} && "
         "make clean && make -j`nproc --all`")
 
     TestRun.LOGGER.info("Calling make install")
     TestRun.executor.run_expect_success(
-        f"cd {iotrace.working_dir} && "
+        f"cd {dest_repo_path} && "
         f"make install")
 
     if not check_if_installed():
@@ -115,7 +120,7 @@ def uninstall_iotrace():
     else:
         TestRun.executor.run("rpm -e iotrace")
     TestRun.executor.run(
-        f"cd {TestRun.plugins['iotrace'].working_dir} && "
+        f"cd {TestRun.plugins['iotrace'].working_dir}/standalone-linux-io-tracer && "
         "make uninstall")
 
 

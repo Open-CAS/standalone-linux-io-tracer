@@ -8,6 +8,9 @@ bin_path="$1"
 # Second arg can be "--one-job" to run one fuzzer instance
 
 if [ "$1" != "clean" ]; then
+        echo "Cleaning afl-o directory"
+        rm -rf afl-o/*
+
         for (( cpu=0; cpu<cpus; cpu++ ))
         do
                 if [ $cpu = "0" ]; then
