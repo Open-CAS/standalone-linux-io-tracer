@@ -43,7 +43,7 @@ def create_patch_redirect_fuzz_to_file(file_path: str, patch_path: str):
 
     # Create new patch file
     TestRun.executor.run_expect_success(f'cp {TestRun.plugins["iotrace"].working_dir}'
-                                        '/tests/security/fuzzy/redirect-fuzz.patch'
+                                        '/standalone-linux-io-tracer/tests/security/fuzzy/redirect-fuzz.patch'
                                         f' {patch_path}')
 
     # Modify patch to use supplied fuzzed file path

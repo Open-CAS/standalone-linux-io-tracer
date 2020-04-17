@@ -14,6 +14,7 @@ from datetime import datetime
 import time
 
 
+# This test is to be run first to initialize fuzzing environment
 def test_fuzz_args():
     fuzzing_time_seconds = 45 * 60
     iotrace: IotracePlugin = TestRun.plugins['iotrace']
@@ -63,8 +64,9 @@ def test_fuzz_args():
 
     TestRun.LOGGER.info('Killing fuzzers')
     TestRun.executor.run(f'cd {repo_path} && ./tests/security/fuzzy/fuzz.sh clean')
+    TestRun.executor.run_expect_success(f'rm -rf {repo_path}/afl-i')
 
-    detect_crashes(output.stdout)
+    detect_crashes(output, "argv")
 
 
 def test_fuzz_config():
@@ -73,24 +75,15 @@ def test_fuzz_config():
 
     repo_path: str = f"{iotrace.working_dir}/slit-afl"
 
-    # Make sure AFL is installed
-    if not is_afl_installed():
-        install_afl()
-
     # Create patch file for redirecting fuzzed stdin to config file path
     new_patch_path: str = f'{iotrace.working_dir}/redirect_to_config.patch'
     create_patch_redirect_fuzz_to_file(f'{repo_path}/rootfs/etc/octf/octf.conf',
                                        new_patch_path)
 
     # Install iotrace locally with AFL support and redirect patch
-    install_iotrace_with_afl_support(new_patch_path)
+    install_iotrace_with_afl_support(new_patch_path, ['modules/open-cas-telemetry-framework', 'modules/test-framework', 'source/kernel'])
 
-    # Instruct the system to output coredumps as files instead of sending them
-    # to a specific crash handler app
-    TestRun.LOGGER.info('Setting up system for fuzzing')
-    TestRun.executor.run_expect_success('echo core > /proc/sys/kernel/core_pattern')
     TestRun.executor.run_expect_success(f'cd {repo_path} && mkdir -p afl-i afl-o')
-
     # Use config as seed to be mutated
     TestRun.executor.run_expect_success(f'cp {repo_path}/rootfs/etc/octf/octf.conf'
                                         f' {repo_path}/afl-i/case0')
@@ -103,25 +96,22 @@ def test_fuzz_config():
                          '"rootfs/bin/iotrace -L" --one-job')
     output = wait_for_completion(fuzzing_time_seconds/2, repo_path)
     TestRun.executor.run(f'cd {repo_path} && ./tests/security/fuzzy/fuzz.sh clean')
-    detect_crashes(output.stdout)
+    detect_crashes(output, "octf-config")
 
     TestRun.LOGGER.info("Trying 'get-trace-repository-path' command")
     TestRun.executor.run(f'cd {repo_path} && ./tests/security/fuzzy/fuzz.sh '
                          '"rootfs/bin/iotrace --get-trace-repository" --one-job')
     output = wait_for_completion(fuzzing_time_seconds/2, repo_path)
     TestRun.executor.run(f'cd {repo_path} && ./tests/security/fuzzy/fuzz.sh clean')
-    detect_crashes(output.stdout)
+    TestRun.executor.run_expect_success(f'rm -rf {repo_path}/afl-i')
+    detect_crashes(output, "octf-config")
 
 
 def test_fuzz_trace_file():
-    fuzzing_time_seconds = 10 * 60
+    fuzzing_time_seconds = 20 * 60
     iotrace: IotracePlugin = TestRun.plugins['iotrace']
 
     repo_path: str = f"{iotrace.working_dir}/slit-afl"
-
-    # Make sure AFL is installed
-    if not is_afl_installed():
-        install_afl()
 
     # Create trace files
     iotrace.start_tracing()
@@ -138,18 +128,13 @@ def test_fuzz_trace_file():
     create_patch_redirect_fuzz_to_file(f'{copied_tracefile_path}', new_patch_path)
 
     # Install iotrace locally with AFL support and redirect patch
-    install_iotrace_with_afl_support(new_patch_path)
+    install_iotrace_with_afl_support(new_patch_path, ['modules/open-cas-telemetry-framework', 'modules/test-framework', 'source/kernel'])
 
     # Copy trace files to local instalation of iotrace
     TestRun.executor.run_expect_success(f'cp -r {trace_repo_path}/kernel '
                                         f'{repo_path}/rootfs/var/lib/octf/trace/')
 
-    # Instruct the system to output coredumps as files instead of sending them
-    # to a specific crash handler app
-    TestRun.LOGGER.info('Setting up system for fuzzing')
-    TestRun.executor.run_expect_success('echo core > /proc/sys/kernel/core_pattern')
     TestRun.executor.run_expect_success(f'cd {repo_path} && mkdir -p afl-i afl-o')
-
     # Add input seed which shall be mutated
     TestRun.executor.run_expect_success(f'cd {repo_path} && echo "0" > afl-i/case0')
 
@@ -160,19 +145,15 @@ def test_fuzz_trace_file():
                          f'{IotracePlugin.get_latest_trace_path()}" --one-job')
     output = wait_for_completion(fuzzing_time_seconds, repo_path)
     TestRun.executor.run(f'cd {repo_path} && ./tests/security/fuzzy/fuzz.sh clean')
-    detect_crashes(output.stdout)
+    TestRun.executor.run_expect_success(f'rm -rf {repo_path}/afl-i')
+    detect_crashes(output, "trace-file")
 
 
-# TODO (trybicki): instrument protobuf library as well to improve fuzzing
 def test_fuzz_summary_file():
     fuzzing_time_seconds = 10 * 60
     iotrace: IotracePlugin = TestRun.plugins['iotrace']
 
     repo_path: str = f"{iotrace.working_dir}/slit-afl"
-
-    # Make sure AFL is installed
-    if not is_afl_installed():
-        install_afl()
 
     # Create trace files
     iotrace.start_tracing()
@@ -189,18 +170,13 @@ def test_fuzz_summary_file():
     create_patch_redirect_fuzz_to_file(f'{copied_summary_path}', new_patch_path)
 
     # Install iotrace locally with AFL support and redirect patch
-    install_iotrace_with_afl_support(new_patch_path)
+    install_iotrace_with_afl_support(new_patch_path, ['modules/open-cas-telemetry-framework', 'modules/test-framework', 'source/kernel'])
 
     # Copy trace files to local installation of iotrace
     TestRun.executor.run_expect_success(f'cp -r {trace_repo_path}/kernel '
                                         f'{repo_path}/rootfs/var/lib/octf/trace/')
 
-    # Instruct the system to output coredumps as files instead of sending them
-    # to a specific crash handler app
-    TestRun.LOGGER.info('Setting up system for fuzzing')
-    TestRun.executor.run_expect_success('echo core > /proc/sys/kernel/core_pattern')
     TestRun.executor.run_expect_success(f'cd {repo_path} && mkdir -p afl-i afl-o')
-
     # Add input seed which shall be mutated
     TestRun.executor.run_expect_success(f'cd {repo_path} ' +
                                         '&& echo "{}" > afl-i/case0')
@@ -212,7 +188,8 @@ def test_fuzz_summary_file():
                          f'{IotracePlugin.get_latest_trace_path()}" --one-job')
     output = wait_for_completion(fuzzing_time_seconds, repo_path)
     TestRun.executor.run(f'cd {repo_path} && ./tests/security/fuzzy/fuzz.sh clean')
-    detect_crashes(output.stdout)
+    TestRun.executor.run_expect_success(f'rm -rf {repo_path}/afl-i')
+    detect_crashes(output, "summary-file")
 
 
 def test_fuzz_procfs():
@@ -223,15 +200,8 @@ def test_fuzz_procfs():
 
     repo_path: str = f"{iotrace.working_dir}/slit-afl"
 
-    # Make sure AFL is installed
-    if not is_afl_installed():
-        install_afl()
-
-    # Instruct the system to output coredumps as files instead of sending them
-    # to a specific crash handler app
-    TestRun.LOGGER.info('Setting up system for fuzzing')
-    TestRun.executor.run_expect_success('echo core > /proc/sys/kernel/core_pattern')
-    TestRun.executor.run_expect_success(f'cd {repo_path} && mkdir -p afl-i afl-o')
+    # Reset dmesg so we don't accidentaly grep old kernel panics
+    TestRun.executor.run_expect_success('dmesg -c')
 
     # Procfs files and their initial seed
     fuzzed_files = {"/proc/iotrace/add_device": "/dev/sdb",
@@ -243,6 +213,7 @@ def test_fuzz_procfs():
     # consumer header procfile. This is because procfiles may have a limit
     # on applications which mmap them, and iotrace -S may block other mmaps
     disk = TestRun.dut.disks[0].system_path
+    TestRun.executor.run_expect_success(f'modprobe iotrace')
     TestRun.executor.run_expect_success(f'echo {disk} > /proc/iotrace/add_device')
     TestRun.executor.run_expect_success(f'echo 1024 > /proc/iotrace/size')
     fio_pid = TestRun.executor.run_in_background(f'fio --name=job --direct=0 --ioengine=mmap '
@@ -255,7 +226,7 @@ def test_fuzz_procfs():
     workload_pid = TestRun.executor.run_in_background(f'fio --direct=1'
                                                  f'--filename={disk} '
                                                  f'--time_based --runtime=24h --bs=4k '
-                                                 f'--iodepth=1 --rw=randwrite')
+                                                 f'--iodepth=1 --rw=randwrite --name=job2 --size=4k')
 
     for procfile, seed in fuzzed_files.items():
         # Create patch file for redirecting fuzzed stdin to proc file
@@ -263,8 +234,11 @@ def test_fuzz_procfs():
         create_patch_redirect_fuzz_to_file(f'{procfile}', new_patch_path)
 
         # Install iotrace locally with AFL support and redirect patch
-        install_iotrace_with_afl_support(new_patch_path)
+        install_iotrace_with_afl_support(new_patch_path,
+                                         ['modules/open-cas-telemetry-framework', 'modules/test-framework', 'source/kernel'])
 
+        TestRun.executor.run_expect_success(
+            f'cd {repo_path} && mkdir -p afl-i afl-o')
         # Add input seed which shall be mutated
         TestRun.executor.run_expect_success(f'cd {repo_path} && echo {seed} > afl-i/case0')
 
@@ -272,17 +246,19 @@ def test_fuzz_procfs():
                             str(fuzzing_time_seconds / 60 / len(fuzzed_files))
                             + ' minutes')
 
+        # May need to set CPU to performance mode beforehand:
+        # cd /sys/devices/system/cpu
+        # echo performance | tee cpu*/cpufreq/scaling_governor
         TestRun.executor.run_in_background(f'cd {repo_path} && screen -S master -d -m &&'
                                            f'screen -S master -X stuff "afl-fuzz -n -i '
                                            f'afl-i -o afl-o {repo_path}/rootfs/bin/iotrace -H\n"')
         elapsed = 0
         start_time = time.time()
         while elapsed < fuzzing_time_seconds / len(fuzzed_files):
-            output = TestRun.executor.run(f'dmesg | grep -A 20 "Call Trace"')
+            output = TestRun.executor.run(f'dmesg | grep -A 40 -B 10 "Call Trace"')
             if output.exit_code == 0:
-                save_fuzzing_output(f'{repo_path}/afl-o')
-                TestRun.executor.run_expect_success('dmesg -c')
-                TestRun.fail('Kernel BUGs during fuzzing procfs were found:\n'
+                save_fuzzing_output(f'{repo_path}/afl-o', f'procfs-{procfile.split("/")[-1]}')
+                TestRun.fail(f'Kernel BUGs during fuzzing {procfile} were found:\n'
                              f'{output.stdout}')
 
             time.sleep(5)
@@ -292,8 +268,9 @@ def test_fuzz_procfs():
         TestRun.executor.run_expect_success('killall afl-fuzz && screen -X -S master kill')
 
     # Stop tracing
-    TestRun.executor.run_expect_success(f'kill {fio_pid}')
+    TestRun.executor.run(f'kill {fio_pid}')
     TestRun.executor.run_expect_success(f'kill {workload_pid}')
+    TestRun.executor.run_expect_success(f'rm -rf {repo_path}/afl-i')
 
 
 # TODO (trybicki): use as AFL plugin which handles start, stop and logging
@@ -311,12 +288,13 @@ def wait_for_completion(fuzzing_time_seconds: int, repo_path: str):
     return output
 
 
-def detect_crashes(fuzz_output: str):
+def detect_crashes(fuzz_output, label: str):
     iotrace: IotracePlugin = TestRun.plugins['iotrace']
     repo_path: str = f"{iotrace.working_dir}/slit-afl"
 
-    if 'Crashes found : 0' not in fuzz_output:
-        save_fuzzing_output(f'{repo_path}/afl-o')
+    if 'Crashes found : 0' not in fuzz_output.stdout\
+            and fuzz_output.exit_code != 1:
+        save_fuzzing_output(f'{repo_path}/afl-o', label)
         TestRun.fail('Crashes during fuzzing were found. Please find the'
                      f' inputs which cause it in {iotrace.working_dir}/'
                      f'fuzzy-crashes/ directory')
@@ -324,13 +302,13 @@ def detect_crashes(fuzz_output: str):
 
 # Save fuzzing output dir to working_dir/fuzzy_crashes to
 # avoid being overwritten by next fuzzy test
-def save_fuzzing_output(output_path: str):
+def save_fuzzing_output(output_path: str, label: str):
     now = datetime.now()
     date: str = now.strftime("%H:%M:%S")
 
     iotrace: IotracePlugin = TestRun.plugins['iotrace']
     TestRun.executor.run_expect_success(f'mkdir -p {iotrace.working_dir}'
-                                        f'/fuzzy-crashes/{date}')
+                                        f'/fuzzy-crashes/{label}/{date}')
     TestRun.executor.run_expect_success(f'cp -r {output_path} '
                                         f'{iotrace.working_dir}/fuzzy-crashes/'
-                                        f'{date}/')
+                                        f'{label}/{date}/')
