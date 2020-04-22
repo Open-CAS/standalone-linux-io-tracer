@@ -10,7 +10,7 @@ import time
 import yaml
 from datetime import timedelta
 
-from api.iotrace_lat_hist_parser import LatencyHistogram
+from api.iotrace_lat_hist_parser import LatencyHistograms
 from core.test_run_utils import TestRun
 from test_tools.fs_utils import check_if_directory_exists, create_directory
 from test_utils.output import CmdException
@@ -368,7 +368,7 @@ class IotracePlugin:
         return parse_json(output.stdout)
 
     @staticmethod
-    def get_latency_histogram(trace_path: str, shortcut: bool = False) -> LatencyHistogram:
+    def get_latency_histograms(trace_path: str, shortcut: bool = False) -> LatencyHistograms:
         """
         Get latency histogram of given trace path
 
@@ -377,7 +377,7 @@ class IotracePlugin:
         :type trace_path: str
         :type shortcut: bool
         :return: latency histogram
-        :rtype: LatencyHistogram
+        :rtype: LatencyHistograms
         :raises Exception: if histogram is invalid
         """
         command = 'iotrace' + (' -P' if shortcut else ' --trace-parser')
@@ -389,7 +389,7 @@ class IotracePlugin:
         if output.stdout == "":
             raise CmdException("Invalid histogram", output)
 
-        return LatencyHistogram(parse_json(output.stdout)[0]['histogram'][0])
+        return LatencyHistograms(parse_json(output.stdout)[0]['histogram'][0])
 
     @staticmethod
     def get_fs_statistics(trace_path: str, shortcut: bool = False) -> list:
@@ -463,7 +463,7 @@ class IotracePlugin:
         if output.stdout == "":
             raise CmdException("Invalid IO statistics", output)
 
-        return parse_json(output.stdout)
+        return parse_json(output.stdout)[0]['statistics']
 
     @staticmethod
     def remove_traces(prefix: str, force: bool = False, shortcut: bool = False):
