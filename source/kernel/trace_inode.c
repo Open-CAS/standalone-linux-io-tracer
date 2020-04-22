@@ -389,7 +389,7 @@ static bool _fsm_is_compatible_kernel(void) {
     const size_t len =
             strnlen(current_kernel_release, sizeof(init_utsname()->release));
 
-    if (len != strlen(UTS_RELEASE)) {
+    if (len != sizeof(UTS_RELEASE) - 1) {
         return false;
     }
 
