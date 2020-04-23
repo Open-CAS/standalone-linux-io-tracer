@@ -7,7 +7,7 @@ from typing import List
 
 from test_utils.size import Size, Unit, UnitPerSecond, parse_unit
 from test_utils.time import Time
-from iotrace import IotracePlugin
+from utils.iotrace import IotracePlugin
 
 class BaseTraceStatistics:
     def __init__(self, trace):
