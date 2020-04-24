@@ -35,7 +35,7 @@ def test_remove_trace():
             time.sleep(65 - int(seconds))
 
     with TestRun.step("Remove first trace using common prefix"):
-        full_trace_list = iotrace.get_traces_list()[0]['trace']
+        full_trace_list = iotrace.get_traces_list()
 
         trace_path = full_trace_list[0]['tracePath']
         iotrace.remove_traces(prefix =trace_path[:-2] + "*")
