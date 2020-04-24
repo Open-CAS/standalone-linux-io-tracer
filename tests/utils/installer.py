@@ -58,6 +58,11 @@ def install_iotrace_with_afl_support(patch_path: str, rsync_exclude: list=[]):
                         "apply the patch. Update patches as needed."
                         " Error: " + output.stderr)
 
+    TestRun.LOGGER.info("Installing dependencies")
+    TestRun.executor.run_expect_success(
+        f"cd {repo_path} && "
+        "./setup_dependencies.sh")
+
     TestRun.LOGGER.info("Calling make install with AFL compiler")
     TestRun.executor.run_expect_success(
         f"cd {repo_path} && "
