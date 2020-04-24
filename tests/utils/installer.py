@@ -113,7 +113,7 @@ def check_if_installed():
 
 
 def check_if_ubuntu():
-    output = TestRun.executor.run("apt")
+    output = TestRun.executor.run("apt -v")
     return output.exit_code == 0
 
 

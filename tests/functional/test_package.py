@@ -19,6 +19,7 @@ def test_package_installation():
 
     iotrace: IotracePlugin = TestRun.plugins['iotrace']
     work_path: str = f"{iotrace.working_dir}/iotrace_package"
+    disk = TestRun.dut.disks[0]
 
     with TestRun.step("Copying iotrace repository to DUT"):
         TestRun.executor.rsync_to(
@@ -56,7 +57,7 @@ def test_package_installation():
     with TestRun.step("Check if iotrace is installed"):
         iotrace.version()
 
-    iotrace.start_tracing()
+    iotrace.start_tracing([disk.system_path])
     stopped = iotrace.stop_tracing()
 
     if not stopped:
@@ -87,6 +88,7 @@ def test_source_package_installation():
 
     iotrace: IotracePlugin = TestRun.plugins['iotrace']
     work_path: str = f"{iotrace.working_dir}/standalone-linux-io-tracer"
+    disk = TestRun.dut.disks[0]
 
     with TestRun.step("Building iotrace source package"):
         TestRun.executor.run_expect_success(
@@ -107,7 +109,7 @@ def test_source_package_installation():
     with TestRun.step("Check if iotrace is installed"):
         iotrace.version()
 
-    iotrace.start_tracing()
+    iotrace.start_tracing([disk.system_path])
     stopped = iotrace.stop_tracing()
 
     if not stopped:

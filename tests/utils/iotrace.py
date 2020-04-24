@@ -265,9 +265,7 @@ class IotracePlugin:
         :return: number of traces
         """
         paths_parsed = IotracePlugin.get_traces_list(prefix, shortcut)
-        if len(paths_parsed):
-            return len(paths_parsed[0]['trace'])
-        return 0
+        return len(paths_parsed)
 
     @staticmethod
     def get_latest_trace_path(prefix: str = None, shortcut: bool = False) -> list:
