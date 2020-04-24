@@ -522,6 +522,8 @@ class IotracePlugin:
         command += (' -p ' if shortcut else ' --path ') + f'{trace_path}'
 
         output = TestRun.executor.run(command)
+        if output.exit_code == 0:
+            return
         error_output = parse_json(output.stderr)[0]["trace"]
         if error_output == "No access to trace directory":
             raise CmdException("Invalid setting of the trace repository path", output)

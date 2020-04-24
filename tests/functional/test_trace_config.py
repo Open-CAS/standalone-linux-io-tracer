@@ -4,6 +4,7 @@
 #
 
 from time import sleep
+from datetime import timedelta
 import pytest
 
 from core.test_run import TestRun
@@ -55,7 +56,7 @@ def test_set_repo_path(use_short_cmd):
             TestRun.LOGGER.error("Trace repository path hasn't changed.")
 
     with TestRun.step("Start short tracing with new path."):
-        TestRun.plugins["iotrace"].start_tracing(timeout=8)
+        TestRun.plugins["iotrace"].start_tracing(timeout=timedelta(seconds=8))
         sleep(9)
 
     with TestRun.step("Check if tracing output is saved in proper place."):
