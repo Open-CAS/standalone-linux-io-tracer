@@ -28,6 +28,11 @@ def test_package_installation():
             symlinks=True,
             exclude_list=['build'] + ['*.pyc'], timeout=timedelta(minutes=2))
 
+    with TestRun.step("Setup dependencies"):
+        TestRun.executor.run_expect_success(
+            f"cd {work_path} && "
+            "./setup_dependencies.sh")
+
     with TestRun.step("Building iotrace package"):
         TestRun.executor.run_expect_success(
             f"cd {work_path} && "
