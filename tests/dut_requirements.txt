@@ -5,3 +5,5 @@ patch
 screen
 python36
 python36-devel
+rsync
+wget

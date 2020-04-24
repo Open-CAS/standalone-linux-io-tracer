@@ -26,7 +26,7 @@ def test_package_installation():
             work_path,
             delete=True,
             symlinks=True,
-            exclude_list=['build'], timeout=timedelta(minutes=2))
+            exclude_list=['build'] + ['*.pyc'], timeout=timedelta(minutes=2))
 
     with TestRun.step("Building iotrace package"):
         TestRun.executor.run_expect_success(
@@ -81,11 +81,11 @@ def test_source_package_installation():
     TestRun.LOGGER.info("Testing source package installation")
 
     iotrace: IotracePlugin = TestRun.plugins['iotrace']
-    work_path: str = iotrace.working_dir
+    work_path: str = f"{iotrace.working_dir}/standalone-linux-io-tracer"
 
     with TestRun.step("Building iotrace source package"):
         TestRun.executor.run_expect_success(
-            f"cd {iotrace.working_dir} && "
+            f"cd {work_path} && "
             "make package_source -j`nproc --all`")
 
     iotrace_installed = check_if_installed()

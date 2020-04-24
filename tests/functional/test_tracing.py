@@ -51,8 +51,7 @@ def test_iotracer_multiple_instances_other_disks():
           - It’s impossible to run io-tracer concurrently for many disks.
     """
     with TestRun.step("Run the first io-tracer instance"):
-        iotracer1 = IotracePlugin(TestRun.plugins['iotrace'].repo_dir,
-                                  TestRun.plugins['iotrace'].working_dir)
+        iotracer1 = IotracePlugin()
         iotracer1.start_tracing([TestRun.dut.disks[0].system_path])
         sleep(1)
 
@@ -62,8 +61,7 @@ def test_iotracer_multiple_instances_other_disks():
         TestRun.LOGGER.info(f"Iotrace process found with PID {iotracer1.pid}")
 
     with TestRun.step("Try to start the second iotracer instance."):
-        iotracer2 = IotracePlugin(TestRun.plugins['iotrace'].repo_dir,
-                                  TestRun.plugins['iotrace'].working_dir)
+        iotracer2 = IotracePlugin()
         iotracer2.start_tracing([TestRun.dut.disks[1].system_path])
         sleep(1)
         if iotracer2.check_if_tracing_active():
