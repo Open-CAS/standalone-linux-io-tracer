@@ -176,7 +176,7 @@ class IotracePlugin:
             TestRun.LOGGER.info("Iotrace processes not found.")
             return False
 
-        elif self.pid != output.stdout:
+        elif self.pid not in output.stdout:
             TestRun.LOGGER.info(f"Found other iotrace process with PID {output.stdout}")
             return False
 
