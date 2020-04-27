@@ -206,6 +206,7 @@ class IotracePlugin:
             TestRun.LOGGER.error("Could not kill iotrace")
             return False
 
+        time.sleep(1)
         return True
 
     def kill_tracing(self) -> bool:

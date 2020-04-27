@@ -48,7 +48,7 @@ def test_package_installation():
         if check_if_ubuntu():
             TestRun.executor.run_expect_success(
                 f"cd {work_path}/build/release && "
-                "apt install iotrace-*.deb")
+                "dpkg -i iotrace-*.deb")
         else:
             TestRun.executor.run_expect_success(
                 f"cd {work_path}/build/release && "
