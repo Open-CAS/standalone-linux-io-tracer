@@ -20,9 +20,10 @@ def test_iotracer_multiple_instances_same_disks():
           - No system crash.
           - It’s impossible to run io-tracer multiple times for the same disks.
     """
+    disk = TestRun.dut.disks[0]
     with TestRun.step("Run the first io-tracer instance"):
         iotracer1 = IotracePlugin()
-        iotracer1.start_tracing()
+        iotracer1.start_tracing([disk.system_path])
 
     with TestRun.step("Check if the first instance of io-tracer works."):
         if not iotracer1.check_if_tracing_active():
@@ -31,7 +32,7 @@ def test_iotracer_multiple_instances_same_disks():
 
     with TestRun.step("Try to start the second iotracer instance."):
         iotracer2 = IotracePlugin()
-        iotracer2.start_tracing()
+        iotracer2.start_tracing([disk.system_path])
         if iotracer2.check_if_tracing_active():
             TestRun.LOGGER.error("There is working iotracer second instance.")
         TestRun.LOGGER.info(
