@@ -47,8 +47,15 @@ install: all
 package: all
 	$(MAKE) -C $(BUILD_DIR) package
 
-package_source: init
-	$(MAKE) -C $(BUILD_DIR) clean-module
+package_source:
+	@if [ -d $(BUILD_DIR) ] ; \
+	then \
+		if [ -f $(BUILD_DIR)/Makefile ] ; \
+		then \
+			$(MAKE) -C $(BUILD_DIR) clean-module ; \
+		fi ; \
+	fi
+	$(MAKE) init
 	$(CMAKE) -P version.cmake
 	cd modules/open-cas-telemetry-framework && $(CMAKE) -P octf-version.cmake
 	make -C $(BUILD_DIR) package_source

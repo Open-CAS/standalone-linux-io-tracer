@@ -17,24 +17,74 @@ else()
 endif()
 execute_process(OUTPUT_VARIABLE uname_r OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND uname -r)
 
-
 # Source package
 set(CPACK_SOURCE_GENERATOR TGZ)
-# Exclude untracked and ignored files, including those in submodules
-execute_process(
-    COMMAND bash -c "git ls-files --directory --others --exclude-standard -x VERSION | xargs -I{} printf \`pwd\`/{}\; \
-    && git ls-files --directory --ignored --others --exclude-standard | xargs -I{} printf {}\; \
-    && git submodule foreach --recursive --quiet 'git ls-files --ignored --directory --others --exclude-standard \
-    | grep -v tools/third_party | xargs -I{} printf \`pwd\`/{}\;'\
-    && git submodule foreach --recursive --quiet 'git ls-files --others --directory --exclude-standard -x VERSION \
-    | xargs -I{} printf \`pwd\`/{}\;'"
-    OUTPUT_VARIABLE CPACK_SOURCE_IGNORE_FILES
-    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-    ERROR_QUIET
-)
 
-list(APPEND CPACK_SOURCE_IGNORE_FILES "/.git")
-list(APPEND CPACK_SOURCE_IGNORE_FILES "/build")
+#
+# EXCLUDED FILES
+# - iotrace
+execute_process(
+    COMMAND bash -c "git ls-files --directory --others --exclude-standard -x VERSION \
+    && git ls-files --directory --ignored --others --exclude-standard"
+    OUTPUT_VARIABLE ignored
+    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+)
+if(ignored)
+    string(REGEX REPLACE "\n" ";" ignored ${ignored})
+    foreach(item ${ignored})
+        list(APPEND CPACK_SOURCE_IGNORE_FILES "${item}")
+    endforeach()
+endif(ignored)
+
+# - Get list of git submoduels
+execute_process(
+    COMMAND bash -c "git submodule status --recursive | awk '{ print $2 }'"
+    OUTPUT_VARIABLE submodules
+    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+)
+if(submodules)
+    string(REGEX REPLACE "\n" ";" submodules ${submodules})
+    # Get excluded files for each submodule
+    foreach(submodule ${submodules})
+        execute_process(
+            COMMAND bash -c "git ls-files --directory --others --exclude-standard -x VERSION \
+            && git ls-files --directory --ignored --others --exclude-standard"
+            OUTPUT_VARIABLE ignored
+            WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/${submodule}
+        )
+        if (ignored)
+            string(REGEX REPLACE "\n" ";" ignored ${ignored})
+            foreach(item ${ignored})
+                list(APPEND CPACK_SOURCE_IGNORE_FILES "${submodule}/${item}")
+            endforeach()
+        endif()
+    endforeach()
+endif(submodules)
+
+list(APPEND CPACK_SOURCE_IGNORE_FILES ".git")
+list(APPEND CPACK_SOURCE_IGNORE_FILES "build/")
+
+# Add third party tools but still exclude archives
+list(REMOVE_ITEM CPACK_SOURCE_IGNORE_FILES "modules/open-cas-telemetry-framework/tools/third_party/")
+execute_process(
+    COMMAND bash -c "find . -name \*.tar.gz -type f -printf '%P\n'"
+    OUTPUT_VARIABLE ignored
+    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+)
+if (ignored)
+    string(REGEX REPLACE "\n" ";" ignored ${ignored})
+    foreach(item ${ignored})
+        list(APPEND CPACK_SOURCE_IGNORE_FILES "${item}")
+    endforeach()
+endif()
+
+if(TARGET package_source)
+    foreach(item ${CPACK_SOURCE_IGNORE_FILES})
+        message("Ignore from source package: ${item}")
+    endforeach()
+endif()
+
+string(REPLACE "." "\\\\." CPACK_SOURCE_IGNORE_FILES "${CPACK_SOURCE_IGNORE_FILES}")
 
 # Separate install and post-install components need to be specified because
 # install(CODE) and install(SCRIPT) code is run at "make install" time. By
