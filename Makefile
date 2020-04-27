@@ -6,13 +6,17 @@ SHELL := /bin/bash
 CMAKE_FILE=CMakeLists.txt
 
 ifdef DEBUG
-	BUILD_DIR=build/debug
+	ifndef BUILD_DIR
+		BUILD_DIR=build/debug
+	endif
 	BUILD_TYPE=DEBUG
 	ifndef PREFIX
 		PREFIX=./rootfs
 	endif
 else
-	BUILD_DIR=build/release
+	ifndef BUILD_DIR
+		BUILD_DIR=build/release
+	endif
 	BUILD_TYPE=RELEASE
 	ifndef PREFIX
 		PREFIX=/

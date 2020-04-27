@@ -84,6 +84,7 @@ if(TARGET package_source)
     endforeach()
 endif()
 
+message(STATUS "Excluded files from package: ${CPACK_SOURCE_IGNORE_FILES}")
 string(REPLACE "." "\\\\." CPACK_SOURCE_IGNORE_FILES "${CPACK_SOURCE_IGNORE_FILES}")
 
 # Separate install and post-install components need to be specified because
