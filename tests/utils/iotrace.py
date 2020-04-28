@@ -176,7 +176,7 @@ class IotracePlugin:
             TestRun.LOGGER.info("Iotrace processes not found.")
             return False
 
-        elif self.pid != output.stdout:
+        elif self.pid not in output.stdout:
             TestRun.LOGGER.info(f"Found other iotrace process with PID {output.stdout}")
             return False
 
@@ -206,6 +206,7 @@ class IotracePlugin:
             TestRun.LOGGER.error("Could not kill iotrace")
             return False
 
+        time.sleep(1)
         return True
 
     def kill_tracing(self) -> bool:
@@ -265,9 +266,7 @@ class IotracePlugin:
         :return: number of traces
         """
         paths_parsed = IotracePlugin.get_traces_list(prefix, shortcut)
-        if len(paths_parsed):
-            return len(paths_parsed[0]['trace'])
-        return 0
+        return len(paths_parsed)
 
     @staticmethod
     def get_latest_trace_path(prefix: str = None, shortcut: bool = False) -> list:
@@ -522,6 +521,8 @@ class IotracePlugin:
         command += (' -p ' if shortcut else ' --path ') + f'{trace_path}'
 
         output = TestRun.executor.run(command)
+        if output.exit_code == 0:
+            return
         error_output = parse_json(output.stderr)[0]["trace"]
         if error_output == "No access to trace directory":
             raise CmdException("Invalid setting of the trace repository path", output)

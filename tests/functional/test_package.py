@@ -19,6 +19,7 @@ def test_package_installation():
 
     iotrace: IotracePlugin = TestRun.plugins['iotrace']
     work_path: str = f"{iotrace.working_dir}/iotrace_package"
+    disk = TestRun.dut.disks[0]
 
     with TestRun.step("Copying iotrace repository to DUT"):
         TestRun.executor.rsync_to(
@@ -26,7 +27,12 @@ def test_package_installation():
             work_path,
             delete=True,
             symlinks=True,
-            exclude_list=['build'], timeout=timedelta(minutes=2))
+            exclude_list=['build'] + ['*.pyc'], timeout=timedelta(minutes=2))
+
+    with TestRun.step("Setup dependencies"):
+        TestRun.executor.run_expect_success(
+            f"cd {work_path} && "
+            "./setup_dependencies.sh")
 
     with TestRun.step("Building iotrace package"):
         TestRun.executor.run_expect_success(
@@ -42,7 +48,7 @@ def test_package_installation():
         if check_if_ubuntu():
             TestRun.executor.run_expect_success(
                 f"cd {work_path}/build/release && "
-                "apt install iotrace-*.deb")
+                "dpkg -i iotrace-*.deb")
         else:
             TestRun.executor.run_expect_success(
                 f"cd {work_path}/build/release && "
@@ -51,7 +57,7 @@ def test_package_installation():
     with TestRun.step("Check if iotrace is installed"):
         iotrace.version()
 
-    iotrace.start_tracing()
+    iotrace.start_tracing([disk.system_path])
     stopped = iotrace.stop_tracing()
 
     if not stopped:
@@ -81,11 +87,12 @@ def test_source_package_installation():
     TestRun.LOGGER.info("Testing source package installation")
 
     iotrace: IotracePlugin = TestRun.plugins['iotrace']
-    work_path: str = iotrace.working_dir
+    work_path: str = f"{iotrace.working_dir}/standalone-linux-io-tracer"
+    disk = TestRun.dut.disks[0]
 
     with TestRun.step("Building iotrace source package"):
         TestRun.executor.run_expect_success(
-            f"cd {iotrace.working_dir} && "
+            f"cd {work_path} && "
             "make package_source -j`nproc --all`")
 
     iotrace_installed = check_if_installed()
@@ -102,7 +109,7 @@ def test_source_package_installation():
     with TestRun.step("Check if iotrace is installed"):
         iotrace.version()
 
-    iotrace.start_tracing()
+    iotrace.start_tracing([disk.system_path])
     stopped = iotrace.stop_tracing()
 
     if not stopped:

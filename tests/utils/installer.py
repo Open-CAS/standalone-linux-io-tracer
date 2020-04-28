@@ -32,7 +32,7 @@ def install_iotrace_with_afl_support(patch_path: str, rsync_exclude: list=[]):
         f"{iotrace.working_dir}/slit-afl",
         delete=True,
         symlinks=True,
-        exclude_list=(['build'] + rsync_exclude), timeout=timedelta(seconds=60))
+        exclude_list=(['build'] + ['*.pyc'] + rsync_exclude), timeout=timedelta(seconds=60))
 
     # Copy neccessary files for patching
     TestRun.executor.run_expect_success(
@@ -58,6 +58,11 @@ def install_iotrace_with_afl_support(patch_path: str, rsync_exclude: list=[]):
                         "apply the patch. Update patches as needed."
                         " Error: " + output.stderr)
 
+    TestRun.LOGGER.info("Installing dependencies")
+    TestRun.executor.run_expect_success(
+        f"cd {repo_path} && "
+        "./setup_dependencies.sh")
+
     TestRun.LOGGER.info("Calling make install with AFL compiler")
     TestRun.executor.run_expect_success(
         f"cd {repo_path} && "
@@ -77,7 +82,7 @@ def install_iotrace():
         f"{dest_repo_path}",
         delete=True,
         symlinks=True,
-        exclude_list=['build'])
+        exclude_list=['build'] + ['*.pyc'])
 
     TestRun.LOGGER.info("Installing dependencies")
     TestRun.executor.run_expect_success(
@@ -108,7 +113,7 @@ def check_if_installed():
 
 
 def check_if_ubuntu():
-    output = TestRun.executor.run("apt")
+    output = TestRun.executor.run("apt -v")
     return output.exit_code == 0
 
 

@@ -14,6 +14,8 @@ def test_remove_trace():
     TestRun.LOGGER.info("Testing removing traces")
 
     iotrace: IotracePlugin = TestRun.plugins['iotrace']
+    disk = TestRun.dut.disks[0]
+
     with TestRun.step("Remove existing traces"):
         if iotrace.get_latest_trace_path(prefix="'*'") != "":
             iotrace.remove_traces(prefix="'*'", force=True)
@@ -24,10 +26,10 @@ def test_remove_trace():
             # share minutes), sleep
             if int(seconds) > 50:
                 time.sleep(10)
-            iotrace.start_tracing(timeout=timedelta(seconds=10))
+            iotrace.start_tracing([disk.system_path], timeout=timedelta(seconds=10))
             time.sleep(1)
             iotrace.stop_tracing()
-            iotrace.start_tracing(timeout=timedelta(seconds=10))
+            iotrace.start_tracing([disk.system_path], timeout=timedelta(seconds=10))
             time.sleep(1)
             iotrace.kill_tracing()
             seconds = TestRun.executor.run_expect_success("date +%S").stdout

@@ -1,5 +1,7 @@
 ## Running tests
 Test controller (machine from which the tests are started) requirements:
+  * rsync
+  * sshpass
   * python >= 3.6
   * python-devel
   * python requirements from the file ./modules/test-framework/requirements.txt
