@@ -38,7 +38,7 @@ def dut_cleanup():
 
     output = TestRun.executor.run('pgrep iotrace')
     if output.stdout != "":
-        TestRun.executor.run(f'kill -2 {output.stdout}')
+        TestRun.executor.run(f'kill -9 {output.stdout}')
 
     TestRun.LOGGER.info("Removing existing traces")
     trace_repository_path: str = iotrace.get_trace_repository_path()
