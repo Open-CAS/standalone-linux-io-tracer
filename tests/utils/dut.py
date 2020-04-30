@@ -36,7 +36,9 @@ def dut_cleanup():
     TestRun.LOGGER.info("Stopping fuzzing")
     TestRun.executor.run(f'{iotrace.working_dir}/standalone-linux-io-tracer/tests/security/fuzzy/fuzz.sh clean')
 
-    iotrace.stop_tracing()
+    output = TestRun.executor.run('pgrep iotrace')
+    if output.stdout != "":
+        TestRun.executor.run(f'kill -2 {output.stdout}')
 
     TestRun.LOGGER.info("Removing existing traces")
     trace_repository_path: str = iotrace.get_trace_repository_path()
