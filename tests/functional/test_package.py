@@ -100,6 +100,10 @@ def test_source_package_installation():
         with TestRun.step("Uninstall existing iotrace if needed"):
             uninstall_iotrace()
 
+    with TestRun.step("Remove old source package"):
+        TestRun.executor.run_expect_success(f"cd {work_path} && "
+                                            f"rm -rf iotrace-*-Source")
+
     with TestRun.step("Unpack and install source package"):
         TestRun.executor.run_expect_success(
             f"tar -xvf {work_path}/build/release/iotrace-*.tar.gz -C {work_path} &&"
