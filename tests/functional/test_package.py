@@ -52,7 +52,7 @@ def test_package_installation():
         else:
             TestRun.executor.run_expect_success(
                 f"cd {work_path}/build/release && "
-                "rpm -i --force iotrace-*.rpm")
+                "rpm -i iotrace-*.rpm")
 
     with TestRun.step("Check if iotrace is installed"):
         iotrace.version()
