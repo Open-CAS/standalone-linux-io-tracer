@@ -32,7 +32,9 @@ def install_iotrace_with_afl_support(patch_path: str, rsync_exclude: list=[]):
         f"{iotrace.working_dir}/slit-afl",
         delete=True,
         symlinks=True,
-        exclude_list=(['build'] + ['*.pyc'] + rsync_exclude), timeout=timedelta(seconds=60))
+        checksum=True,
+        exclude_list=(['build'] + ['*.pyc'] + rsync_exclude),
+        timeout=timedelta(minutes=2))
 
     # Copy neccessary files for patching
     TestRun.executor.run_expect_success(
@@ -82,7 +84,9 @@ def install_iotrace():
         f"{dest_repo_path}",
         delete=True,
         symlinks=True,
-        exclude_list=['build'] + ['*.pyc'])
+        checksum=True,
+        exclude_list=['build'] + ['*.pyc'],
+        timeout=timedelta(minutes=2))
 
     TestRun.LOGGER.info("Installing dependencies")
     TestRun.executor.run_expect_success(
