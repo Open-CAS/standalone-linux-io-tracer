@@ -34,6 +34,11 @@ def test_package_installation():
             f"cd {work_path} && "
             "./setup_dependencies.sh")
 
+    with TestRun.step("Remove old packages"):
+        TestRun.executor.run_expect_success(f"cd {work_path}/build/release && "
+                                            "rm -rf iotrace-*.deb && "
+                                            "rm -rf iotrace-*.rpm")
+
     with TestRun.step("Building iotrace package"):
         TestRun.executor.run_expect_success(
             f"cd {work_path} && "
