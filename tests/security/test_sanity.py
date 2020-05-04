@@ -4,6 +4,7 @@
 #
 
 import pytest
+import time
 from core.test_run import TestRun
 from utils.iotrace import IotracePlugin
 from utils.installer import insert_module
@@ -54,6 +55,7 @@ def test_trace_start_stop():
     iotrace: IotracePlugin = TestRun.plugins['iotrace']
 
     iotrace.start_tracing()
+    time.sleep(1)
     stopped = iotrace.stop_tracing()
 
     if not stopped:

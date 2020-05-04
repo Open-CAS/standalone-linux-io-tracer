@@ -113,9 +113,7 @@ static long _iotrace_ioctl(struct file *file,
         result = 0;
     } break;
 
-    default: {
-    } break;
-    }
+    default: { } break; }
 
     return result;
 }
@@ -537,8 +535,8 @@ static struct file_operations size_ops = {
  * @retval 0 Directory created successfully
  * @retval non-zero Error code
  */
-static int iotrace_procfs_mngt_init(void) {
-    struct proc_dir_entry *dir, *ent;
+static int iotrace_procfs_mngt_init(struct proc_dir_entry *dir) {
+    struct proc_dir_entry *ent;
     unsigned i;
 
     struct {
@@ -574,13 +572,6 @@ static int iotrace_procfs_mngt_init(void) {
     };
     size_t num_entries = sizeof(entries) / sizeof(entries[0]);
 
-    /* create iotrace directory */
-    dir = proc_mkdir(iotrace_subdir, NULL);
-    if (!dir) {
-        printk(KERN_ERR "Cannot create /proc/%s\n", iotrace_subdir);
-        return -ENOENT;
-    }
-
     /* create iotrace management file interfaces */
     for (i = 0; i < num_entries; i++) {
         ent = proc_create(entries[i].name, entries[i].mode, dir,
@@ -594,7 +585,6 @@ static int iotrace_procfs_mngt_init(void) {
 
     if (i < num_entries) {
         /* error */
-        proc_remove(dir);
         return -EINVAL;
     }
 
@@ -695,9 +685,9 @@ static int iotrace_procfs_trace_file_init(struct iotrace_proc_file *proc_file,
         return -ENOENT;
     }
 
-    /* Set trace file sizes. Ring buffer size is going to be set later per
-     * user request, so now just initializing it to 0. Consumer header is
-     * of fixed size and already allocated, so this one is set here. */
+        /* Set trace file sizes. Ring buffer size is going to be set later per
+         * user request, so now just initializing it to 0. Consumer header is
+         * of fixed size and already allocated, so this one is set here. */
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 32)
     proc_set_size(proc_file->trace_ring_entry, 0);
     proc_set_size(proc_file->consumer_hdr_entry, OCTF_TRACE_HDR_SIZE);
@@ -744,8 +734,16 @@ void iotrace_procfs_mngt_deinit(void) {
  * @retval non-zero Error code
  */
 int iotrace_procfs_init(struct iotrace_context *iotrace) {
+    struct proc_dir_entry *dir;
     unsigned i;
     int result = 0;
+
+    /* create iotrace directory */
+    dir = proc_mkdir(iotrace_subdir, NULL);
+    if (!dir) {
+        printk(KERN_ERR "Cannot create /proc/%s\n", iotrace_subdir);
+        return -ENOENT;
+    }
 
     /* For each cpu (and thus trace file) allocate atomic flag */
     iotrace->cpu_context = alloc_percpu(struct iotrace_cpu_context);
@@ -753,10 +751,6 @@ int iotrace_procfs_init(struct iotrace_context *iotrace) {
         result = -ENOMEM;
         goto error;
     }
-
-    result = iotrace_procfs_mngt_init();
-    if (result)
-        goto error;
 
     for_each_online_cpu(i) {
         struct iotrace_cpu_context *cpu_context =
@@ -773,20 +767,25 @@ int iotrace_procfs_init(struct iotrace_context *iotrace) {
     }
 
     if (result) {
-        for_each_online_cpu(i) {
-            struct iotrace_cpu_context *cpu_context =
-                    per_cpu_ptr(iotrace->cpu_context, i);
-
-            iotrace_procfs_trace_file_deinit(&cpu_context->proc_files);
-        }
-        iotrace_procfs_mngt_deinit();
-        goto error;
+        goto procfs_deinit;
     }
+
+    result = iotrace_procfs_mngt_init(dir);
+    if (result)
+        goto procfs_deinit;
 
     return 0;
 
+procfs_deinit:
+    for_each_online_cpu(i) {
+        struct iotrace_cpu_context *cpu_context =
+                per_cpu_ptr(iotrace->cpu_context, i);
+
+        iotrace_procfs_trace_file_deinit(&cpu_context->proc_files);
+    }
 error:
     free_percpu(iotrace->cpu_context);
+    proc_remove(dir);
     return result;
 }
 
