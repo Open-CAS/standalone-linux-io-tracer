@@ -107,8 +107,8 @@ def is_size_almost_equal(size_a: Size, size_b: str):
 
 
 def is_time_almost_equal(time_a: timedelta, time_b: str):
-    """Returns true if both times are equal +/- 1s"""
-    return isclose(int(time_a.total_seconds()), int(time_b), abs_tol=1)
+    """Returns true if both times are equal +/- 5s"""
+    return isclose(int(time_a.total_seconds()), int(time_b), abs_tol=5)
 
 
 def is_size_lower_or_equal(size_a: str, size_b: Size):

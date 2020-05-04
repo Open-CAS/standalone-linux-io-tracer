@@ -192,21 +192,17 @@ class IotracePlugin:
         """
         TestRun.LOGGER.info("Stopping tracing")
 
-        # Send sigints
-        kill_attempts = 30
-        attempt = 0
-
-        while self.check_if_tracing_active() and attempt < kill_attempts:
-            TestRun.LOGGER.info("Sending sigint no. " + str(attempt + 1))
-            attempt += 1
+        if self.check_if_tracing_active():
+            TestRun.LOGGER.info(f"Sending termination signal to process {self.pid}")
             TestRun.executor.run(f'kill -2 {self.pid}')
-            time.sleep(2)
+            TestRun.executor.wait_cmd_finish(pid=self.pid, timeout=timedelta(seconds=60))
 
         if self.check_if_tracing_active():
-            TestRun.LOGGER.error("Could not kill iotrace")
+            TestRun.LOGGER.info("Cannot kill iotrace, force kill")
+            TestRun.executor.kill_process(self.pid)
+            TestRun.fail("Cannot not stop iotrace")
             return False
 
-        time.sleep(1)
         return True
 
     def kill_tracing(self) -> bool:
