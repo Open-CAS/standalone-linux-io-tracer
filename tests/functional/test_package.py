@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: BSD-3-Clause-Clear
 #
 
+import time
 from core.test_run import TestRun
 from utils.iotrace import IotracePlugin
 from datetime import timedelta
@@ -63,6 +64,7 @@ def test_package_installation():
         iotrace.version()
 
     iotrace.start_tracing([disk.system_path])
+    time.sleep(1)
     stopped = iotrace.stop_tracing()
 
     if not stopped:
