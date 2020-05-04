@@ -171,4 +171,4 @@ storage caching meta-library
 <a id="notice"></a>
 
 ## Notice
-[NOTICE](https://github.com/Open-CAS/standalone-linux-io-tracer/blob/master/doc/NOTICE) contains more information
+[NOTICE](https://github.com/Open-CAS/standalone-linux-io-tracer/blob/master/NOTICE) contains more information
