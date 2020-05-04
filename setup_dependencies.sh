@@ -247,7 +247,7 @@ then
     ${PKG_INSTALLER} ${PKGS}
     iotrace_check_result $? "Cannot install required dependencies"
 else
-    iotrace_info "All required already installed"
+    iotrace_info "All required packages already installed"
 fi
 
 exit 0
