@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright(c) 2012-2018 Intel Corporation
+# Copyright(c) 2012-2020 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause-Clear
 
 function detect_distribution ()
@@ -171,6 +171,55 @@ function iotrace_get_distribution_pkg_manager () {
     esac
 }
 
+#
+# Usage: is_package_installed <PACKAGE>
+#
+function iotrace_is_package_installed () {
+    local distro=$(detect_distribution)
+    local cmd=""
+    local pkg=$1
+
+    if [ "${pkg}" == "" ]
+    then
+        error "No package specified to be checked if installed"
+        exit 1
+    fi
+
+    case "${distro}" in
+    "RHEL7"|"RHEL8"|"CENTOS7"|"CENTOS8"|"FEDORA")
+        cmd="rpm -q"
+        ;;
+    "UBUNTU")
+        cmd="dpkg -s"
+        ;;
+    *)
+        iotrace_error "Unknown Linux distribution"
+        exit 1
+        ;;
+    esac
+
+    ${cmd} ${pkg} &>/dev/null
+    return $?
+}
+
+#
+# Usage: get_distribution_missing_pkg_dependencies <PKG1> <PKG2> ...
+#
+function iotrace_get_distribution_missing_pkg_dependencies () {
+    local pkgs_required=$*
+    local pkgs_missing=""
+
+    for pkg in ${pkgs_required}
+    do
+        if ! iotrace_is_package_installed ${pkg}
+        then
+            pkgs_missing="${pkg} ${pkgs_missing}"
+        fi
+    done
+
+    echo ${pkgs_missing}
+}
+
 # Include and execute OCTF setup dependencies
 IOTRACE_SCRIPT_DIR="$(cd $(dirname ${BASH_SOURCE[0]}) && pwd)"
 bash -c ${IOTRACE_SCRIPT_DIR}/modules/open-cas-telemetry-framework/setup_dependencies.sh
@@ -188,8 +237,17 @@ fi
 PKGS=$(iotrace_get_distribution_pkg_dependencies)
 PKG_INSTALLER=$(iotrace_get_distribution_pkg_manager)
 iotrace_setup_kernel_headers
-iotrace_info "Installing packages: ${PKGS}"
-${PKG_INSTALLER} ${PKGS}
-iotrace_check_result $? "Cannot install required dependencies"
+
+iotrace_info "Required packages: ${PKGS}"
+PKGS=$(iotrace_get_distribution_missing_pkg_dependencies $PKGS)
+
+if [ "${PKGS}" != "" ]
+then
+    iotrace_info "Installing packages: ${PKGS}"
+    ${PKG_INSTALLER} ${PKGS}
+    iotrace_check_result $? "Cannot install required dependencies"
+else
+    iotrace_info "All required already installed"
+fi
 
 exit 0
