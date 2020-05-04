@@ -113,9 +113,7 @@ static long _iotrace_ioctl(struct file *file,
         result = 0;
     } break;
 
-    default: {
-    } break;
-    }
+    default: { } break; }
 
     return result;
 }
@@ -695,9 +693,9 @@ static int iotrace_procfs_trace_file_init(struct iotrace_proc_file *proc_file,
         return -ENOENT;
     }
 
-    /* Set trace file sizes. Ring buffer size is going to be set later per
-     * user request, so now just initializing it to 0. Consumer header is
-     * of fixed size and already allocated, so this one is set here. */
+        /* Set trace file sizes. Ring buffer size is going to be set later per
+         * user request, so now just initializing it to 0. Consumer header is
+         * of fixed size and already allocated, so this one is set here. */
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 32)
     proc_set_size(proc_file->trace_ring_entry, 0);
     proc_set_size(proc_file->consumer_hdr_entry, OCTF_TRACE_HDR_SIZE);
@@ -754,10 +752,6 @@ int iotrace_procfs_init(struct iotrace_context *iotrace) {
         goto error;
     }
 
-    result = iotrace_procfs_mngt_init();
-    if (result)
-        goto error;
-
     for_each_online_cpu(i) {
         struct iotrace_cpu_context *cpu_context =
                 per_cpu_ptr(iotrace->cpu_context, i);
@@ -773,18 +767,22 @@ int iotrace_procfs_init(struct iotrace_context *iotrace) {
     }
 
     if (result) {
-        for_each_online_cpu(i) {
-            struct iotrace_cpu_context *cpu_context =
-                    per_cpu_ptr(iotrace->cpu_context, i);
-
-            iotrace_procfs_trace_file_deinit(&cpu_context->proc_files);
-        }
-        iotrace_procfs_mngt_deinit();
-        goto error;
+        goto procfs_deinit;
     }
+
+    result = iotrace_procfs_mngt_init();
+    if (result)
+        goto procfs_deinit;
 
     return 0;
 
+procfs_deinit:
+    for_each_online_cpu(i) {
+        struct iotrace_cpu_context *cpu_context =
+                per_cpu_ptr(iotrace->cpu_context, i);
+
+        iotrace_procfs_trace_file_deinit(&cpu_context->proc_files);
+    }
 error:
     free_percpu(iotrace->cpu_context);
     return result;
