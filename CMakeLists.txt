@@ -7,6 +7,7 @@ project(iotrace VERSION ${IOTRACE_VERSION} LANGUAGES C CXX)
 
 include (GNUInstallDirs)
 include(defenses.cmake)
+include(install.cmake)
 
 add_subdirectory(modules)
 
