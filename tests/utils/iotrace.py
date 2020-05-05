@@ -147,6 +147,8 @@ class IotracePlugin:
 
         self.pid = str(TestRun.executor.run_in_background(command))
         TestRun.LOGGER.info("Started tracing of: " + ','.join(bdevs))
+        # Make sure there's a >0 duration in all tests
+        time.sleep(2)
 
     @staticmethod
     def get_trace_repository_path(shortcut: bool = False) -> list:
