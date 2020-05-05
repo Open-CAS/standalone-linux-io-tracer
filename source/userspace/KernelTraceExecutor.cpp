@@ -5,14 +5,14 @@
 
 #include "KernelTraceExecutor.h"
 
-#include <procfs_files.h>
-#include <fstream>
-#include <thread>
 #include <octf/interface/TraceConverter.h>
 #include <octf/trace/iotrace_event.h>
 #include <octf/utils/Exception.h>
 #include <octf/utils/Log.h>
 #include <octf/utils/SignalHandler.h>
+#include <procfs_files.h>
+#include <fstream>
+#include <thread>
 #include "KernelRingTraceProducer.h"
 
 namespace octf {
@@ -26,29 +26,28 @@ KernelTraceExecutor::KernelTraceExecutor(
         throw Exception("Kernel tracing module is not loaded.");
     }
 
+    // Check if kernel module version is compatible
+    if (!checkModuleCompatibility()) {
+        throw Exception("Kernel module version is incompatible.");
+    }
+
     if (!writeSatraceProcfs(IOTRACE_PROCFS_SIZE_FILE_NAME,
                             std::to_string(ringSizeMiB))) {
         throw Exception("Failed to set ring buffer size \n");
     }
 
-    // Check if kernel module version is compatible
-    if (!checkModuleCompatibility()) {
-        throw Exception("Kernel module version is incompatible.");
-    }
-}
-
-bool KernelTraceExecutor::startTrace() {
     for (const auto &dev : m_devices) {
         if (writeSatraceProcfs(IOTRACE_PROCFS_ADD_DEVICE_FILE_NAME, dev)) {
             m_startedDevices.push_back(dev);
             log::verbose << "Tracing started, device " << dev << std::endl;
         } else {
             stopDevices();
-            SignalHandler::get().sendSignal(SIGTERM);
             throw Exception("Cannot start tracing, device " + dev);
         }
     }
+}
 
+bool KernelTraceExecutor::startTrace() {
     return true;
 }
 
