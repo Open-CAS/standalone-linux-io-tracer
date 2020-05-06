@@ -35,19 +35,20 @@ KernelTraceExecutor::KernelTraceExecutor(
                             std::to_string(ringSizeMiB))) {
         throw Exception("Failed to set ring buffer size \n");
     }
+}
 
+bool KernelTraceExecutor::startTrace() {
     for (const auto &dev : m_devices) {
         if (writeSatraceProcfs(IOTRACE_PROCFS_ADD_DEVICE_FILE_NAME, dev)) {
             m_startedDevices.push_back(dev);
             log::verbose << "Tracing started, device " << dev << std::endl;
         } else {
             stopDevices();
+            SignalHandler::get().sendSignal(SIGTERM);
             throw Exception("Cannot start tracing, device " + dev);
         }
     }
-}
 
-bool KernelTraceExecutor::startTrace() {
     return true;
 }
 
