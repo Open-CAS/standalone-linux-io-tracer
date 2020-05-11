@@ -64,20 +64,6 @@ endif(submodules)
 list(APPEND CPACK_SOURCE_IGNORE_FILES ".git")
 list(APPEND CPACK_SOURCE_IGNORE_FILES "build/")
 
-# Add third party tools but still exclude archives
-list(REMOVE_ITEM CPACK_SOURCE_IGNORE_FILES "modules/open-cas-telemetry-framework/tools/third_party/")
-execute_process(
-    COMMAND bash -c "find . -name \*.tar.gz -type f -printf '%P\n'"
-    OUTPUT_VARIABLE ignored
-    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-)
-if (ignored)
-    string(REGEX REPLACE "\n" ";" ignored ${ignored})
-    foreach(item ${ignored})
-        list(APPEND CPACK_SOURCE_IGNORE_FILES "${item}")
-    endforeach()
-endif()
-
 if(TARGET package_source)
     foreach(item ${CPACK_SOURCE_IGNORE_FILES})
         message("Ignore from source package: ${item}")
