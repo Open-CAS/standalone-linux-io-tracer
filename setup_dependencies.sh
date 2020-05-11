@@ -53,6 +53,7 @@ function iotrace_setup_kernel_headers () {
 
     info "Install kernel headers"
     local installer=$(get_distribution_pkg_manager)
+    ${installer} $(iotrace_get_kernel_package)
 
     if [ ! -d "${kernel_dir}" ]
     then
