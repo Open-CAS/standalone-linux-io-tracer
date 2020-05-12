@@ -115,6 +115,7 @@ def test_source_package_installation():
         TestRun.executor.run_expect_success(
             f"tar -xvf {work_path}/build/release/iotrace-*.tar.gz -C {work_path} &&"
             f"cd {work_path}/iotrace-*-Source &&"
+            "./setup_dependencies.sh &&"
             "make install -j`nproc --all`")
 
     with TestRun.step("Check if iotrace is installed"):
