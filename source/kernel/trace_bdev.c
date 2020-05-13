@@ -245,6 +245,8 @@ error:
 /**
  * @brief Remove all devices from trace list
  *
+ * @usage Caller must hold block device list lock (trace_bdev->lock)
+ *
  * @param trace_bdev iotrace block device list
  */
 void iotrace_bdev_remove_all(struct iotrace_bdev *trace_bdev) {
@@ -252,12 +254,8 @@ void iotrace_bdev_remove_all(struct iotrace_bdev *trace_bdev) {
 
     bdev_list = per_cpu_ptr(trace_bdev->list, smp_processor_id());
 
-    mutex_lock(&trace_bdev->lock);
-
     while (trace_bdev->num)
         iotrace_bdev_remove_locked(trace_bdev, bdev_list[trace_bdev->num - 1]);
-
-    mutex_unlock(&trace_bdev->lock);
 }
 
 /**

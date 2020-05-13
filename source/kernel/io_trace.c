@@ -368,11 +368,13 @@ exit:
  */
 void iotrace_detach_client(struct iotrace_context *iotrace) {
     struct iotrace_state *state = &iotrace->trace_state;
+    mutex_lock(&iotrace->bdev.lock);
     mutex_lock(&state->client_mutex);
 
     state->clients--;
     if (state->clients) {
         mutex_unlock(&state->client_mutex);
+        mutex_unlock(&iotrace->bdev.lock);
         return;
     }
 
@@ -387,6 +389,7 @@ void iotrace_detach_client(struct iotrace_context *iotrace) {
     deinit_tracers(state);
 
     mutex_unlock(&state->client_mutex);
+    mutex_unlock(&iotrace->bdev.lock);
 }
 
 /**
