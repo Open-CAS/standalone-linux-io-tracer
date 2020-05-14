@@ -560,9 +560,10 @@ static void _remove_entry(iotrace_inode_tracer_t inode_tracer,
 static struct cache_entry *_lookup(iotrace_inode_tracer_t inode_tracer,
                                    struct inode *inode) {
     struct cache_entry *entry = NULL;
+    struct hlist_node *next;
 
-    hash_for_each_possible(inode_tracer->hash_table, entry, hash,
-                           inode->i_ino) {
+    hash_for_each_possible_safe(inode_tracer->hash_table, entry, next, hash,
+                                inode->i_ino) {
         if (inode->i_ino == entry->inode_id &&
             inode->i_sb->s_dev == entry->device_id) {
             // If creation time is same, that's the wanted entry
