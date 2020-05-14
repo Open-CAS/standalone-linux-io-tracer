@@ -214,13 +214,15 @@ def test_fuzz_procfs():
     # on applications which mmap them, and iotrace -S may block other mmaps
     disk = TestRun.dut.disks[0].system_path
     TestRun.executor.run_expect_success(f'modprobe iotrace')
-    TestRun.executor.run_expect_success(f'echo {disk} > /proc/iotrace/add_device')
+    TestRun.executor.run_expect_fail(f'echo {disk} > /proc/iotrace/add_device')
     TestRun.executor.run_expect_success(f'echo 1024 > /proc/iotrace/size')
     fio_pid = TestRun.executor.run_in_background(f'fio --name=job --direct=0 --ioengine=mmap '
                                                  f'--filename=/proc/iotrace/consumer_hdr.0 '
                                                  f"--buffer_pattern=\\'/dev/urandom\\' "
                                                  f'--time_based --runtime=30s --bs=4k '
                                                  f'--iodepth=128 --rw=randwrite')
+    time.sleep(5)
+    TestRun.executor.run_expect_success(f'echo {disk} > /proc/iotrace/add_device')
 
     # Also start some workload on traced device to generate trace traffic
     workload_pid = TestRun.executor.run_in_background(f'fio --direct=1'
