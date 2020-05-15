@@ -119,10 +119,15 @@ int iotrace_bdev_add(struct iotrace_bdev *trace_bdev, const char *path) {
      * lock responsible for protecting this resource.
      */
     mutex_lock(&iotrace_get_context()->trace_state.client_mutex);
-    on_each_cpu(iotrace_bdev_add_oncpu, &data, true);
+    if (iotrace_get_context()->trace_state.clients) {
+        on_each_cpu(iotrace_bdev_add_oncpu, &data, true);
+        trace_bdev->num++;
+    } else {
+        mutex_unlock(&iotrace_get_context()->trace_state.client_mutex);
+        result = -EINVAL;
+        goto put;
+    }
     mutex_unlock(&iotrace_get_context()->trace_state.client_mutex);
-
-    trace_bdev->num++;
 
     mutex_unlock(&trace_bdev->lock);
 
