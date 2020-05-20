@@ -24,13 +24,11 @@ def test_remove_trace():
             seconds = TestRun.executor.run_expect_success("date +%S").stdout
             # If we're close to a next minute (so the pair of traces may not
             # share minutes), sleep
-            if int(seconds) > 50:
-                time.sleep(10)
-            iotrace.start_tracing([disk.system_path], timeout=timedelta(seconds=10))
-            time.sleep(1)
+            if int(seconds) > 45:
+                time.sleep(20)
+            iotrace.start_tracing([disk.system_path], timeout=timedelta(seconds=15))
             iotrace.stop_tracing()
-            iotrace.start_tracing([disk.system_path], timeout=timedelta(seconds=10))
-            time.sleep(1)
+            iotrace.start_tracing([disk.system_path], timeout=timedelta(seconds=15))
             iotrace.kill_tracing()
             seconds = TestRun.executor.run_expect_success("date +%S").stdout
             # Sleep until next minute rolls around
