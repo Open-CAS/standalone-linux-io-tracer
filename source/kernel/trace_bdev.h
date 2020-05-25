@@ -8,8 +8,7 @@
 
 #include <linux/blkdev.h>
 #include <linux/genhd.h>
-
-#define SATRACE_MAX_DEVICES 16
+#include "procfs_files.h"
 
 /**
  * @brief Traced devices info
@@ -53,7 +52,7 @@ static inline struct block_device *iotrace_get_bdev_from_queue(
 
     bdev_list = per_cpu_ptr(trace_bdev->list, cpu);
 
-    for (i = 0; i < SATRACE_MAX_DEVICES && bdev_list[i] != NULL; i++) {
+    for (i = 0; i < IOTRACE_MAX_DEVICES && bdev_list[i] != NULL; i++) {
         if (bdev_list[i]->bd_queue == q)
             return bdev_list[i];
     }
@@ -62,7 +61,7 @@ static inline struct block_device *iotrace_get_bdev_from_queue(
 }
 
 int iotrace_bdev_list(struct iotrace_bdev *trace_bdev,
-                      char list[SATRACE_MAX_DEVICES][DISK_NAME_LEN]);
+                      char list[IOTRACE_MAX_DEVICES][DISK_NAME_LEN]);
 
 int iotrace_bdev_remove(struct iotrace_bdev *trace_bdev, const char *path);
 

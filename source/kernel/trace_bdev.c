@@ -50,7 +50,7 @@ void static iotrace_bdev_add_oncpu(void *info) {
                         ? get_capacity(data->bdev->bd_disk)
                         : data->bdev->bd_part->nr_sects;
 
-    BUG_ON(trace_bdev->num >= SATRACE_MAX_DEVICES);
+    BUG_ON(trace_bdev->num >= IOTRACE_MAX_DEVICES);
     per_cpu_ptr(trace_bdev->list, cpu)[trace_bdev->num] = data->bdev;
 
     iotrace_trace_desc(iotrace, cpu, disk_devt(gd), gd->disk_name, bdev_size);
@@ -80,7 +80,7 @@ int iotrace_bdev_add(struct iotrace_bdev *trace_bdev, const char *path) {
 
     mutex_lock(&trace_bdev->lock);
 
-    if (trace_bdev->num == SATRACE_MAX_DEVICES) {
+    if (trace_bdev->num == IOTRACE_MAX_DEVICES) {
         result = -ENOSPC;
         goto unlock;
     }
@@ -273,7 +273,7 @@ void iotrace_bdev_remove_all(struct iotrace_bdev *trace_bdev) {
  * @retval <0 error code (negation)
  */
 int iotrace_bdev_list(struct iotrace_bdev *trace_bdev,
-                      char list[SATRACE_MAX_DEVICES][DISK_NAME_LEN]) {
+                      char list[IOTRACE_MAX_DEVICES][DISK_NAME_LEN]) {
     unsigned i;
     size_t len;
     const char *name;
@@ -309,7 +309,7 @@ int iotrace_bdev_list(struct iotrace_bdev *trace_bdev,
  */
 int iotrace_bdev_init(struct iotrace_bdev *trace_bdev) {
     const size_t bdev_list_size =
-            sizeof(struct block_device *) * SATRACE_MAX_DEVICES;
+            sizeof(struct block_device *) * IOTRACE_MAX_DEVICES;
 
     trace_bdev->list = __alloc_percpu(bdev_list_size, 128);
     if (!trace_bdev->list)
