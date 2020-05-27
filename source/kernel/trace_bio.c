@@ -175,6 +175,8 @@ void iotrace_trace_bio(struct iotrace_context *context,
     iotrace_event_init_hdr(&ev->hdr, iotrace_event_type_io, sid,
                            ktime_to_ns(ktime_get()), sizeof(*ev));
 
+    ev->id = ~((uint64_t) bio);
+
     if (IOTRACE_BIO_IS_DISCARD(bio))
         ev->operation = iotrace_event_operation_discard;
     else if (IOTRACE_BIO_IS_WRITE(bio))
@@ -203,7 +205,9 @@ void iotrace_trace_bio(struct iotrace_context *context,
         iotrace_inode_tracer_t inode_trace =
                 *per_cpu_ptr(state->inode_traces, cpu);
 
-        _trace_bio_fs_meta(trace, atomic64_inc_return(&state->sid), sid, &info);
+        _trace_bio_fs_meta(trace, atomic64_inc_return(&state->sid),
+                           ~((uint64_t) bio), &info);
+
         iotrace_trace_inode(state, trace, inode_trace, info.inode);
     }
 }
@@ -226,6 +230,7 @@ void iotrace_trace_bio_completion(struct iotrace_context *context,
     iotrace_event_init_hdr(&cmpl->hdr, iotrace_event_type_io_cmpl, sid,
                            ktime_to_ns(ktime_get()), sizeof(*cmpl));
 
+    cmpl->ref_id = ~((uint64_t) bio);
     cmpl->lba = IOTRACE_BIO_BISECTOR(bio);
     cmpl->len = IOTRACE_BIO_BISIZE(bio) >> SECTOR_SHIFT;
     cmpl->error = error;

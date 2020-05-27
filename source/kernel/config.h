@@ -11,6 +11,7 @@
 #include <linux/blkdev.h>
 #include <linux/fcntl.h>
 #include <linux/kallsyms.h>
+#include <linux/types.h>
 #include <linux/vermagic.h>
 #include <linux/version.h>
 #include <trace/events/block.h>
@@ -69,6 +70,22 @@ static inline int iotrace_register_trace_block_bio_queue(
 static inline int iotrace_unregister_trace_block_bio_queue(
         void (*fn)(void *ignore, struct request_queue *, struct bio *)) {
     return unregister_trace_block_bio_queue(fn, NULL);
+}
+
+static inline int iotrace_register_trace_block_split(
+        void (*fn)(void *ignore,
+                   struct request_queue *q,
+                   struct bio *bio,
+                   unsigned int sector)) {
+    return register_trace_block_split(fn, NULL);
+}
+
+static inline int iotrace_unregister_trace_block_split(
+        void (*fn)(void *ignore,
+                   struct request_queue *q,
+                   struct bio *bio,
+                   unsigned int sector)) {
+    return unregister_trace_block_split(fn, NULL);
 }
 
 void iotrace_block_rq_complete(void *data,
@@ -140,6 +157,28 @@ static inline int iotrace_unregister_trace_block_bio_queue(
         void (*fn)(void *ignore, struct request_queue *, struct bio *)) {
     char *sym_name = "__tracepoint_block_bio_queue";
     typeof(&__tracepoint_block_bio_queue) tracepoint =
+            (void *) kallsyms_lookup_name(sym_name);
+    return tracepoint_probe_unregister((void *) tracepoint, fn, NULL);
+}
+
+static inline int iotrace_register_trace_block_split(
+        void (*fn)(void *ignore,
+                   struct request_queue *q,
+                   struct bio *bio,
+                   unsigned int sector)) {
+    char *sym_name = "__tracepoint_block_split";
+    typeof(&__tracepoint_block_split) tracepoint =
+            (void *) kallsyms_lookup_name(sym_name);
+    return tracepoint_probe_register((void *) tracepoint, fn, NULL);
+}
+
+static inline int iotrace_unregister_trace_block_split(
+        void (*fn)(void *ignore,
+                   struct request_queue *q,
+                   struct bio *bio,
+                   unsigned int sector)) {
+    char *sym_name = "__tracepoint_block_split";
+    typeof(&__tracepoint_block_split) tracepoint =
             (void *) kallsyms_lookup_name(sym_name);
     return tracepoint_probe_unregister((void *) tracepoint, fn, NULL);
 }
@@ -249,6 +288,28 @@ typedef int iotrace_vm_fault_t;
 #define IOTRACE_LOOKUP_BDEV(path) lookup_bdev(path, 0)
 #else
 #define IOTRACE_LOOKUP_BDEV(path) lookup_bdev(path)
+#endif
+
+/* kernel read */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
+static inline ssize_t iotrace_kernel_read(struct file *file,
+                                          void *buf,
+                                          size_t count,
+                                          loff_t *pos) {
+    int result = kernel_read(file, *pos, buf, count);
+    if (result > 0) {
+        (*pos) += result;
+    }
+
+    return result;
+}
+#else
+static inline ssize_t iotrace_kernel_read(struct file *file,
+                                          void *buf,
+                                          size_t count,
+                                          loff_t *pos) {
+    return kernel_read(file, buf, count, pos);
+}
 #endif
 
 #endif  // SOURCE_KERNEL_INTERNAL_CONFIG_H
