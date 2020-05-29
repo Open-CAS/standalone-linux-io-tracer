@@ -134,7 +134,7 @@ sudo make install
 * Parse traces (note usage of path returned in --list-traces):
 
   ~~~{.sh}
-  iotrace --trace-parsing --io --path "kernel/2019-05-10_15:24:21" --format json
+  iotrace --trace-parser --io --path "kernel/2019-05-10_15:24:21" --format json
   ~~~
 
   Output:
