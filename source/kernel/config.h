@@ -1,5 +1,5 @@
 /*
- * Copyright(c) 2012-2018 Intel Corporation
+ * Copyright(c) 2012-2020 Intel Corporation
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -11,6 +11,7 @@
 #include <linux/blkdev.h>
 #include <linux/fcntl.h>
 #include <linux/kallsyms.h>
+#include <linux/vermagic.h>
 #include <linux/version.h>
 #include <trace/events/block.h>
 
@@ -31,6 +32,12 @@ typedef void (*iotrace_bio_complete_fn)(void *ignore,
 #endif
 #ifndef SECTOR_SIZE
 #define SECTOR_SIZE (1ULL << SECTOR_SHIFT)
+#endif
+
+#ifdef UTS_UBUNTU_RELEASE_ABI
+#define IS_UBUNTU 1
+#else
+#define IS_UBUNTU 0
 #endif
 
 /* BIO operation macros (read/write/discard) */
@@ -238,9 +245,7 @@ typedef int iotrace_vm_fault_t;
 #endif
 
 /* Block device lookup */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0)
-#define IOTRACE_LOOKUP_BDEV(path) lookup_bdev(path)
-#elif LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 0)
+#if IS_UBUNTU
 #define IOTRACE_LOOKUP_BDEV(path) lookup_bdev(path, 0)
 #else
 #define IOTRACE_LOOKUP_BDEV(path) lookup_bdev(path)
