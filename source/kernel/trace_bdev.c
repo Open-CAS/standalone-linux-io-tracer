@@ -268,12 +268,16 @@ void iotrace_bdev_remove_all(struct iotrace_bdev *trace_bdev) {
  *
  * @param trace_bdev iotrace block device list
  * @param[out] list array of device name strings
+ * @param list_len number of list entries
+ * @param entry_len size of single entry
  *
  * @retval >=0 number of devices
  * @retval <0 error code (negation)
  */
 int iotrace_bdev_list(struct iotrace_bdev *trace_bdev,
-                      char list[IOTRACE_MAX_DEVICES][DISK_NAME_LEN]) {
+                      char **list,
+                      size_t list_len,
+                      size_t entry_len) {
     unsigned i;
     size_t len;
     const char *name;
@@ -290,7 +294,7 @@ int iotrace_bdev_list(struct iotrace_bdev *trace_bdev,
             mutex_unlock(&trace_bdev->lock);
             return -ENOSPC;
         }
-        strlcpy(list[i], name, sizeof(list[i]));
+        strlcpy(list[i], name, entry_len);
     }
     num = trace_bdev->num;
 

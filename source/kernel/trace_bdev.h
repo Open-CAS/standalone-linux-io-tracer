@@ -61,7 +61,9 @@ static inline struct block_device *iotrace_get_bdev_from_queue(
 }
 
 int iotrace_bdev_list(struct iotrace_bdev *trace_bdev,
-                      char list[IOTRACE_MAX_DEVICES][DISK_NAME_LEN]);
+                      char **list,
+                      size_t list_len,
+                      size_t entry_len);
 
 int iotrace_bdev_remove(struct iotrace_bdev *trace_bdev, const char *path);
 

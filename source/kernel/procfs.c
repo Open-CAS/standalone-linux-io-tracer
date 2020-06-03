@@ -113,9 +113,7 @@ static long _iotrace_ioctl(struct file *file,
         result = 0;
     } break;
 
-    default: {
-    } break;
-    }
+    default: { } break; }
 
     return result;
 }
@@ -407,15 +405,25 @@ static ssize_t del_dev_write(struct file *file,
 }
 
 static int _list_dev_snprintf(char *buf, size_t size) {
-    char devices[IOTRACE_MAX_DEVICES][DISK_NAME_LEN];
+    char **devices;
     unsigned dev_count;
-    int result;
+    int result = -1;
     int pos, idx;
     size_t bytes_left, bytes_copied;
 
-    result = iotrace_bdev_list(&iotrace_get_context()->bdev, devices);
+    devices = vzalloc(IOTRACE_MAX_DEVICES * sizeof(*devices));
+    if (!devices)
+        return -1;
+    for (idx = 0; idx < IOTRACE_MAX_DEVICES; idx++) {
+        devices[idx] = vzalloc(DISK_NAME_LEN * sizeof(**devices));
+        if (!devices[idx])
+            goto allocated_devices;
+    }
+
+    result = iotrace_bdev_list(&iotrace_get_context()->bdev, devices,
+                               IOTRACE_MAX_DEVICES, DISK_NAME_LEN);
     if (result < 0)
-        return result;
+        goto allocated_devices;
     dev_count = result;
 
     bytes_left = size;
@@ -431,9 +439,15 @@ static int _list_dev_snprintf(char *buf, size_t size) {
         if (!bytes_left)
             break;
     }
+    result = pos;
 
+allocated_devices:
+    for (idx = 0; idx < IOTRACE_MAX_DEVICES; idx++) {
+        vfree(devices[idx]);
+    }
+    vfree(devices);
     /* return size excluding terminating NULL */
-    return pos;
+    return result;
 }
 
 /**
@@ -687,9 +701,9 @@ static int iotrace_procfs_trace_file_init(struct iotrace_proc_file *proc_file,
         return -ENOENT;
     }
 
-    /* Set trace file sizes. Ring buffer size is going to be set later per
-     * user request, so now just initializing it to 0. Consumer header is
-     * of fixed size and already allocated, so this one is set here. */
+        /* Set trace file sizes. Ring buffer size is going to be set later per
+         * user request, so now just initializing it to 0. Consumer header is
+         * of fixed size and already allocated, so this one is set here. */
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 32)
     proc_set_size(proc_file->trace_ring_entry, 0);
     proc_set_size(proc_file->consumer_hdr_entry, OCTF_TRACE_HDR_SIZE);
