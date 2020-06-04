@@ -405,15 +405,25 @@ static ssize_t del_dev_write(struct file *file,
 }
 
 static int _list_dev_snprintf(char *buf, size_t size) {
-    char devices[SATRACE_MAX_DEVICES][DISK_NAME_LEN];
+    char **devices;
     unsigned dev_count;
-    int result;
+    int result = -1;
     int pos, idx;
     size_t bytes_left, bytes_copied;
 
-    result = iotrace_bdev_list(&iotrace_get_context()->bdev, devices);
+    devices = vzalloc(IOTRACE_MAX_DEVICES * sizeof(*devices));
+    if (!devices)
+        return -1;
+    for (idx = 0; idx < IOTRACE_MAX_DEVICES; idx++) {
+        devices[idx] = vzalloc(DISK_NAME_LEN * sizeof(**devices));
+        if (!devices[idx])
+            goto allocated_devices;
+    }
+
+    result = iotrace_bdev_list(&iotrace_get_context()->bdev, devices,
+                               IOTRACE_MAX_DEVICES, DISK_NAME_LEN);
     if (result < 0)
-        return result;
+        goto allocated_devices;
     dev_count = result;
 
     bytes_left = size;
@@ -429,9 +439,15 @@ static int _list_dev_snprintf(char *buf, size_t size) {
         if (!bytes_left)
             break;
     }
+    result = pos;
 
+allocated_devices:
+    for (idx = 0; idx < IOTRACE_MAX_DEVICES; idx++) {
+        vfree(devices[idx]);
+    }
+    vfree(devices);
     /* return size excluding terminating NULL */
-    return pos;
+    return result;
 }
 
 /**
@@ -449,7 +465,7 @@ static ssize_t list_dev_read(struct file *file,
                              size_t count,
                              loff_t *ppos) {
     return iotrace_mngt_read(file, ubuf, count, ppos,
-                             SATRACE_MAX_DEVICES * DISK_NAME_LEN,
+                             IOTRACE_MAX_DEVICES * DISK_NAME_LEN,
                              _list_dev_snprintf);
 }
 

@@ -36,7 +36,8 @@ message StartIoTraceRequest {
         (opts_param).cli_required = true,
         (opts_param).cli_short_key = "d",
         (opts_param).cli_long_key = "devices",
-        (opts_param).cli_desc = "Paths of devices to be traced"
+        (opts_param).cli_desc = "Paths of devices to be traced, limit is 32",
+        (opts_param).cli_str.repeated_limit = 32
     ];
 
     uint32 circBufferSize = 4 [

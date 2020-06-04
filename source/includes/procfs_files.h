@@ -8,6 +8,8 @@
 
 #include <linux/ioctl.h>
 
+#define IOTRACE_MAX_DEVICES 32
+
 #define IOTRACE_PROCFS_DIR "/proc/iotrace/"
 #define IOTRACE_PROCFS_SUBDIR_NAME "iotrace"
 
