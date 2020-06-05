@@ -93,8 +93,10 @@ struct iotrace_inode_tracer {
 };
 
 struct iotrace_group_priv {
-    /** Tracer for inodes */
-    iotrace_inode_tracer_t inode_tracer;
+    /**
+     * Filesystem events monitor
+     */
+    struct fs_monitor *fsm;
 
     /** Allocation cache for marks */
     struct kmem_cache *mark_cache;
@@ -181,15 +183,13 @@ void _fs_free_group_priv(struct fsnotify_group *group) {
  * inode and child inodes to notify group
  */
 static void _fs_add_mark(struct fsnotify_group *group, struct inode *inode) {
-    iotrace_inode_tracer_t inode_tracer;
     struct iotrace_group_priv *group_priv;
     struct fs_monitor *fsm;
     struct fsnotify_mark *mark;
     int result;
 
     group_priv = (struct iotrace_group_priv *) group->private;
-    inode_tracer = ((struct iotrace_group_priv *) group->private)->inode_tracer;
-    fsm = inode_tracer->fsm;
+    fsm = ((struct iotrace_group_priv *) group->private)->fsm;
 
     /* Find mark belonging to this group in the list of inode marks */
     mark = fsnotify_ops.find_mark(&inode->i_fsnotify_marks, group);
@@ -455,7 +455,7 @@ static void _fsm_init(iotrace_inode_tracer_t inode_tracer) {
     BUG_ON(fsm->group->private);
 
     priv = kzalloc(sizeof(struct iotrace_group_priv), GFP_KERNEL);
-    priv->inode_tracer = inode_tracer;
+    priv->fsm = fsm;
     priv->mark_cache = kmem_cache_create(
             "fsmark_cache", sizeof(struct fsnotify_mark), 0, 0, NULL);
 
