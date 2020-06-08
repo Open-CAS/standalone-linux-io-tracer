@@ -411,11 +411,11 @@ static int _list_dev_snprintf(char *buf, size_t size) {
     int pos, idx;
     size_t bytes_left, bytes_copied;
 
-    devices = vzalloc(IOTRACE_MAX_DEVICES * sizeof(*devices));
+    devices = vzalloc(IOTRACE_MAX_DEVICES * sizeof(char*));
     if (!devices)
         return -1;
     for (idx = 0; idx < IOTRACE_MAX_DEVICES; idx++) {
-        devices[idx] = vzalloc(DISK_NAME_LEN * sizeof(**devices));
+        devices[idx] = vzalloc(DISK_NAME_LEN * sizeof(char));
         if (!devices[idx])
             goto allocated_devices;
     }
