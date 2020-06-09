@@ -32,9 +32,9 @@ struct iotrace_bdev_data {
  * @brief Add block device pointer to per-cpu @trace_bdev array
  *
  * @usage This function is designed to be called using on_each_cpu macro,
- *	pinned to fixed CPU in order to ensure that trace_bdev->list is not
- *	modified concurrently. Also management lock should be held by
- *	the caller to avoid re-entrance in management path.
+ *     pinned to fixed CPU in order to ensure that trace_bdev->list is not
+ *     modified concurrently. Also management lock should be held by
+ *     the caller to avoid re-entrance in management path.
  *
  * @param info Input data structure (iotrace device list and bdev)
  */
@@ -69,6 +69,7 @@ int iotrace_bdev_add(struct iotrace_bdev *trace_bdev, const char *path) {
     struct block_device *bdev;
     struct iotrace_bdev_data data = {.trace_bdev = trace_bdev};
     struct block_device **bdev_list;
+    struct iotrace_context *context = iotrace_get_context();
     int result;
     unsigned i;
 
@@ -78,7 +79,7 @@ int iotrace_bdev_add(struct iotrace_bdev *trace_bdev, const char *path) {
         goto exit;
     }
 
-    mutex_lock(&trace_bdev->lock);
+    mutex_lock(&context->mutex);
 
     if (trace_bdev->num == IOTRACE_MAX_DEVICES) {
         result = -ENOSPC;
@@ -113,30 +114,22 @@ int iotrace_bdev_add(struct iotrace_bdev *trace_bdev, const char *path) {
      */
     data.bdev = bdev;
 
-    /**
-     * Because adding device will push device description event into trace log,
-     * we demand all trace log structures to be initialized, thus we acquire
-     * lock responsible for protecting this resource.
-     */
-    mutex_lock(&iotrace_get_context()->trace_state.client_mutex);
     if (iotrace_get_context()->trace_state.clients) {
         on_each_cpu(iotrace_bdev_add_oncpu, &data, true);
         trace_bdev->num++;
     } else {
-        mutex_unlock(&iotrace_get_context()->trace_state.client_mutex);
         result = -EINVAL;
         goto put;
     }
-    mutex_unlock(&iotrace_get_context()->trace_state.client_mutex);
 
-    mutex_unlock(&trace_bdev->lock);
+    mutex_unlock(&context->mutex);
 
     return 0;
 
 put:
     blkdev_put(bdev, FMODE_READ);
 unlock:
-    mutex_unlock(&trace_bdev->lock);
+    mutex_unlock(&context->mutex);
 exit:
     return result;
 }
@@ -236,11 +229,9 @@ int iotrace_bdev_remove(struct iotrace_bdev *trace_bdev, const char *path) {
         goto error;
     }
 
-    mutex_lock(&trace_bdev->lock);
-
+    mutex_lock(&iotrace_get_context()->mutex);
     result = iotrace_bdev_remove_locked(trace_bdev, bdev);
-
-    mutex_unlock(&trace_bdev->lock);
+    mutex_unlock(&iotrace_get_context()->mutex);
 
     bdput(bdev);
 error:
@@ -254,7 +245,7 @@ error:
  *
  * @param trace_bdev iotrace block device list
  */
-void iotrace_bdev_remove_all(struct iotrace_bdev *trace_bdev) {
+void iotrace_bdev_remove_all_locked(struct iotrace_bdev *trace_bdev) {
     struct block_device **bdev_list;
 
     bdev_list = per_cpu_ptr(trace_bdev->list, smp_processor_id());
@@ -284,21 +275,21 @@ int iotrace_bdev_list(struct iotrace_bdev *trace_bdev,
     struct block_device **bdev_list;
     int num;
 
-    mutex_lock(&trace_bdev->lock);
+    mutex_lock(&iotrace_get_context()->mutex);
 
     bdev_list = per_cpu_ptr(trace_bdev->list, smp_processor_id());
     for (i = 0; i < trace_bdev->num; i++) {
         name = bdev_list[i]->bd_disk->disk_name;
         len = strnlen(name, DISK_NAME_LEN);
         if (len >= DISK_NAME_LEN) {
-            mutex_unlock(&trace_bdev->lock);
+            mutex_unlock(&iotrace_get_context()->mutex);
             return -ENOSPC;
         }
         strlcpy(list[i], name, entry_len);
     }
     num = trace_bdev->num;
 
-    mutex_unlock(&trace_bdev->lock);
+    mutex_unlock(&iotrace_get_context()->mutex);
 
     return num;
 }
@@ -318,8 +309,6 @@ int iotrace_bdev_init(struct iotrace_bdev *trace_bdev) {
     trace_bdev->list = __alloc_percpu(bdev_list_size, 128);
     if (!trace_bdev->list)
         goto error;
-
-    mutex_init(&trace_bdev->lock);
 
     return 0;
 

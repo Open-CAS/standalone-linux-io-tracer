@@ -275,7 +275,7 @@ int iotrace_init_buffers(struct iotrace_context *iotrace, uint64_t size) {
     int result = 0;
     int i;
 
-    mutex_lock(&state->client_mutex);
+    mutex_lock(&iotrace->mutex);
 
     if (state->clients) {
         result = -EINVAL;
@@ -297,7 +297,7 @@ int iotrace_init_buffers(struct iotrace_context *iotrace, uint64_t size) {
     }
 
 exit:
-    mutex_unlock(&state->client_mutex);
+    mutex_unlock(&iotrace->mutex);
     return result;
 }
 
@@ -337,7 +337,7 @@ int iotrace_attach_client(struct iotrace_context *iotrace) {
     struct iotrace_state *state = &iotrace->trace_state;
     int result = 0;
 
-    mutex_lock(&state->client_mutex);
+    mutex_lock(&iotrace->mutex);
 
     if (!state->clients) {
         result = init_tracers(iotrace);
@@ -356,7 +356,7 @@ int iotrace_attach_client(struct iotrace_context *iotrace) {
     ++state->clients;
 
 exit:
-    mutex_unlock(&state->client_mutex);
+    mutex_unlock(&iotrace->mutex);
     return result;
 }
 
@@ -368,13 +368,11 @@ exit:
  */
 void iotrace_detach_client(struct iotrace_context *iotrace) {
     struct iotrace_state *state = &iotrace->trace_state;
-    mutex_lock(&iotrace->bdev.lock);
-    mutex_lock(&state->client_mutex);
+    mutex_lock(&iotrace->mutex);
 
     state->clients--;
     if (state->clients) {
-        mutex_unlock(&state->client_mutex);
-        mutex_unlock(&iotrace->bdev.lock);
+        mutex_unlock(&iotrace->mutex);
         return;
     }
 
@@ -383,13 +381,12 @@ void iotrace_detach_client(struct iotrace_context *iotrace) {
     printk(KERN_INFO "Unregistered tracing callback\n");
 
     /* remove all devices from trace list */
-    iotrace_bdev_remove_all(&iotrace_get_context()->bdev);
+    iotrace_bdev_remove_all_locked(&iotrace->bdev);
 
     /* deinitialize trace producers */
     deinit_tracers(state);
 
-    mutex_unlock(&state->client_mutex);
-    mutex_unlock(&iotrace->bdev.lock);
+    mutex_unlock(&iotrace->mutex);
 }
 
 /**
@@ -401,10 +398,7 @@ void iotrace_detach_client(struct iotrace_context *iotrace) {
  * @retval non-zero Error code
  */
 int iotrace_trace_init(struct iotrace_context *iotrace) {
-    struct iotrace_state *state = &iotrace->trace_state;
-
-    mutex_init(&state->client_mutex);
-
+    mutex_init(&iotrace->mutex);
     return 0;
 }
 

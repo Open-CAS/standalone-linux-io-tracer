@@ -14,12 +14,6 @@
  * @brief Traced devices info
  */
 struct iotrace_bdev {
-    /**
-     * Mutex for synchronizing prallell add/remove and other mngmnt
-     * function calls
-     **/
-    struct mutex lock;
-
     /** Array of traced devices ptrs (per-cpu variable ) */
     struct block_device *__percpu *list;
 
@@ -69,7 +63,7 @@ int iotrace_bdev_remove(struct iotrace_bdev *trace_bdev, const char *path);
 
 int iotrace_bdev_add(struct iotrace_bdev *trace_bdev, const char *path);
 
-void iotrace_bdev_remove_all(struct iotrace_bdev *trace_bdev);
+void iotrace_bdev_remove_all_locked(struct iotrace_bdev *trace_bdev);
 
 int iotrace_bdev_init(struct iotrace_bdev *trace_bdev);
 
