@@ -26,9 +26,6 @@ struct iotrace_state {
     /** Sequential number */
     atomic64_t sid;
 
-    /** Mutex for client attach / detach */
-    struct mutex client_mutex;
-
     /* Number of attached clients */
     unsigned clients;
 };

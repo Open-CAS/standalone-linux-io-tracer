@@ -32,6 +32,9 @@ struct iotrace_cpu_context {
  * @brief Tracing global context
  */
 struct iotrace_context {
+    /** Mutex for synchronization */
+    struct mutex mutex;
+
     /** Traced block devices info */
     struct iotrace_bdev bdev;
 
