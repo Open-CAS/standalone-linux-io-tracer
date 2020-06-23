@@ -1,3 +1,4 @@
 !\.gitignore
+configure.d/.*
 build/
 __pycache__
