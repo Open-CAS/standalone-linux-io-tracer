@@ -41,6 +41,7 @@ static inline void iotrace_notify_of_new_events(struct iotrace_context *context,
  * @param cpu CPU id
  * @param dev_id Device id
  * @param dev_name device canonical name
+ * @param dev_model device model
  *
  * @retval 0 Information stored successfully in trace buffer
  * @retval non-zero Error code
@@ -49,6 +50,7 @@ int iotrace_trace_desc(struct iotrace_context *iotrace,
                        unsigned cpu,
                        uint64_t dev_id,
                        const char *dev_name,
+                       const char *dev_model,
                        uint64_t dev_size) {
     int result = 0;
     struct iotrace_state *state = &iotrace->trace_state;
@@ -59,8 +61,11 @@ int iotrace_trace_desc(struct iotrace_context *iotrace,
     uint64_t sid = atomic64_inc_return(&state->sid);
 
     const size_t dev_name_size = sizeof(desc->device_name);
+    const size_t dev_model_size = sizeof(desc->device_model);
 
     if (strnlen(dev_name, dev_name_size) >= dev_name_size)
+        return -ENOSPC;
+    if (strnlen(dev_model, dev_model_size) >= dev_model_size)
         return -ENOSPC;
 
     result = octf_trace_get_wr_buffer(trace, &ev_hndl, (void **) &desc,
@@ -69,6 +74,7 @@ int iotrace_trace_desc(struct iotrace_context *iotrace,
         return result;
     }
     strlcpy(desc->device_name, dev_name, sizeof(desc->device_name));
+    strlcpy(desc->device_model, dev_model, sizeof(desc->device_model));
 
     iotrace_event_init_hdr(&desc->hdr, iotrace_event_type_device_desc, sid,
                            ktime_to_ns(ktime_get()), sizeof(*desc));
@@ -138,8 +144,13 @@ static void bio_complete_event(void *ignore,
     }
 
     put_cpu();
+}
 
-    return;
+static void bio_split_event(void *ignore,
+                            struct request_queue *q,
+                            struct bio *bio,
+                            unsigned int sector) {
+    bio_queue_event(ignore, q, bio);
 }
 
 /**
@@ -314,8 +325,15 @@ static int _register_trace_points(void) {
         goto REG_BIO_COMPLETE_ERROR;
     }
 
+    result = iotrace_register_trace_block_split(bio_split_event);
+    if (result) {
+        goto REG_BIO_SPLIT_ERROR;
+    }
+
     return 0;
 
+REG_BIO_SPLIT_ERROR:
+    iotrace_unregister_trace_block_bio_complete(bio_complete_event);
 REG_BIO_COMPLETE_ERROR:
     iotrace_unregister_trace_block_bio_queue(bio_queue_event);
 REG_BIO_QUEUE_ERROR:
@@ -325,6 +343,7 @@ REG_BIO_QUEUE_ERROR:
 static void _unregister_trace_points(void) {
     iotrace_unregister_trace_block_bio_queue(bio_queue_event);
     iotrace_unregister_trace_block_bio_complete(bio_complete_event);
+    iotrace_unregister_trace_block_split(bio_split_event);
 }
 
 /**

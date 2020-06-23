@@ -5,7 +5,12 @@
 
 #include "trace_bdev.h"
 #include <linux/blkdev.h>
+#include <linux/cred.h>
+#include <linux/ctype.h>
+#include <linux/file.h>
+#include <linux/fs.h>
 #include <linux/mutex.h>
+#include <linux/namei.h>
 #include <linux/smp.h>
 #include <linux/version.h>
 #include <linux/vmalloc.h>
@@ -20,12 +25,14 @@
 struct iotrace_bdev_data {
     /** iotrace traced devices info */
     struct iotrace_bdev *trace_bdev;
-    union {
-        /** block device to be added */
-        struct block_device *bdev;
-        /** index at which to delete a device */
-        unsigned idx;
-    };
+
+    /** block device to be added */
+    struct block_device *bdev;
+    /** index at which to delete a device */
+    unsigned idx;
+
+    /** Device model */
+    char bdev_model[128];
 };
 
 /**
@@ -53,7 +60,48 @@ void static iotrace_bdev_add_oncpu(void *info) {
     BUG_ON(trace_bdev->num >= IOTRACE_MAX_DEVICES);
     per_cpu_ptr(trace_bdev->list, cpu)[trace_bdev->num] = data->bdev;
 
-    iotrace_trace_desc(iotrace, cpu, disk_devt(gd), gd->disk_name, bdev_size);
+    iotrace_trace_desc(iotrace, cpu, disk_devt(gd), gd->disk_name,
+                       data->bdev_model, bdev_size);
+}
+
+static void iotrace_bdev_get_model(struct iotrace_bdev_data *data) {
+    struct gendisk *gd = data->bdev->bd_disk;
+    char filename[256] = {'\0'};
+    struct path path;
+    struct file *file;
+    loff_t off = 0;
+    int i;
+
+    snprintf(filename, sizeof(filename) - 1, "/sys/block/%s/device/model",
+             gd->disk_name);
+
+    if (kern_path(filename, LOOKUP_FOLLOW, &path)) {
+        return;
+    }
+
+    file = dentry_open(&path, O_RDONLY, current_cred());
+    if (IS_ERR(file)) {
+        path_put(&path);
+        return;
+    }
+
+    iotrace_kernel_read(file, data->bdev_model, sizeof(data->bdev_model) - 1,
+                        &off);
+    fput(file);
+    path_put(&path);
+
+    // Trim white spaces at the end of string
+    for (i = sizeof(data->bdev_model) - 1; i > 0; i--) {
+        char ch = data->bdev_model[i];
+
+        if ('\0' == ch || isspace(ch)) {
+            ch = '\0';
+        } else {
+            break;
+        }
+
+        data->bdev_model[i] = ch;
+    }
 }
 
 /**
@@ -113,6 +161,7 @@ int iotrace_bdev_add(struct iotrace_bdev *trace_bdev, const char *path) {
      * to synchronize with I/O
      */
     data.bdev = bdev;
+    iotrace_bdev_get_model(&data);
 
     if (iotrace_get_context()->trace_state.clients) {
         on_each_cpu(iotrace_bdev_add_oncpu, &data, true);

@@ -42,6 +42,7 @@ int iotrace_trace_desc(struct iotrace_context *iotrace,
                        unsigned cpu,
                        uint64_t dev_id,
                        const char *dev_name,
+                       const char *dev_model,
                        uint64_t dev_size);
 
 int iotrace_attach_client(struct iotrace_context *iotrace);

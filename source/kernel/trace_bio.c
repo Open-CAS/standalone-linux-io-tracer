@@ -157,6 +157,10 @@ static void _trace_bio_fs_meta(octf_trace_t trace,
     octf_trace_commit_wr_buffer(trace, ev_hndl);
 }
 
+static inline uint64_t iotrace_bio_to_id(struct bio *bio) {
+    return ~((uint64_t) bio);
+}
+
 void iotrace_trace_bio(struct iotrace_context *context,
                        unsigned cpu,
                        uint64_t dev_id,
@@ -174,6 +178,8 @@ void iotrace_trace_bio(struct iotrace_context *context,
     }
     iotrace_event_init_hdr(&ev->hdr, iotrace_event_type_io, sid,
                            ktime_to_ns(ktime_get()), sizeof(*ev));
+
+    ev->id = iotrace_bio_to_id(bio);
 
     if (IOTRACE_BIO_IS_DISCARD(bio))
         ev->operation = iotrace_event_operation_discard;
@@ -203,7 +209,9 @@ void iotrace_trace_bio(struct iotrace_context *context,
         iotrace_inode_tracer_t inode_trace =
                 *per_cpu_ptr(state->inode_traces, cpu);
 
-        _trace_bio_fs_meta(trace, atomic64_inc_return(&state->sid), sid, &info);
+        _trace_bio_fs_meta(trace, atomic64_inc_return(&state->sid),
+                           iotrace_bio_to_id(bio), &info);
+
         iotrace_trace_inode(state, trace, inode_trace, info.inode);
     }
 }
@@ -226,8 +234,18 @@ void iotrace_trace_bio_completion(struct iotrace_context *context,
     iotrace_event_init_hdr(&cmpl->hdr, iotrace_event_type_io_cmpl, sid,
                            ktime_to_ns(ktime_get()), sizeof(*cmpl));
 
-    cmpl->lba = IOTRACE_BIO_BISECTOR(bio);
-    cmpl->len = IOTRACE_BIO_BISIZE(bio) >> SECTOR_SHIFT;
+    cmpl->ref_id = iotrace_bio_to_id(bio);
+
+    // In kernels <4.10 discard requests overwrite the bisize field, making the
+    // completion inaccurate
+    if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0) &&
+        IOTRACE_BIO_IS_DISCARD(bio)) {
+        cmpl->lba = 0;
+        cmpl->len = 0;
+    } else {
+        cmpl->lba = IOTRACE_BIO_BISECTOR(bio);
+        cmpl->len = IOTRACE_BIO_BISIZE(bio) >> SECTOR_SHIFT;
+    }
     cmpl->error = error;
     cmpl->dev_id = dev_id;
 
