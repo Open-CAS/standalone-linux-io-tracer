@@ -46,7 +46,7 @@ typedef void (*iotrace_bio_complete_fn)(void *ignore,
 /* ************************************************************************** */
 /* Defines for CentOS 7.6 (3.10 kernel) */
 /* ************************************************************************** */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
+#if IOTRACE_REGISTER_TYPE == 1
 
 static inline int iotrace_register_trace_block_bio_queue(
         void (*fn)(void *ignore, struct request_queue *, struct bio *)) {
@@ -120,8 +120,7 @@ static inline int iotrace_unregister_trace_block_bio_complete(
 /* ************************************************************************** */
 /* Defines for Ubuntu 18.04 (4.15 kernel) */
 /* ************************************************************************** */
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0)
-
+#elif IOTRACE_REGISTER_TYPE == 2
 
 static inline int iotrace_register_trace_block_bio_queue(
         void (*fn)(void *ignore, struct request_queue *, struct bio *)) {
