@@ -46,12 +46,10 @@ set(headerSources
     "${CMAKE_CURRENT_LIST_DIR}/configure.d/2_bio_flush.conf"
 )
 
-add_custom_target(traceModuleConfiguration
-    ALL
+add_custom_command(OUTPUT ${generatedHeader}
     COMMAND
     OUT=${CMAKE_CURRENT_BINARY_DIR}
     ${CMAKE_CURRENT_LIST_DIR}/generate_header.sh
-    OUTPUT ${generatedHeader}
     DEPENDS ${headerSources}
 )
 
@@ -66,7 +64,7 @@ add_custom_command(
     M=${CMAKE_CURRENT_SOURCE_DIR} modules
     GENERATED_HEADER=${CMAKE_CURRENT_BINARY_DIR}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    DEPENDS ${moduleSources} traceModuleConfiguration
+    DEPENDS ${moduleSources} ${generatedHeader}
 )
 
 add_custom_target(traceModule
