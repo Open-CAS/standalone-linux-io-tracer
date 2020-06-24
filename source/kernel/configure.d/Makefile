@@ -10,6 +10,6 @@ obj-m += test_mod.o
 MAKE_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
 all:
-	make -C $(KERNEL_DIR) M=$(MAKE_DIR) modules EXTRA_CFLAGS='-Werror -Wno-error=unused-variable -Wno-error=uninitialized'
+	+make -C $(KERNEL_DIR) M=$(MAKE_DIR) modules EXTRA_CFLAGS='-Werror -Wno-error=unused-variable -Wno-error=uninitialized'
 clean:
-	make -C $(KERNEL_DIR) M=$(MAKE_DIR) clean
+	+make -C $(KERNEL_DIR) M=$(MAKE_DIR) clean

@@ -9,8 +9,7 @@ SCRIPTPATH=`realpath $SCRIPTPATH`
 KERNEL_DIR="${KERNEL_DIR:-/lib/modules/$(uname -r)/build/}"
 KERNEL_VER="$(cd $KERNEL_DIR; make kernelversion)"
 NPROC=`nproc`
-DEFINE_FILE=$SCRIPTPATH/source/kernel/generated_config.h
-
+DEFINE_FILE=$OUT/generated_config.h
 
 add_define() {
 	printf "#define %s\n" $1 >> $DEFINE_FILE
@@ -33,8 +32,8 @@ compile_module(){
 	fi
 
 	config_file=$1
-	test_module_dir=$SCRIPTPATH/configure.d/${config_file}_dir
-	test_module_log=$SCRIPTPATH/configure.d/.${config_file}.log
+	test_module_dir=$OUT/configure.d/${config_file}_dir
+	test_module_log=$OUT/configure.d/.${config_file}.log
 	test_module_file=$test_module_dir/test_mod.c
 	test_module_obj=$test_module_dir/test_mod.o
 
