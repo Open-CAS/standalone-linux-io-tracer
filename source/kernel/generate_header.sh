@@ -23,7 +23,7 @@ function generate_config() {
 			source $file "check" "$CONFIG_FILE" "$file" KERNEL_DIR="$KERNEL_DIR"&
 
 			# Prevent spawning more subprocesses than CPU available
-			while [ $(ps --no-headers -o pid --ppid=$$ | wc -w) -ge $n_cores ] ; do
+			while [ $(ps --no-headers -o pid --ppid=$$ | wc -w) -gt $n_cores ] ; do
 				sleep 1
 			done
 	done
