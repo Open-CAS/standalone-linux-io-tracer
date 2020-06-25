@@ -51,7 +51,7 @@ add_custom_command(OUTPUT ${generatedHeader}
     OUT=${CMAKE_CURRENT_BINARY_DIR}
     KERNEL_DIR=${kernelSourcesPath}
     ${CMAKE_CURRENT_LIST_DIR}/generate_header.sh
-    DEPENDS ${headerSources}
+    DEPENDS ${headerSources} ${kernelSourcesPath}
 )
 
 # Command for building iotrace.ko kernel module
