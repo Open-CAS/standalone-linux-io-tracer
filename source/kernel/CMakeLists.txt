@@ -49,6 +49,7 @@ set(headerSources
 add_custom_command(OUTPUT ${generatedHeader}
     COMMAND
     OUT=${CMAKE_CURRENT_BINARY_DIR}
+    KERNEL_DIR=${kernelSourcesPath}
     ${CMAKE_CURRENT_LIST_DIR}/generate_header.sh
     DEPENDS ${headerSources}
 )

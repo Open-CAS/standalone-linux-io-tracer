@@ -20,7 +20,7 @@ function generate_config() {
 			# $2 - File with stored configuration
 			# $3 - Name of called script (since script is running as subprocess
 			#		it has to be passed explicitly)
-			source $file "check" "$CONFIG_FILE" "$file" &
+			source $file "check" "$CONFIG_FILE" "$file" KERNEL_DIR="$KERNEL_DIR"&
 
 			# Prevent spawning more subprocesses than CPU available
 			while [ $(ps --no-headers -o pid --ppid=$$ | wc -w) -ge $n_cores ] ; do
@@ -47,12 +47,12 @@ function generate_header() {
 
 	for file in $FIRST; do
 		CONF=$(cat ${CONFIG_FILE} | grep $(basename $file) | cut -d' ' -f2)
-		source $file "apply" "$CONF" "$file"
+		source $file "apply" "$CONF" "$file" KERNEL_DIR="$KERNEL_DIR"
 	done
 
 	for file in $SECOND; do
 		CONF=$(cat ${CONFIG_FILE} | grep $(basename $file) | cut -d' ' -f2)
-		source $file "apply" "$CONF" "$file"
+		source $file "apply" "$CONF" "$file" KERNEL_DIR="$KERNEL_DIR"
 	done
 }
 
