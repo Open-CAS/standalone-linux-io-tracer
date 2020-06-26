@@ -307,8 +307,7 @@ static int _fs_handle_event(struct fsnotify_group *group,
 }
 
 /* Switch for different kernels */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 18, 0) && \
-        !defined(IOTRACE_FSNOTIFY_VERSION_5)
+#if IOTRACE_FSNOTIFY_VERSION == 1
 static int iotrace_fs_handle_event(struct fsnotify_group *group,
                                    struct inode *inode,
                                    struct fsnotify_mark *inode_mark,
@@ -319,7 +318,7 @@ static int iotrace_fs_handle_event(struct fsnotify_group *group,
                                    const unsigned char *file_name,
                                    u32 cookie,
                                    struct fsnotify_iter_info *iter_info)
-#elif LINUX_VERSION_CODE < KERNEL_VERSION(5, 2, 0)
+#elif IOTRACE_FSNOTIFY_VERSION == 2
 static int iotrace_fs_handle_event(struct fsnotify_group *group,
                                    struct inode *inode,
                                    u32 mask,
@@ -328,7 +327,7 @@ static int iotrace_fs_handle_event(struct fsnotify_group *group,
                                    const unsigned char *file_name,
                                    u32 cookie,
                                    struct fsnotify_iter_info *iter_info)
-#else
+#elif IOTRACE_FSNOTIFY_VERSION == 3
 static int iotrace_fs_handle_event(struct fsnotify_group *group,
                                    struct inode *inode,
                                    u32 mask,

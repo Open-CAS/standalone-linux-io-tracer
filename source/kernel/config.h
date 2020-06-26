@@ -15,6 +15,7 @@
 #include <linux/vermagic.h>
 #include <linux/version.h>
 #include <trace/events/block.h>
+#include <generated_config.h>
 
 /* ************************************************************************** */
 /* Common declarations */
@@ -35,12 +36,6 @@ typedef void (*iotrace_bio_complete_fn)(void *ignore,
 #define SECTOR_SIZE (1ULL << SECTOR_SHIFT)
 #endif
 
-#ifdef UTS_UBUNTU_RELEASE_ABI
-#define IS_UBUNTU 1
-#else
-#define IS_UBUNTU 0
-#endif
-
 /* BIO operation macros (read/write/discard) */
 #define IOTRACE_BIO_IS_WRITE(bio) (bio_data_dir(bio) == WRITE)
 /* BIO flags macros (flush, fua, ...) */
@@ -51,16 +46,7 @@ typedef void (*iotrace_bio_complete_fn)(void *ignore,
 /* ************************************************************************** */
 /* Defines for CentOS 7.6 (3.10 kernel) */
 /* ************************************************************************** */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
-
-#define IOTRACE_BIO_OP_FLAGS(bio) (bio)->bi_rw
-/* BIO operation macros (read/write/discard) */
-#define IOTRACE_BIO_IS_DISCARD(bio) ((IOTRACE_BIO_OP_FLAGS(bio)) & REQ_DISCARD)
-/* BIO attributes macros (address, size ...) */
-#define IOTRACE_BIO_BISIZE(bio) (bio)->bi_size
-#define IOTRACE_BIO_BISECTOR(bio) (bio)->bi_sector
-/* BIO flags macros (flush, fua, ...) */
-#define IOTRACE_BIO_IS_FLUSH(bio) ((IOTRACE_BIO_OP_FLAGS(bio)) & REQ_FLUSH)
+#if IOTRACE_REGISTER_TYPE == 1
 
 static inline int iotrace_register_trace_block_bio_queue(
         void (*fn)(void *ignore, struct request_queue *, struct bio *)) {
@@ -134,16 +120,7 @@ static inline int iotrace_unregister_trace_block_bio_complete(
 /* ************************************************************************** */
 /* Defines for Ubuntu 18.04 (4.15 kernel) */
 /* ************************************************************************** */
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0)
-
-#define IOTRACE_BIO_OP_FLAGS(bio) (bio)->bi_opf
-/* BIO operation macros (read/write/discard) */
-#define IOTRACE_BIO_IS_DISCARD(bio) (bio_op(bio) == REQ_OP_DISCARD)
-/* BIO attributes macros (address, size ...) */
-#define IOTRACE_BIO_BISIZE(bio) (bio)->bi_iter.bi_size
-#define IOTRACE_BIO_BISECTOR(bio) (bio)->bi_iter.bi_sector
-/* BIO flags macros (flush, fua, ...) */
-#define IOTRACE_BIO_IS_FLUSH(bio) ((IOTRACE_BIO_OP_FLAGS(bio)) & REQ_OP_FLUSH)
+#elif IOTRACE_REGISTER_TYPE == 2
 
 static inline int iotrace_register_trace_block_bio_queue(
         void (*fn)(void *ignore, struct request_queue *, struct bio *)) {
@@ -238,78 +215,5 @@ static inline int iotrace_unregister_trace_block_bio_complete(
 
 /* fsnotify macros */
 #define FSNOTIFY_FUN(fun_name) "fsnotify_" #fun_name
-
-#if defined(RHEL_MAJOR) && defined(RHEL_MINOR)
-#if RHEL_MAJOR == 7 && RHEL_MINOR >= 7
-#define IOTRACE_FSNOTIFY_VERSION_5
-#endif
-#endif
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 18, 0) && \
-        !defined(IOTRACE_FSNOTIFY_VERSION_5)
-#define IOTRACE_FSNOTIFY_ADD_MARK(mark, inode) \
-    (fsnotify_ops.add_mark(mark, inode, NULL, 0));
-
-#elif LINUX_VERSION_CODE < KERNEL_VERSION(5, 1, 0)
-#define IOTRACE_FSNOTIFY_ADD_MARK(mark, inode)             \
-    (fsnotify_ops.add_mark(mark, &inode->i_fsnotify_marks, \
-                           FSNOTIFY_OBJ_TYPE_INODE, 0));
-
-#else
-#define IOTRACE_FSNOTIFY_ADD_MARK(mark, inode)             \
-    (fsnotify_ops.add_mark(mark, &inode->i_fsnotify_marks, \
-                           FSNOTIFY_OBJ_TYPE_INODE, 0, NULL));
-
-#endif
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 13, 0)
-#define IOTRACE_GET_WRITE_HINT(bio) (bio->bi_write_hint)
-#else
-#define IOTRACE_GET_WRITE_HINT(bio) (0)
-#endif
-
-/* Memory access OK */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0) || \
-        (defined(RHEL_MAJOR) && RHEL_MAJOR >= 8)
-#define IOTRACE_ACCESS_OK(type, addr, size) access_ok(addr, size)
-#else
-#define IOTRACE_ACCESS_OK(type, addr, size) access_ok(type, addr, size)
-#endif
-
-/* typedef of page fault result */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 17, 0)
-typedef vm_fault_t iotrace_vm_fault_t;
-#else
-typedef int iotrace_vm_fault_t;
-#endif
-
-/* Block device lookup */
-#if IS_UBUNTU
-#define IOTRACE_LOOKUP_BDEV(path) lookup_bdev(path, 0)
-#else
-#define IOTRACE_LOOKUP_BDEV(path) lookup_bdev(path)
-#endif
-
-/* kernel read */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
-static inline ssize_t iotrace_kernel_read(struct file *file,
-                                          void *buf,
-                                          size_t count,
-                                          loff_t *pos) {
-    int result = kernel_read(file, *pos, buf, count);
-    if (result > 0) {
-        (*pos) += result;
-    }
-
-    return result;
-}
-#else
-static inline ssize_t iotrace_kernel_read(struct file *file,
-                                          void *buf,
-                                          size_t count,
-                                          loff_t *pos) {
-    return kernel_read(file, buf, count, pos);
-}
-#endif
 
 #endif  // SOURCE_KERNEL_INTERNAL_CONFIG_H

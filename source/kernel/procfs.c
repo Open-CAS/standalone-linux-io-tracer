@@ -136,12 +136,12 @@ static loff_t _iotrace_llseek(struct file *file, loff_t offset, int whence) {
     return -ENOTSUPP;
 }
 
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 10, 0)
+#if IOTRACE_VM_FUNC_TYPE == 1
 iotrace_vm_fault_t _iotrace_fault(struct vm_area_struct *vma,
                                   struct vm_fault *vmf,
                                   bool trace_ring) {
     struct file *file = vma->vm_file;
-#else
+#elif IOTRACE_VM_FUNC_TYPE == 2
 iotrace_vm_fault_t _iotrace_fault(struct vm_fault *vmf, bool trace_ring) {
     struct file *file = vmf->vma->vm_file;
 #endif
@@ -164,7 +164,7 @@ iotrace_vm_fault_t _iotrace_fault(struct vm_fault *vmf, bool trace_ring) {
     return VM_FAULT_MAJOR;
 }
 
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 10, 0)
+#if IOTRACE_VM_FUNC_TYPE == 1
 int _iotrace_fault_trace_ring(struct vm_area_struct *vma,
                               struct vm_fault *vmf) {
     return _iotrace_fault(vma, vmf, true);
@@ -174,7 +174,7 @@ int _iotrace_fault_consumer_hdr(struct vm_area_struct *vma,
                                 struct vm_fault *vmf) {
     return _iotrace_fault(vma, vmf, false);
 }
-#else
+#elif IOTRACE_VM_FUNC_TYPE == 2
 iotrace_vm_fault_t _iotrace_fault_trace_ring(struct vm_fault *vmf) {
     return _iotrace_fault(vmf, true);
 }
@@ -411,7 +411,7 @@ static int _list_dev_snprintf(char *buf, size_t size) {
     int pos, idx;
     size_t bytes_left, bytes_copied;
 
-    devices = vzalloc(IOTRACE_MAX_DEVICES * sizeof(char*));
+    devices = vzalloc(IOTRACE_MAX_DEVICES * sizeof(char *));
     if (!devices)
         return -1;
     for (idx = 0; idx < IOTRACE_MAX_DEVICES; idx++) {

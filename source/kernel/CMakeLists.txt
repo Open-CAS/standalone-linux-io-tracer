@@ -1,5 +1,6 @@
 # Built kernel module path
 set(traceModulePath ${CMAKE_CURRENT_SOURCE_DIR}/iotrace.ko)
+set(generatedHeader ${CMAKE_CURRENT_BINARY_DIR}/generated_config.h)
 
 if(DEFINED ENV{KERNEL_SRCS})
     set(kernelSourcesPath $ENV{KERNEL_SRCS})
@@ -30,6 +31,31 @@ set(moduleSources
     "${CMAKE_CURRENT_LIST_DIR}/trace_inode.c"
 )
 
+set(headerSources
+    "${CMAKE_CURRENT_LIST_DIR}/configure.d/1_access_ok.conf"
+    "${CMAKE_CURRENT_LIST_DIR}/configure.d/1_bdev_lookup.conf"
+    "${CMAKE_CURRENT_LIST_DIR}/configure.d/1_bio_attr.conf"
+    "${CMAKE_CURRENT_LIST_DIR}/configure.d/1_bio_discard.conf"
+    "${CMAKE_CURRENT_LIST_DIR}/configure.d/1_bio_flags.conf"
+    "${CMAKE_CURRENT_LIST_DIR}/configure.d/1_bio_trace_completion.conf"
+    "${CMAKE_CURRENT_LIST_DIR}/configure.d/1_fs_notify_add_mark.conf"
+    "${CMAKE_CURRENT_LIST_DIR}/configure.d/1_fs_notify_handle_event.conf"
+    "${CMAKE_CURRENT_LIST_DIR}/configure.d/1_kernel_read.conf"
+    "${CMAKE_CURRENT_LIST_DIR}/configure.d/1_trace_register.conf"
+    "${CMAKE_CURRENT_LIST_DIR}/configure.d/1_vm_fault.conf"
+    "${CMAKE_CURRENT_LIST_DIR}/configure.d/1_vm_ops.conf"
+    "${CMAKE_CURRENT_LIST_DIR}/configure.d/1_write_hint.conf"
+    "${CMAKE_CURRENT_LIST_DIR}/configure.d/2_bio_flush.conf"
+)
+
+add_custom_command(OUTPUT ${generatedHeader}
+    COMMAND
+    OUT=${CMAKE_CURRENT_BINARY_DIR}
+    KERNEL_DIR=${kernelSourcesPath}
+    ${CMAKE_CURRENT_LIST_DIR}/generate_header.sh
+    DEPENDS ${headerSources} ${kernelSourcesPath}
+)
+
 # Command for building iotrace.ko kernel module
 # Module is built in source tree, and then all build artifacts are copied
 # to binary directory
@@ -39,8 +65,9 @@ add_custom_command(
     IOTRACE_VERSION="${IOTRACE_VERSION}"
     IOTRACE_VERSION_LABEL="${IOTRACE_VERSION_LABEL}"
     M=${CMAKE_CURRENT_SOURCE_DIR} modules
+    GENERATED_HEADER=${CMAKE_CURRENT_BINARY_DIR}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    DEPENDS ${moduleSources}
+    DEPENDS ${moduleSources} ${generatedHeader}
 )
 
 add_custom_target(traceModule
@@ -60,8 +87,8 @@ install(FILES "${traceModulePath}"
 )
 
 if (${CMAKE_INSTALL_PREFIX} STREQUAL "/")
-	install(
-	   CODE "execute_process(COMMAND depmod)"
+    install(
+        CODE "execute_process(COMMAND depmod)"
         COMPONENT iotrace-post-install
     )
-endif()            
+endif()

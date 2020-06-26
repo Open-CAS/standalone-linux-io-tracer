@@ -5,12 +5,6 @@
 
 #include "config.h"
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
-#define IOTRACE_BIO_TRACE_COMPLETION(bio) true
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0)
-#define IOTRACE_BIO_TRACE_COMPLETION(bio) bio_flagged(bio, BIO_TRACE_COMPLETION)
-#endif
-
 /*
  * Request completion trace function
  */
@@ -39,14 +33,14 @@ static void _iotrace_block_rq_complete(void *data,
     }
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
+#if IOTRACE_REGISTER_TYPE == 1
 void iotrace_block_rq_complete(void *data,
                                struct request_queue *q,
                                struct request *rq,
                                unsigned int nr_bytes) {
     _iotrace_block_rq_complete(data, rq, rq->errors, nr_bytes);
 }
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0)
+#elif IOTRACE_REGISTER_TYPE == 2
 void iotrace_block_rq_complete(void *data,
                                struct request *rq,
                                int error,
