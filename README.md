@@ -18,7 +18,6 @@ iotrace consists of a kernel tracing module (iotrace.ko) and an executable
 # In this readme:
 
 * [Supported OS](#os_support)
-* [Documentation](#documentation)
 * [Source Code](#source)
 * [Deployment](#deployment)
 * [Examples](#examples)
@@ -38,13 +37,6 @@ following OSes:
 |RHEL/CentOS                   | 8.1               |
 |Ubuntu                        | 18.04             |
 |Fedora                        | 31                |
-
-<a id="documentation"></a>
-
-## Documentation
-
-You can find the Markdown version of the man page for iotrace [here](https://github.com/Open-CAS/standalone-linux-io-tracer/blob/master/doc/man/MAN.md).
-The man page is also installed during installation.
 
 <a id="source"></a>
 
@@ -112,6 +104,8 @@ sudo make install
   module needs to be loaded first. It is done automatically. After
   collecting traces the module will be unloaded.
 
+* The below output example is based on sample traces found [here](https://github.com/Open-CAS/standalone-linux-io-tracer/blob/master/doc/resources/sample_trace.tar.xz)
+
 * List created traces:
 
   ~~~{.sh}
@@ -124,8 +118,9 @@ sudo make install
   {
   "trace": [
     {
-     "tracePath": "kernel/2019-05-10_15:24:21",
+     "tracePath": "kernel/2020-07-02_08:52:51",
      "state": "COMPLETE"
+     "label": "ycsb;a;rocksdb;uniform;xfs;381MiB;16000000"
     }
   ]
   }
@@ -134,19 +129,187 @@ sudo make install
 * Parse traces (note usage of path returned in --list-traces):
 
   ~~~{.sh}
-  iotrace --trace-parser --io --path "kernel/2019-05-10_15:24:21" --format json
+  iotrace --trace-parser --io --path "kernel/2020-07-02_08:52:51" --format json
   ~~~
 
   Output:
 
   ~~~{.sh}
-  {"header":{"sid":"1","timestamp":"253654431680"},"deviceDescription":{"id":"1","name":"sda","size":62914560}}
-  {"header":{"sid":"2","timestamp":"253654431680"},"deviceDescription":{"id":"2","name":"sdb","size":62914560}}
-  {"header":{"sid":"3","timestamp":"254719353975"},"io":{"lba":"29664032","len":8,"ioClass":1,"deviceId":"1","operation":"Write","flush":false,"fua":false}}
-  {"header":{"sid":"4","timestamp":"254719353975"},"io":{"lba":"29664032","len":8,"ioClass":1,"deviceId":"2","operation":"Write","flush":false,"fua":false}}
+  {"header":{"sid":"1","timestamp":"3835590186"},"io":{"lba":"1652296","len":256,"ioClass":19,"operation":"Write","flush":false,"fua":false,"error":false,"latency":"83797","qd":"1","writeHint":0},"device":{"id":"271581186","name":"nvme0n1","partition":"271581186","model":"INTEL SSDPED1K375GA"},"file":{"id":"76","offset":"0","size":"241960","path":"/000014.sst","eventType":"Access","creationDate":"2020-07-02T06:52:55.712990641Z"}}
+  {"header":{"sid":"2","timestamp":"3835625267"},"io":{"lba":"1652552","len":256,"ioClass":19,"operation":"Write","flush":false,"fua":false,"error":false,"latency":"95069","qd":"2","writeHint":0},"device":{"id":"271581186","name":"nvme0n1","partition":"271581186","model":"INTEL SSDPED1K375GA"},"file":{"id":"76","offset":"256","size":"241960","path":"/000014.sst","eventType":"Access","creationDate":"2020-07-02T06:52:55.712990641Z"}}
+  {"header":{"sid":"3","timestamp":"3835638717"},"io":{"lba":"1652808","len":256,"ioClass":19,"operation":"Write","flush":false,"fua":false,"error":false,"latency":"130094","qd":"3","writeHint":0},"device":{"id":"271581186","name":"nvme0n1","partition":"271581186","model":"INTEL SSDPED1K375GA"},"file":{"id":"76","offset":"512","size":"241960","path":"/000014.sst","eventType":"Access","creationDate":"2020-07-02T06:52:55.712990641Z"}}
+  {"header":{"sid":"4","timestamp":"3835652180"},"io":{"lba":"1653064","len":256,"ioClass":19,"operation":"Write","flush":false,"fua":false,"error":false,"latency":"203209","qd":"4","writeHint":0},"device":{"id":"271581186","name":"nvme0n1","partition":"271581186","model":"INTEL SSDPED1K375GA"},"file":{"id":"76","offset":"768","size":"241960","path":"/000014.sst","eventType":"Access","creationDate":"2020-07-02T06:52:55.712990641Z"}}
   ...
   ~~~
 
+  > **NOTE:**  Any mention of LBA assumes a 512B sector size, even
+  if the underlying drive is formatted to 4096B sectors. Similarly
+  a 512B sector is the unit of length.
+
+* Show trace statistics:
+  ~~~{.sh}
+  iotrace --trace-parser --statistics -p "kernel/2020-07-02_08:52:51/"
+  ~~~
+
+  Output:
+
+  <pre>
+  "statistics": [
+  {
+   "desc": {
+    "device": {
+     "id": "271581186",
+     "name": "nvme0n1",
+     "size": "732585168" > <b> NOTE: </b> In sectors
+    }
+   },
+   "duration": "24650525234", <b> NOTE: </b> In nanoseconds
+   ...
+   "write": { <b> NOTE: </b> Statistics for writes
+    "size": {
+     "unit": "sector",
+     "average": "254", <b> NOTE: </b> Average write I/O size in sectors
+     "min": "1", <b> NOTE: </b> Minimum write I/O size in sectors
+     "max": "256", <b> NOTE: </b> Maximum write I/O size in sectors
+     "total": "16338524", <b> NOTE: </b> Total write I/O size in sectors
+     ...
+    "latency": {
+     "unit": "ns",
+     "average": "15071365", <b> NOTE: </b> Average write I/O latency in ns
+     "min": "9942", <b> NOTE: </b> Minimum write I/O latency in ns
+     "max": "63161202", <b> NOTE: </b> Maximum write I/O latency in ns
+    ...
+    "count": "64188", <b> NOTE: </b> Number of write operations
+    "metrics": {
+     "throughput": {
+      "unit": "IOPS",
+      "value": 2603.9201757643164 <b> NOTE: </b> Average write IOPS
+     },
+     "workset": {
+      "unit": "sector",
+      "value": 2237616 <b> NOTE: </b> Number of distinct sectors written
+     },
+     "bandwidth": {
+      "unit": "MiB/s",
+      "value": 323.63590009317039 <b> NOTE: </b> Average write bandwidth
+     }
+  ...
+  </pre>
+
+  > **NOTE:**  Similar statistics exist for any read, discard or flush operations.
+  There's a section for the combined statistics as well (Total).
+
+
+* Show file system statistics:
+  ~~~{.sh}
+  iotrace --trace-parser --fs-statistics -p "kernel/2020-07-02_08:52:51/"
+  ~~~
+
+  Output:
+
+  <pre>
+  "entries": [
+   {
+    "deviceId": "271581186",
+    "partitionId": "271581186",
+    "statistics": {
+   ...
+   "write": {
+     "size": {
+      "unit": "sector",
+      "average": "255", <b> NOTE: </b> Average write I/O size in sectors
+      "min": "8", <b> NOTE: </b> Minimum write I/O size in sectors
+      "max": "256", <b> NOTE: </b> Maximum write I/O size in sectors
+      "total": "16336216", <b> NOTE: </b> Total write I/O size in sectors
+      "percentiles": {}
+     },
+     "count": "63984",
+     "metrics": {
+      "throughput": {
+       "unit": "IOPS",
+       "value": 2602.9390810897676
+      },
+      "workset": {
+       "unit": "sector",
+       "value": 2237096 <b> NOTE: </b> Number of distinct sectors written
+      },
+      "write invalidation factor": {
+       "unit": "",
+       "value": 7.3024206381845032 <b> NOTE: </b> Average number of times a given sector in the workset is written to
+      },
+      "bandwidth": {
+       "unit": "MiB/s",
+       "value": 324.49957478019985 <b> NOTE: </b> Average write bandwidth
+      }
+     },
+     ...
+     "directory": "/" <b> NOTE: </b> Directories are relative to the filesystem mountpoint
+  </pre>
+
+  > **NOTE:**  Similar statistics exist for any read, discard or flush operations.
+  There's a section for the combined statistics as well (Total).
+
+  > **NOTE:**  File system statistics are gathered for detected groups of related
+  I/O requests with common attributes like directory, file extension, file name
+  prefix or IO class.
+
+
+* Show latency histogram:
+  ~~~{.sh}
+  iotrace --trace-parser --latency-histogram -p "kernel/2020-07-02_08:52:51/"
+  ~~~
+
+  Output:
+
+  <pre>
+  ...
+   "write": {
+    "unit": "ns",
+    "range": [
+     {
+      "begin": "0",
+      "end": "0",
+      "count": "0"
+     },
+     ...
+     {
+      "begin": "8192", <b> NOTE: </b> Minimum bound of latency histogram bucket in nanoseconds
+      "end": "16383", <b> NOTE: </b> Maximum bound of latency histogram bucket in nanoseconds
+      "count": "95" <b> NOTE: </b> Number of I/O requests in the bucket
+     },
+  ...
+  </pre>
+
+  > **NOTE:**  In the above example 95 write requests had latency between 8192 and 16383 ns.
+
+  > **NOTE:**  Similar statistics exist for any read, discard or flush operations.
+  There's a section for the combined statistics as well (Total).
+
+* Show latency histogram:
+  ~~~{.sh}
+  iotrace --trace-parser --lba-histogram -p "kernel/2020-07-02_08:52:51/"
+  ~~~
+
+  Output:
+
+
+  <pre>
+  ...
+   "write": {
+    "unit": "sector",
+    "range": [
+     {
+      "begin": "0",  <b> NOTE: </b> Minimum disk LBA bound of latency histogram bucket
+      "end": "20479", <b> NOTE: </b> Maximum disk LBA bound of latency histogram bucket
+      "count": "177" <b> NOTE: </b> Number of I/O requests in the bucket
+     },
+  ...
+  </pre>
+
+  > **NOTE:**  In the above example 177 write requests were issued to disk LBAs 0 through 20479.
+
+  > **NOTE:**  Similar statistics exist for any read, discard or flush operations.
+  There's a section for the combined statistics as well (Total).
 <a id="tests"></a>
 
 ## Tests
