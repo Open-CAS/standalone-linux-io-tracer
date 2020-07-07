@@ -20,6 +20,7 @@ iotrace consists of a kernel tracing module (iotrace.ko) and an executable
 * [Supported OS](#os_support)
 * [Source Code](#source)
 * [Deployment](#deployment)
+* [Theory Of Operation](#theory_of_operation)
 * [Examples](#examples)
 * [Contributing](#contributing)
 * [Tests](#tests)
@@ -90,6 +91,65 @@ Both the executable and the kernel module (and OCTF if submodule is present) are
 ~~~{.sh}
 sudo make install
 ~~~
+
+<a id="theory_of_operation"></a>
+
+## Theory of operation
+
+Standalone Linux IO Tracer captures request data by registering to multiple trace points surfaced
+by the Linux kernel (e.g. BIO queueing, BIO splitting, BIO completion). This allows for gathering of
+IO metadata at the request level and passing it between kernel and userspace.
+
+A circular buffer is allocated and shared between kernel and userspace for each logical CPU core and
+trace events (example shown below) are then pushed into it.
+
+```c
+struct iotrace_event_device_desc {
+    /** Event header */
+    struct iotrace_event_hdr hdr;
+
+    /** Device Id */
+    uint64_t id;
+
+    /** Device size in sectors */
+    uint64_t device_size;
+
+    /** Canonical device name */
+    char device_name[32];
+
+    /** Device model */
+    char device_model[256];
+} __attribute__((packed, aligned(8)));
+```
+
+The userspace part of the Standalone Linux IO Tracer reads the entries from the circular buffer and
+translates them into Google Protocol Buffer format (see example below), for easier portability. The
+data is then serialized in trace files in a per CPU basis (e.g. octf.trace.0).
+
+
+```protobuf
+message EventDeviceDescription {
+    /** Device Id */
+    uint64 id = 1;
+
+    /** Device Name */
+    string name = 2;
+
+    /** Device size in sectors */
+    uint64 size = 3;
+
+    /** Device Model */
+    string model = 4;
+}
+```
+
+After tracing is complete these singular trace events may be parsed, combined and translated into
+different Google Protocol Buffer messages (or other formats, such as CSV) when executing Standalone 
+Linux IO Tracer trace parser commands.
+
+For example the **--trace-parser --io** command analyzes multiple submission, split and completion
+events to give a more complete view of a given IO request such as: its latency, queue depth, file 
+size and path (if applicable) etc.
 
 <a id="examples"></a>
 
