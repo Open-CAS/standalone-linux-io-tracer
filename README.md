@@ -104,23 +104,61 @@ A circular buffer is allocated and shared between kernel and userspace for each 
 trace events (example shown below) are then pushed into it.
 
 ```c
-struct iotrace_event_device_desc {
-    /** Event header */
-    struct iotrace_event_hdr hdr;
+struct iotrace_event_hdr {
+    /** Event sequence ID */
+    log_sid_t sid;
 
-    /** Device Id */
+    /** Time stamp */
+    uint64_t timestamp;
+
+    /** Trace event type, iotrace_event_type enunerator */
+    uint32_t type;
+
+    /** Size of this event, including header */
+    uint32_t size;
+} __attribute__((packed, aligned(8)));
+
+...
+
+struct iotrace_event {
+    /** Trace event header */
+    struct iotrace_event_hdr hdr;
+    /**
+     * @brief IO ID
+     *
+     * This ID can be used by the tracing environment to assign an ID to the IO.
+     *
+     * @note Zero means not set.
+     */
     uint64_t id;
 
-    /** Device size in sectors */
-    uint64_t device_size;
+    /** Address of IO in sectors */
+    uint64_t lba;
 
-    /** Canonical device name */
-    char device_name[32];
+    /** Size of IO in sectors */
+    uint32_t len;
 
-    /** Device model */
-    char device_model[256];
+    /** IO class of IO */
+    uint32_t io_class;
+
+    /** Device ID */
+    uint32_t dev_id;
+
+    /** Operation flags: flush, fua, ... .
+     * Values according to iotrace_event_flag_t enum
+     * are summed (OR-ed) together. */
+    uint32_t flags;
+
+    /** Operation type: read, write, discard
+     * (iotrace_event_operation_t enumerator) **/
+    uint8_t operation;
+
+    /** Write hint associated with IO */
+    uint8_t write_hint;
 } __attribute__((packed, aligned(8)));
 ```
+
+The events declaration file can be found [here](https://github.com/Open-CAS/open-cas-telemetry-framework/blob/master/source/octf/trace/iotrace_event.h).
 
 The userspace part of the Standalone Linux IO Tracer reads the entries from the circular buffer and
 translates them into Google Protocol Buffer format (see example below), for easier portability. The
@@ -128,21 +166,90 @@ data is then serialized in trace files in a per CPU basis (e.g. octf.trace.0).
 
 
 ```protobuf
-message EventDeviceDescription {
-    /** Device Id */
-    uint64 id = 1;
+message EventHeader {
+    /** Event sequence ID */
+    uint64 sid = 1;
 
-    /** Device Name */
-    string name = 2;
+    /** Time stamp */
+    uint64 timestamp = 2;
+}
 
-    /** Device size in sectors */
-    uint64 size = 3;
+...
 
-    /** Device Model */
-    string model = 4;
+enum IoType {
+    UnknownIoType = 0;
+    Read = 1;
+    Write = 2;
+    Discard = 3;
+}
+
+...
+
+message EventIo {
+    /** Address of IO in sectors */
+    uint64 lba = 1;
+
+    /** Size of IO in sectors */
+    uint32 len = 2;
+
+    /** IO class of IO */
+    uint32 ioClass = 3;
+
+    /** Device ID */
+    uint64 deviceId = 4;
+
+    /** Operation type: read, write, trim */
+    IoType operation = 5;
+
+    /** Flush flag */
+    bool flush = 6;
+
+    /** FUA flag */
+    bool fua = 7;
+
+    /** Write (lifetime) hint */
+    uint32 writeHint = 8;
+
+    /**
+     * This ID can be used by the tracing environment to assign an ID to the IO.
+     * Zero means not set.
+     */
+    uint64 id = 9;
+}
+
+...
+
+message Event {
+    /** Trace event header */
+    EventHeader header = 1;
+
+    oneof EventType {
+        EventIo io = 2;
+        EventDeviceDescription deviceDescription = 3;
+        EventIoFilesystemMeta filesystemMeta = 4;
+        EventIoCompletion ioCompletion = 5;
+        EventIoFilesystemFileName filesystemFileName = 6;
+        EventIoFilesystemFileEvent filesystemFileEvent = 7;
+    }
 }
 ```
 
+The protobuf events declaration file can be found [here](https://github.com/Open-CAS/open-cas-telemetry-framework/blob/master/source/octf/proto/trace.proto).
+
+You may see the results of translating into the above protobuf format, by executing the following
+command:
+~~~{.sh}
+iotrace --trace-parser --io --path "kernel/2020-07-02_08:52:51" --raw
+~~~
+
+Output:
+~~~{.sh}
+...
+{"header":{"sid":"1","timestamp":"14193058940837"},"deviceDescription":{"id":"271581186","name":"nvme0n1","size":"732585168","model":"INTEL SSDPED1K375GA"}}
+{"header":{"sid":"73","timestamp":"14196894550578"},"io":{"lba":"1652296","len":256,"ioClass":19,"deviceId":"271581186","operation":"Write","flush":false,"fua":false,"writeHint":0,"id":"110842991263647"}}
+{"header":{"sid":"74","timestamp":"14196894550696"},"filesystemMeta":{"refSid":"110842991263647","fileId":{"partitionId":"271581186","id":"76","creationDate":"2020-07-02T06:52:55.712990641Z"},"fileOffset":"0","fileSize":"241960"}}
+...
+~~~
 After tracing is complete these singular trace events may be parsed, combined and translated into
 different Google Protocol Buffer messages (or other formats, such as CSV) when executing Standalone 
 Linux IO Tracer trace parser commands.
@@ -164,7 +271,17 @@ size and path (if applicable) etc.
   module needs to be loaded first. It is done automatically. After
   collecting traces the module will be unloaded.
 
-* The below output example is based on sample traces found [here](https://github.com/Open-CAS/standalone-linux-io-tracer/blob/master/doc/resources/sample_trace.tar.xz)
+* The below output example is based on sample traces found [here](https://github.com/Open-CAS/standalone-linux-io-tracer/blob/master/doc/resources/sample_trace.tar.xz).
+
+  Traces can be unpacked using the following command:
+  ~~~{.sh}
+  tar -xf sample_trace.tar.xz
+  ~~~
+  They can then be moved to the trace repository directory, the path of which can be extracted using:
+
+  ~~~{.sh}
+  iotrace --trace-config --get-trace-repository-path
+  ~~~
 
 * List created traces:
 
