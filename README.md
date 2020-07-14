@@ -272,6 +272,7 @@ size and path (if applicable) etc.
   collecting traces the module will be unloaded.
 
 * The below output example is based on sample traces found [here](https://github.com/Open-CAS/standalone-linux-io-tracer/blob/master/doc/resources/sample_trace.tar.xz).
+  The traces were captured during YCSB workload type A benchmark on RocksDB.
 
   Traces can be unpacked using the following command:
   ~~~{.sh}
