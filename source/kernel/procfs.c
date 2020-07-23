@@ -113,7 +113,9 @@ static long _iotrace_ioctl(struct file *file,
         result = 0;
     } break;
 
-    default: { } break; }
+    default: {
+    } break;
+    }
 
     return result;
 }
@@ -211,6 +213,7 @@ static int _iotrace_mmap_consumer_hdr(struct file *file,
     return 0;
 }
 
+#if IOTRACE_PROCFS_VERSION == 1
 static const struct file_operations _iotrace_trace_ring_fops = {
         .owner = THIS_MODULE,
         .open = _iotrace_open_ring,
@@ -231,6 +234,27 @@ static const struct file_operations _iotrace_consumer_hdr_fops = {
         .release = _iotrace_release,
         .mmap = _iotrace_mmap_consumer_hdr,
 };
+
+#elif IOTRACE_PROCFS_VERSION == 2
+static const struct proc_ops _iotrace_trace_ring_fops = {
+        .proc_open = _iotrace_open_ring,
+        .proc_write = _iotrace_write,
+        .proc_read = _iotrace_read,
+        .proc_ioctl = _iotrace_ioctl,
+        .proc_lseek = _iotrace_llseek,
+        .proc_release = _iotrace_release,
+        .proc_mmap = _iotrace_mmap_trace_ring,
+};
+
+static const struct proc_ops _iotrace_consumer_hdr_fops = {
+        .proc_open = _iotrace_open_consumer_hdr,
+        .proc_write = _iotrace_write,
+        .proc_read = _iotrace_read,
+        .proc_lseek = _iotrace_llseek,
+        .proc_release = _iotrace_release,
+        .proc_mmap = _iotrace_mmap_consumer_hdr,
+};
+#endif
 
 /* Function writing specific data to buffer with semantics similar to snprintf
  *  - input size must not be exceeded and output must be NULL - terminated.
@@ -527,6 +551,7 @@ static ssize_t size_write(struct file *file,
 }
 
 /* device management files ops */
+#if IOTRACE_PROCFS_VERSION == 1
 static struct file_operations add_dev_ops = {.owner = THIS_MODULE,
                                              .write = add_dev_write};
 static struct file_operations del_dev_ops = {.owner = THIS_MODULE,
@@ -544,6 +569,20 @@ static struct file_operations size_ops = {
         .write = size_write,
         .read = size_read,
 };
+#elif IOTRACE_PROCFS_VERSION == 2
+static struct proc_ops add_dev_ops = {.proc_write = add_dev_write};
+static struct proc_ops del_dev_ops = {.proc_write = del_dev_write};
+static struct proc_ops list_dev_ops = {
+        .proc_read = list_dev_read,
+};
+static struct proc_ops get_version_ops = {
+        .proc_read = get_version,
+};
+static struct proc_ops size_ops = {
+        .proc_write = size_write,
+        .proc_read = size_read,
+};
+#endif
 
 /**
  * @brief Initialize iotrace directory in /proc
@@ -557,7 +596,12 @@ static int iotrace_procfs_mngt_init(struct proc_dir_entry *dir) {
 
     struct {
         char *name;
+
+#if IOTRACE_PROCFS_VERSION == 1
         struct file_operations *ops;
+#elif IOTRACE_PROCFS_VERSION == 2
+        struct proc_ops *ops;
+#endif
         umode_t mode;
     } entries[] = {
             {
@@ -701,9 +745,9 @@ static int iotrace_procfs_trace_file_init(struct iotrace_proc_file *proc_file,
         return -ENOENT;
     }
 
-        /* Set trace file sizes. Ring buffer size is going to be set later per
-         * user request, so now just initializing it to 0. Consumer header is
-         * of fixed size and already allocated, so this one is set here. */
+    /* Set trace file sizes. Ring buffer size is going to be set later per
+     * user request, so now just initializing it to 0. Consumer header is
+     * of fixed size and already allocated, so this one is set here. */
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 32)
     proc_set_size(proc_file->trace_ring_entry, 0);
     proc_set_size(proc_file->consumer_hdr_entry, OCTF_TRACE_HDR_SIZE);

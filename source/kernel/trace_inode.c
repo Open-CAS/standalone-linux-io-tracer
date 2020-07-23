@@ -62,7 +62,7 @@ struct cache_entry {
     /**
      * inode creation date stored in entry
      */
-    struct timespec ctime;
+    struct timespec64 ctime;
 
     /**
      * device ID for which indoe belongs to
@@ -587,8 +587,8 @@ int _trace_filename(struct iotrace_state *state,
                     uint64_t part_id,
                     uint64_t file_id,
                     uint64_t parent_id,
-                    struct timespec ctime,
-                    struct timespec parentctime,
+                    struct timespec64 ctime,
+                    struct timespec64 parentctime,
                     struct dentry *dentry) {
     struct iotrace_event_fs_file_name *ev = NULL;
     uint64_t sid = atomic64_inc_return(&state->sid);
@@ -630,8 +630,8 @@ void iotrace_trace_inode(struct iotrace_state *state,
     struct cache_entry *entry;
     struct dentry *this_dentry = NULL, *parent_dentry = NULL;
     struct inode *parent_inode = NULL;
-    struct timespec zero_timespec = {0}, inode_timespec = {0},
-                    parent_timespec = {0};
+    struct timespec64 zero_timespec = {0}, inode_timespec = {0},
+                      parent_timespec = {0};
 
     // Get dentry from inode
     this_dentry = d_find_alias(this_inode);
