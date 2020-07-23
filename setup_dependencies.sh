@@ -15,7 +15,7 @@ function iotrace_get_kernel_package () {
     "RHEL7"|"RHEL8"|"CENTOS7"|"CENTOS8"|"FEDORA")
         echo "kernel-devel"
         ;;
-    "UBUNTU")
+    "UBUNTU"|"DEBIAN")
         echo "linux-headers"
         ;;
     *)
@@ -32,7 +32,7 @@ function iotrace_get_distribution_pkg_dependencies () {
     "RHEL8"|"CENTOS8")
         echo "rpm-build elfutils-libelf-devel"
         ;;
-    "UBUNTU")
+    "UBUNTU"|"DEBIAN")
         echo "dpkg"
         ;;
     *)
@@ -64,7 +64,7 @@ function iotrace_setup_kernel_headers () {
         "RHEL7"|"CENTOS7"|"RHEL8"|"CENTOS8"|"FEDORA")
             ${installer} "kernel-devel-uname-r == $(uname -r)"
             ;;
-        "UBUNTU")
+        "UBUNTU"|"DEBIAN")
             ${installer} linux-headers-$(uname -r)
             ;;
         *)
