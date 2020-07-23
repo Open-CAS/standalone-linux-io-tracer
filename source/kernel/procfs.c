@@ -254,6 +254,8 @@ static const struct proc_ops _iotrace_consumer_hdr_fops = {
         .proc_release = _iotrace_release,
         .proc_mmap = _iotrace_mmap_consumer_hdr,
 };
+#else
+#error Unrecognized procfs version
 #endif
 
 /* Function writing specific data to buffer with semantics similar to snprintf
@@ -582,6 +584,8 @@ static struct proc_ops size_ops = {
         .proc_write = size_write,
         .proc_read = size_read,
 };
+#else
+#error Unrecognized procfs version
 #endif
 
 /**
@@ -601,6 +605,8 @@ static int iotrace_procfs_mngt_init(struct proc_dir_entry *dir) {
         struct file_operations *ops;
 #elif IOTRACE_PROCFS_VERSION == 2
         struct proc_ops *ops;
+#else
+#error Unrecognized procfs version
 #endif
         umode_t mode;
     } entries[] = {
