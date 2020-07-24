@@ -48,11 +48,10 @@ struct iotrace_bdev_data {
 void static iotrace_bdev_add_oncpu(void *info) {
     struct iotrace_bdev_data *data = info;
     struct iotrace_bdev *trace_bdev = data->trace_bdev;
-    unsigned cpu = smp_processor_id();
+    unsigned cpu = get_cpu();
     struct gendisk *gd = data->bdev->bd_disk;
     struct iotrace_context *iotrace = iotrace_get_context();
     uint64_t bdev_size = 0;
-
     bdev_size = (data->bdev->bd_contains == data->bdev)
                         ? get_capacity(data->bdev->bd_disk)
                         : data->bdev->bd_part->nr_sects;
@@ -62,6 +61,7 @@ void static iotrace_bdev_add_oncpu(void *info) {
 
     iotrace_trace_desc(iotrace, cpu, disk_devt(gd), gd->disk_name,
                        data->bdev_model, bdev_size);
+    put_cpu();
 }
 
 static void iotrace_bdev_get_model(struct iotrace_bdev_data *data) {
@@ -120,6 +120,7 @@ int iotrace_bdev_add(struct iotrace_bdev *trace_bdev, const char *path) {
     struct iotrace_context *context = iotrace_get_context();
     int result;
     unsigned i;
+    unsigned cpu;
 
     if (strnlen(path, PATH_MAX) >= PATH_MAX) {
         printk(KERN_ERR "Path too long\n");
@@ -145,17 +146,18 @@ int iotrace_bdev_add(struct iotrace_bdev *trace_bdev, const char *path) {
      * Get per-cpu variables. CPU can potentially change during execution
      * of this function, but it is ok - all CPUs should have identical copies
      * at this point */
-    bdev_list = per_cpu_ptr(trace_bdev->list, smp_processor_id());
-
+    cpu = get_cpu();
+    bdev_list = per_cpu_ptr(trace_bdev->list, cpu);
     /* Check if this queue is traced already */
     for (i = 0; i < trace_bdev->num; i++) {
         if (bdev_list[i]->bd_queue == bdev->bd_queue) {
+            put_cpu();
             printk(KERN_ERR "Device already traced\n");
             result = -EPERM;
             goto put;
         }
     }
-
+    put_cpu();
     /**
      * Add bdev to per-cpu array, actually running code on each CPU in order
      * to synchronize with I/O
@@ -198,12 +200,13 @@ exit:
 void static iotrace_bdev_remove_oncpu(void *info) {
     struct iotrace_bdev_data *data = info;
     struct iotrace_bdev *trace_bdev = data->trace_bdev;
-    unsigned cpu = smp_processor_id();
+    unsigned cpu = get_cpu();
     struct block_device **bdev_list = per_cpu_ptr(trace_bdev->list, cpu);
 
     BUG_ON(trace_bdev->num == 0);
     bdev_list[data->idx] = bdev_list[trace_bdev->num - 1];
     bdev_list[trace_bdev->num - 1] = NULL;
+    put_cpu();
 }
 
 /**
@@ -220,17 +223,15 @@ void static iotrace_bdev_remove_oncpu(void *info) {
 static int iotrace_bdev_remove_locked(struct iotrace_bdev *trace_bdev,
                                       struct block_device *bdev) {
     struct iotrace_bdev_data data = {.trace_bdev = trace_bdev};
-    unsigned cpu = smp_processor_id();
+    unsigned cpu = get_cpu();
     struct block_device **bdev_list;
     int result;
     unsigned i;
-
     /**
      * Get per-cpu variables. CPU can potentially change during execution
      * of this function, but it is ok - all CPUs should have identical copies
      * at this point */
     bdev_list = per_cpu_ptr(trace_bdev->list, cpu);
-
     result = -ENOENT;
     for (i = 0; i < trace_bdev->num; i++) {
         if (bdev_list[i] == bdev) {
@@ -238,6 +239,7 @@ static int iotrace_bdev_remove_locked(struct iotrace_bdev *trace_bdev,
             break;
         }
     }
+    put_cpu();
 
     if (result)
         goto exit;
@@ -296,11 +298,11 @@ error:
  */
 void iotrace_bdev_remove_all_locked(struct iotrace_bdev *trace_bdev) {
     struct block_device **bdev_list;
-
-    bdev_list = per_cpu_ptr(trace_bdev->list, smp_processor_id());
-
+    unsigned cpu = get_cpu();
+    bdev_list = per_cpu_ptr(trace_bdev->list, cpu);
     while (trace_bdev->num)
         iotrace_bdev_remove_locked(trace_bdev, bdev_list[trace_bdev->num - 1]);
+    put_cpu();
 }
 
 /**
@@ -322,20 +324,23 @@ int iotrace_bdev_list(struct iotrace_bdev *trace_bdev,
     size_t len;
     const char *name;
     struct block_device **bdev_list;
+    unsigned cpu;
     int num;
 
     mutex_lock(&iotrace_get_context()->mutex);
-
-    bdev_list = per_cpu_ptr(trace_bdev->list, smp_processor_id());
+    cpu = get_cpu();
+    bdev_list = per_cpu_ptr(trace_bdev->list, cpu);
     for (i = 0; i < trace_bdev->num; i++) {
         name = bdev_list[i]->bd_disk->disk_name;
         len = strnlen(name, DISK_NAME_LEN);
         if (len >= DISK_NAME_LEN) {
             mutex_unlock(&iotrace_get_context()->mutex);
+            put_cpu();
             return -ENOSPC;
         }
         strlcpy(list[i], name, entry_len);
     }
+    put_cpu();
     num = trace_bdev->num;
 
     mutex_unlock(&iotrace_get_context()->mutex);
