@@ -442,6 +442,9 @@ static void _fsm_init(iotrace_inode_tracer_t inode_tracer) {
 
     /* Allocate FS monitor */
     fsm = kzalloc(sizeof(*fsm), GFP_KERNEL);
+    if (!fsm) {
+        goto ERROR;
+    }
     refcount_set(&fsm->refcnt, 1);
 
     /* Allocate FS notify group for receiving fs events */
@@ -454,6 +457,9 @@ static void _fsm_init(iotrace_inode_tracer_t inode_tracer) {
     BUG_ON(fsm->group->private);
 
     priv = kzalloc(sizeof(struct iotrace_group_priv), GFP_KERNEL);
+    if (!priv) {
+        goto ERROR;
+    }
     priv->fsm = fsm;
     priv->mark_cache = kmem_cache_create(
             "fsmark_cache", sizeof(struct fsnotify_mark), 0, 0, NULL);
