@@ -1,5 +1,5 @@
 # Copyright(c) 2012-2020 Intel Corporation
-# SPDX-License-Identifier: BSD-3-Clause-Clear
+# SPDX-License-Identifier: BSD-3-Clause
 
 override EXTRA_CFLAGS += -I$(M)
 override EXTRA_CFLAGS += -I$(GENERATED_HEADER)
