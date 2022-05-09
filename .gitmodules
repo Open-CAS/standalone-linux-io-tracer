@@ -1,6 +1,3 @@
 [submodule "modules/open-cas-telemetry-framework"]
 	path = modules/open-cas-telemetry-framework
 	url = https://github.com/Open-CAS/open-cas-telemetry-framework
-[submodule "modules/test-framework"]
-	path = modules/test-framework
-	url = https://github.com/Open-CAS/test-framework
