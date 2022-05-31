@@ -35,6 +35,9 @@ private:
             const std::string &fieldName,
             const ::google::protobuf::Descriptor *messageDescriptor);
 
+    void parseTag(const std::string &tag,
+                  std::map<std::string, std::string> &tags);
+
     void probeModule();
 
     void removeModule();

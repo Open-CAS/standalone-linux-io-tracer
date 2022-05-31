@@ -4,6 +4,7 @@
  */
 
 #include "InterfaceKernelTraceCreatingImpl.h"
+
 #include <sys/types.h>
 #include <chrono>
 #include <cstdio>
@@ -44,6 +45,7 @@ void InterfaceKernelTraceCreatingImpl::StartTracing(
         ::google::protobuf::Closure *done) {
     (void) response;
     try {
+        std::map<std::string, std::string> tags;
         uint32_t maxDuration = request->maxduration();
         auto maxSize = request->maxsize();
         auto circBufferSize = request->circbuffersize();
@@ -59,6 +61,10 @@ void InterfaceKernelTraceCreatingImpl::StartTracing(
                                     descriptor)) {
             throw Exception("Invalid circular buffer size");
         }
+        /* Parse tags */
+        for (const auto &tag : request->tag()) {
+            parseTag(tag, tags);
+        }
 
         probeModule();
 
@@ -71,9 +77,12 @@ void InterfaceKernelTraceCreatingImpl::StartTracing(
         KernelTraceExecutor kernelExecutor(devices, circBufferSize);
 
         TraceManager manager(m_nodePath, &kernelExecutor);
+        for (const auto &tag : tags) {
+            manager.addTag(tag.first, tag.second);
+        }
 
         manager.startJobs(maxDuration, maxSize, circBufferSize,
-                          request->label(), SerializerType::FileSerializer);
+                          SerializerType::FileSerializer);
 
         kernelExecutor.waitUntilStopTrace();
 
@@ -143,6 +152,41 @@ void InterfaceKernelTraceCreatingImpl::removeModule() {
     int result = std::system(REMOVE_MODULE_COMMAND);
     if (result) {
         log::cerr << "Cannot remove iotrace kernel module" << std::endl;
+    }
+}
+
+void InterfaceKernelTraceCreatingImpl::parseTag(
+        const std::string &tag,
+        std::map<std::string, std::string> &tags) {
+    auto trimStrFn = [](std::string str) {
+        const char *spaces = " \t\n\r\f\v";
+        str.erase(0, str.find_first_not_of(spaces));
+        str.erase(str.find_last_not_of(spaces) + 1);
+        return str;
+    };
+
+    auto delimiter = tag.find('=');
+    if (0 == delimiter) {
+        throw Exception("Missing tag name");
+    } else if (delimiter == tag.npos) {
+        throw Exception("Missing tag value");
+    } else {
+        auto name = tag.substr(0, delimiter);
+        auto len = tag.length() - delimiter - 1;
+        auto value = tag.substr(delimiter + 1, len);
+
+        name = trimStrFn(name);
+        value = trimStrFn(value);
+
+        if (!name.length()) {
+            throw Exception("Tag name empty");
+        }
+
+        if (!value.length()) {
+            throw Exception("Tag value empty");
+        }
+
+        tags[name] = value;
     }
 }
 
