@@ -146,7 +146,7 @@ static void _trace_bio_fs_meta(octf_trace_t trace,
     iotrace_event_init_hdr(&ev->hdr, iotrace_event_type_fs_meta, sid,
                            ktime_to_ns(ktime_get()), sizeof(*ev));
 
-    ev->ref_sid = ref_sid;
+    ev->ref_id = ref_sid;
     ev->file_id.id = info->inode->i_ino;
     ev->file_id.ctime.tv_nsec = info->inode->i_ctime.tv_nsec;
     ev->file_id.ctime.tv_sec = info->inode->i_ctime.tv_sec;
@@ -198,10 +198,14 @@ void iotrace_trace_bio(struct iotrace_context *context,
     ev->dev_id = dev_id;
     ev->write_hint = IOTRACE_GET_WRITE_HINT(bio);
 
-    if (!bio_has_data(bio))
-        ev->io_class = DSS_UNCLASSIFIED;
-    else
-        ev->io_class = io_class = _get_dss_io_class(bio, &info);
+    if (bio_has_data(bio)) {
+        io_class = _get_dss_io_class(bio, &info);
+        if (io_class == DSS_DATA_DIRECT) {
+            ev->flags |= iotrace_event_flag_direct;
+        } else if (io_class == DSS_METADATA) {
+            ev->flags |= iotrace_event_flag_metadata;
+        }
+    }
 
     octf_trace_commit_wr_buffer(trace, ev_hndl);
 

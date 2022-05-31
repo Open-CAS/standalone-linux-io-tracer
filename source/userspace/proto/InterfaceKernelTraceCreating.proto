@@ -51,11 +51,15 @@ message StartIoTraceRequest {
         (opts_param).cli_num.default_value = 100
     ];
 
-    string label = 5 [
+     // deprecating label, now user can define tags
+    reserved 5;
+
+    repeated string tag = 6 [
         (opts_param).cli_required = false,
-        (opts_param).cli_short_key = "l",
-        (opts_param).cli_long_key = "label",
-        (opts_param).cli_desc = "User defined label"
+        (opts_param).cli_short_key = "g",
+        (opts_param).cli_long_key = "tags",
+        (opts_param).cli_desc = "User defined tags, limit is 1024",
+        (opts_param).cli_str.repeated_limit = 1024
     ];
 }
 
