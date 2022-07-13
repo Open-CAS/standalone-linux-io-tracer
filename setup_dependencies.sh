@@ -25,15 +25,17 @@ function iotrace_get_kernel_package () {
 }
 
 function iotrace_get_distribution_pkg_dependencies () {
+    local pkgs="zlib clang llvm libblkid-devel bpftool libbpf-devel"
+
     case "${DISTRO}" in
     "RHEL7"|"CENTOS7"|"FEDORA")
-        echo "rpm-build"
+        echo "${pkgs} rpm-build elfutils-libelf-devel"
         ;;
     "RHEL8"|"CENTOS8")
-        echo "rpm-build elfutils-libelf-devel"
+        echo "${pkgs} rpm-build elfutils-libelf-devel"
         ;;
     "UBUNTU"|"DEBIAN")
-        echo "dpkg"
+        echo "${pkgs} dpkg"
         ;;
     *)
         error "Unknown Linux distribution"
