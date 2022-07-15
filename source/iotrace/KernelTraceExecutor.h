@@ -6,10 +6,17 @@
 #ifndef SOURCE_USERSPACE_KERNELTRACEEXECUTOR_H
 #define SOURCE_USERSPACE_KERNELTRACEEXECUTOR_H
 
+#include <stdint.h>
 #include <list>
 #include <string>
+#include <thread>
 #include <vector>
 #include <octf/interface/ITraceExecutor.h>
+#include <octf/trace/trace.h>
+#include "KernelRingTraceProducer.h"
+
+struct iotrace_bpf;
+struct perf_buffer;
 
 namespace octf {
 
@@ -27,7 +34,7 @@ public:
     KernelTraceExecutor(const std::vector<std::string> &devices,
                         uint32_t circBufferSize);
 
-    virtual ~KernelTraceExecutor() = default;
+    virtual ~KernelTraceExecutor();
 
     bool startTrace() override;
 
@@ -44,23 +51,27 @@ public:
      */
     void waitUntilStopTrace();
 
-    /**
-     * @brief Checks if IO tracer Linux kernel module is loaded
-     *
-     * @retval true module is loaded
-     * @retval false module is not loaded
-     */
-    static bool isKernelModuleLoaded();
+private:
+    static void perfEventHandler(void *ctx,
+                                 int cpu,
+                                 void *data,
+                                 unsigned int data_sz);
+
+    static void perfEventLost(void *ctx, int cpu, long long unsigned int lost);
+
+    void destroyBpf();
+
+    void initDeviceList(const std::vector<std::string> &devices);
 
 private:
-    bool checkModuleCompatibility();
-
-    bool writeSatraceProcfs(std::string file, const std::string &text);
-
-    void stopDevices();
-
-    std::vector<std::string> m_devices;
-    std::list<std::string> m_startedDevices;
+    const uint32_t m_traceQueueCount;
+    struct iotrace_bpf *m_bpf;
+    struct perf_buffer *m_bpfPerf;
+    std::thread m_bpfThread;
+    std::vector<std::shared_ptr<KernelRingTraceBuffer>> m_traceProducerRings;
+    KernelRingDevListShRef m_devList;
+    KernelRingSeqIdShRef m_refSeqId;
+    bool m_running;
 };
 
 }  // namespace octf

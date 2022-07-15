@@ -38,10 +38,7 @@ private:
     void parseTag(const std::string &tag,
                   std::map<std::string, std::string> &tags);
 
-    void probeModule();
-
-    void removeModule();
-
+private:
     const NodePath m_nodePath;
 };
 
