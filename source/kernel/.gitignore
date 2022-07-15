@@ -1,8 +1,0 @@
-!\.gitignore
-*.o
-*.ko
-*order
-*symvers
-*.mod.c
-*.cmd
-configure.d/.*
