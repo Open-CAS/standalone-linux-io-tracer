@@ -52,13 +52,6 @@ package: all
 	$(MAKE) -C $(BUILD_DIR) package
 
 package_source:
-	@if [ -d $(BUILD_DIR) ] ; \
-	then \
-		if [ -f $(BUILD_DIR)/Makefile ] ; \
-		then \
-			$(MAKE) -C $(BUILD_DIR) clean-module ; \
-		fi ; \
-	fi
 	$(MAKE) init
 	$(CMAKE) -P version.cmake
 	cd modules/open-cas-telemetry-framework && $(CMAKE) -P octf-version.cmake
@@ -81,7 +74,6 @@ clean:
 		if [ -f $(BUILD_DIR)/Makefile ] ; \
 		then \
 			$(MAKE) -C $(BUILD_DIR) clean ; \
-			$(MAKE) -C $(BUILD_DIR) clean-module ; \
 		fi ; \
 		rm -rf $(BUILD_DIR) ; \
 	fi
