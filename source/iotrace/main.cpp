@@ -1,57 +1,63 @@
-// SPDX-License-Identifier: (LGPL-2.1 OR BSD-2-Clause)
-/* Copyright (c) 2020 Facebook */
-#include <bpf/libbpf.h>
-#include <stdio.h>
-#include <sys/resource.h>
-#include <unistd.h>
-#include "iotrace.skel.h"
+/*
+ * Copyright(c) 2012-2018 Intel Corporation
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 
-static int libbpf_print_fn(enum libbpf_print_level level,
-                           const char *format,
-                           va_list args) {
-    return vfprintf(stderr, format, args);
-}
+#include <memory>
+#include <octf/cli/Executor.h>
+#include <octf/interface/InterfaceConfigurationImpl.h>
+#include <octf/interface/InterfaceTraceManagementImpl.h>
+#include <octf/interface/InterfaceTraceParsingImpl.h>
+#include <octf/utils/Exception.h>
+#include "InterfaceKernelTraceCreatingImpl.h"
+#include "procfs_files.h"
 
-int main(int argc, char **argv) {
-    struct iotrace_bpf *bpf;
-    int err;
+using namespace std;
+using namespace octf;
+using namespace octf::cli;
 
-    libbpf_set_strict_mode(LIBBPF_STRICT_ALL);
-    /* Set up libbpf errors and debug info callback */
-    libbpf_set_print(libbpf_print_fn);
+int main(int argc, char *argv[]) {
+    const string APP_NAME = "iotrace";
+    try {
+        // Create executor and local command set
+        Executor ex;
 
-    /* Open BPF application */
-    bpf = iotrace_bpf__open();
-    if (!bpf) {
-        fprintf(stderr, "Failed to open BPF skeleton\n");
+        auto &properties = ex.getCliProperties();
+
+        properties.setName(APP_NAME);
+        properties.setVersion(IOTRACE_VERSION_STRING);
+
+        // Create interfaces
+
+        // Trace Management Interface
+        InterfaceShRef iTraceManagement =
+                std::make_shared<InterfaceTraceManagementImpl>("");
+
+        // Kernel Trace Creating Interface
+        InterfaceShRef iKernelTarcing =
+                std::make_shared<InterfaceKernelTraceCreatingImpl>();
+
+        // Trace Parsing Interface
+        InterfaceShRef iTraceParsing =
+                std::make_shared<InterfaceTraceParsingImpl>();
+
+        // Configuration Interface for setting trace repository path
+        InterfaceShRef iConfiguration =
+                std::make_shared<InterfaceConfigurationImpl>();
+
+        // Add interfaces to executor
+        ex.addModules(iTraceManagement, iKernelTarcing, iTraceParsing,
+                      iConfiguration);
+
+        // Execute command
+        return ex.execute(argc, argv);
+
+    } catch (Exception &e) {
+        log::cerr << e.what() << endl;
+        return 1;
+    } catch (std::exception &e) {
+        log::critical << APP_NAME << " execution interrupted: " << e.what()
+                      << endl;
         return 1;
     }
-
-    /* Load & verify BPF programs */
-    err = iotrace_bpf__load(bpf);
-    if (err) {
-        fprintf(stderr, "Failed to load and verify BPF skeleton\n");
-        goto cleanup;
-    }
-
-    /* Attach tracepoint handler */
-    err = iotrace_bpf__attach(bpf);
-    if (err) {
-        fprintf(stderr, "Failed to attach BPF skeleton\n");
-        goto cleanup;
-    }
-
-    printf("Successfully started! Please run `sudo cat "
-           "/sys/kernel/debug/tracing/trace_pipe` "
-           "to see output of the BPF programs.\n");
-
-    for (;;) {
-        /* trigger our BPF program */
-        fprintf(stderr, ".");
-        sleep(1);
-    }
-
-cleanup:
-    iotrace_bpf__destroy(bpf);
-    return -err;
 }
