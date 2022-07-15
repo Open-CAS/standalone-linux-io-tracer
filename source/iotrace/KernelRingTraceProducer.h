@@ -7,10 +7,32 @@
 #define SOURCE_USERSPACE_KERNELRINGTRACEPRODUCER_H
 
 #include <atomic>
+#include <functional>
+#include <list>
 #include <memory>
-#include <octf/interface/IRingTraceProducer.h>
+#include <vector>
+#include <octf/interface/TraceProducerLocal.h>
+#include <octf/trace/iotrace_event.h>
+#include <octf/utils/NonCopyable.h>
 
 namespace octf {
+
+typedef std::list<struct iotrace_event_device_desc> KernelRingDevList;
+typedef std::shared_ptr<KernelRingDevList> KernelRingDevListShRef;
+typedef std::atomic<uint64_t> KernelRingSeqId;
+typedef std::shared_ptr<KernelRingSeqId> KernelRingSeqIdShRef;
+
+struct KernelRingTraceBuffer : public NonCopyable {
+    KernelRingTraceBuffer()
+            : devs()
+            , refSeqId() {}
+    virtual ~KernelRingTraceBuffer() {}
+
+    KernelRingDevListShRef devs;
+    KernelRingSeqIdShRef refSeqId;
+    std::function<void(const void *trace, const uint32_t traceSize)> pushTrace;
+    std::function<void(const uint64_t lost)> lostTrace;
+};
 
 /**
  * @brief Producer which utilizes ring buffer.
@@ -19,52 +41,18 @@ namespace octf {
  * and utilizes procfs files. Because of this, pushTrace method
  * is not used.
  */
-class KernelRingTraceProducer : public IRingTraceProducer {
+class KernelRingTraceProducer : public TraceProducerLocal {
 public:
-    KernelRingTraceProducer(int cpuId);
+    KernelRingTraceProducer(std::shared_ptr<KernelRingTraceBuffer> traceBuffer,
+                            int cpuId);
     ~KernelRingTraceProducer();
-
-    char *getBuffer(void) override;
-
-    size_t getSize(void) const override;
-
-    octf_trace_hdr_t *getConsumerHeader(void) override;
-
-    bool wait(std::chrono::time_point<std::chrono::steady_clock> &endTime)
-            override;
-
-    void stop(void) override;
 
     void initRing(uint32_t memoryPoolSize) override;
 
-    void deinitRing() override;
-
     int getCpuAffinity(void) override;
 
-    int32_t getQueueId() override;
-
-    /**
-     * @note Because this producer utilizes procfs files to push traces
-     * this method is not used.
-     */
-    int pushTrace(const void *trace, const uint32_t traceSize) override;
-
 private:
-    struct MappedFile {
-        MappedFile(std::string path,
-                   int open_flags,
-                   int map_prot,
-                   uint64_t max_size);
-        ~MappedFile();
-
-        char *buffer;
-        int fd;
-        size_t length;
-    };
-
-    std::unique_ptr<struct MappedFile> m_ring, m_consumer_hdr;
-
-    std::atomic<bool> m_stopped;
+    std::shared_ptr<KernelRingTraceBuffer> m_traceBuffer;
     int m_cpuId;
 };
 

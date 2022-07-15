@@ -10,11 +10,23 @@
 #include <octf/interface/InterfaceTraceParsingImpl.h>
 #include <octf/utils/Exception.h>
 #include "InterfaceKernelTraceCreatingImpl.h"
-#include "procfs_files.h"
 
 using namespace std;
 using namespace octf;
 using namespace octf::cli;
+
+#define VALUE_TO_STRING(x) #x
+#define TOSTR(x) VALUE_TO_STRING(x)
+
+#define VALUE_TO_STRING(x) #x
+#define TOSTR(x) VALUE_TO_STRING(x)
+
+#ifdef IOTRACE_VERSION_LABEL
+#define IOTRACE_VERSION_STRING \
+TOSTR(IOTRACE_VERSION) " (" TOSTR(IOTRACE_VERSION_LABEL) ")"
+#else
+#define IOTRACE_VERSION_STRING TOSTR(IOTRACE_VERSION)
+#endif
 
 int main(int argc, char *argv[]) {
     const string APP_NAME = "iotrace";
