@@ -1,5 +1,14 @@
 # Standalone Linux IO Tracer
 
+## NEWS
+Standalone Linux IO Tracer switched to using **eBPF** for capturing traces.
+Previously, the tracer ran custom loadable kernel module for that. eBPF tracing
+method is more secure for user. The version which uses the kernel module will
+be obsoleted. In case you want to run old version, switch to this branch:
+[master-kernel](https://github.com/Open-CAS/standalone-linux-io-tracer/tree/master-kernel)
+
+# Description
+
 Standalone Linux IO Tracer (iotrace) is a tool for block device I/O tracing
 and management of created traces
 
@@ -9,11 +18,14 @@ classification. Extended classification contains information about I/O type
 (direct / filesystem metadata / file) and target file attributes(e.g. file
 size).
 
-iotrace is based on [Open CAS Telemetry Framework (OCTF)](https://github.com/Open-CAS/open-cas-telemetry-framework). Collected traces are stored in OCTF trace
-location. Traces can later be converted to JSON or CSV format.
+iotrace is based on [Open CAS Telemetry Framework (OCTF)](https://github.com/Open-CAS/open-cas-telemetry-framework).
+Collected traces are stored in OCTF trace location. Traces can later be
+converted to JSON or CSV format.
 
-iotrace consists of a kernel tracing module (iotrace.ko) and an executable
-(iotrace) with command line interface.
+The iotrace executable (iotrace command line application) includes an eBPF
+program which is loaded to the Linux kernel during tracing. The eBPF program
+captures trace information and shares them to the userspace iotrace application.
+This is serialized to the OCTF IO trace.
 
 # In this readme:
 
@@ -32,12 +44,9 @@ iotrace consists of a kernel tracing module (iotrace.ko) and an executable
 Right now the compilation of Standalone Linux IO Tracer is tested on the
 following OSes:
 
-|OS                            | Version           | Comment
-|------------------------------|-------------------|-------------------
-|RHEL/CentOS                   | 7.7               |
-|RHEL/CentOS                   | 8.1               |
-|Ubuntu                        | 18.04             |
-|Fedora                        | 31                |
+| OS     | Version | Kernel Version |
+| ------ | ------- | -------------- |
+| Fedora | 36      | 5.18.10        |
 
 <a id="source"></a>
 
@@ -54,17 +63,6 @@ cd standalone-linux-io-tracer
 
 ## Deployment
 
-### Checkout
-To get stable version of iotrace checkout latest release:
-
-~~~{.sh}
-git clone https://github.com/Open-CAS/standalone-linux-io-tracer/
-cd standalone-linux-io-tracer
-git checkout $(git tag | grep "^v[[:digit:]]*.[[:digit:]]*.[[:digit:]]*$" | tail -1)
-~~~
-
-But if you are going to develop iotrace, it is ok to checkout master branch.
-
 ### Prerequisites
 
 * To build and use Standalone Linux IO Tracer, setup prerequisites first in the following way:
@@ -74,34 +72,47 @@ But if you are going to develop iotrace, it is ok to checkout master branch.
   sudo ./setup_dependencies.sh
   ~~~
 
-  Installed dependencies include [OCTF](https://github.com/Open-CAS/open-cas-telemetry-framework),
-  Google Protocol Buffers, CMake and Google Test. The dependencies are either installed with yum/apt
-  or installed to a dedicated directory /opt/octf/ to avoid overwriting already installed ones.
+  Installed dependencies include [OCTF](https://github.com/Open-CAS/open-cas-telemetry-framework),   Google Protocol Buffers, CMake and Google
+  Test. The dependencies are either installed with dnf/yum/apt or installed
+  to a dedicated directory /opt/octf/ to avoid overwriting already installed ones.
 
 ### Build
 
-Both the executable and the kernel module (and OCTF if submodule is present) are built with:
+To build the iotrace executable invoke:
 ~~~{.sh}
 make
 ~~~
 
+You can try to create rpm/deb installation package.
+~~~{.sh}
+make package
+~~~
+For example in case of Fedora OS, the generated installation package is located
+in build/release/iotrace-XX.YY.ZZ-1.x86_64.rpm.
+
 ### Installation
 
-Both the executable and the kernel module (and OCTF if submodule is present) are installed with:
+To install iotrace call:
 ~~~{.sh}
 sudo make install
+~~~
+
+Also you can try to install iotrace using rpm/deb package:
+~~~{.sh}
+rpm -Uvh iotrace-XX.YY.ZZ-1.x86_64.rpm.
 ~~~
 
 <a id="theory_of_operation"></a>
 
 ## Theory of operation
 
-Standalone Linux IO Tracer captures request data by registering to multiple trace points surfaced
-by the Linux kernel (e.g. BIO queueing, BIO splitting, BIO completion). This allows for gathering of
-IO metadata at the request level and passing it between kernel and userspace.
+Standalone Linux IO Tracer captures request data by registering to multiple
+trace points surfaced by the Linux kernel (e.g. BIO queueing, BIO splitting,
+BIO completion). This allows for gathering of IO metadata at the request level
+and passing it between kernel and userspace.
 
-A circular buffer is allocated and shared between kernel and userspace for each logical CPU core and
-trace events (example shown below) are then pushed into it.
+A perf buffer is allocated and shared between the eBPF program and the userspace
+application. The below example shows a recorded traces event.
 
 ```c
 struct iotrace_event_hdr {
@@ -160,9 +171,10 @@ struct iotrace_event {
 
 The events declaration file can be found [here](https://github.com/Open-CAS/open-cas-telemetry-framework/blob/master/source/octf/trace/iotrace_event.h).
 
-The userspace part of the Standalone Linux IO Tracer reads the entries from the circular buffer and
-translates them into Google Protocol Buffer format (see example below), for easier portability. The
-data is then serialized in trace files in a per CPU basis (e.g. octf.trace.0).
+The userspace part of the Standalone Linux IO Tracer reads the entries from
+the perf buffer and translates them into Google Protocol Buffer format
+(see example below), for easier portability. The data is then serialized in
+trace files in a per CPU basis (e.g. octf.trace.0).
 
 
 ```protobuf
@@ -236,7 +248,8 @@ message Event {
 
 The protobuf events declaration file can be found [here](https://github.com/Open-CAS/open-cas-telemetry-framework/blob/master/source/octf/proto/trace.proto).
 
-You may see the results of translating into the above protobuf format, by executing the following
+You may see the results of translating into the above protobuf format,
+by executing the following
 command:
 ~~~{.sh}
 iotrace --trace-parser --io --path "kernel/2020-07-02_08:52:51" --raw
@@ -250,13 +263,13 @@ Output:
 {"header":{"sid":"74","timestamp":"14196894550696"},"filesystemMeta":{"refSid":"110842991263647","fileId":{"partitionId":"271581186","id":"76","creationDate":"2020-07-02T06:52:55.712990641Z"},"fileOffset":"0","fileSize":"241960"}}
 ...
 ~~~
-After tracing is complete these singular trace events may be parsed, combined and translated into
-different Google Protocol Buffer messages (or other formats, such as CSV) when executing Standalone 
-Linux IO Tracer trace parser commands.
+After tracing is complete these singular trace events may be parsed, combined
+and translated into different Google Protocol Buffer messages (or other formats,
+such as CSV) when executing Standalone Linux IO Tracer trace parser commands.
 
-For example the **--trace-parser --io** command analyzes multiple submission, split and completion
-events to give a more complete view of a given IO request such as: its latency, queue depth, file 
-size and path (if applicable) etc.
+For example the **--trace-parser --io** command analyzes multiple submission,
+split and completion events to give a more complete view of a given IO request
+such as: its latency, queue depth, file size and path (if applicable) etc.
 
 <a id="examples"></a>
 
@@ -267,18 +280,15 @@ size and path (if applicable) etc.
   sudo iotrace --start-tracing --devices /dev/sda,/dev/sdb1 --time 3600 --size 1024
   ~~~
 
-  > **NOTE:**  To allow tracing of block devices, Linux kernel tracing
-  module needs to be loaded first. It is done automatically. After
-  collecting traces the module will be unloaded.
-
-* The below output example is based on sample traces found [here](https://github.com/Open-CAS/standalone-linux-io-tracer/blob/master/doc/resources/sample_trace.tar.xz).
+  * The below output example is based on sample traces found [here](https://github.com/Open-CAS/standalone-linux-io-tracer/blob/master/doc/resources/sample_trace.tar.xz).
   The traces were captured during YCSB workload type A benchmark on RocksDB.
 
   Traces can be unpacked using the following command:
   ~~~{.sh}
   tar -xf sample_trace.tar.xz
   ~~~
-  They can then be moved to the trace repository directory, the path of which can be extracted using:
+  They can then be moved to the trace repository directory, the path of which
+  can be extracted using:
 
   ~~~{.sh}
   iotrace --trace-config --get-trace-repository-path
@@ -298,7 +308,7 @@ size and path (if applicable) etc.
     {
      "tracePath": "kernel/2020-07-02_08:52:51",
      "state": "COMPLETE"
-     "label": "ycsb;a;rocksdb;uniform;xfs;381MiB;16000000"
+     "tags": {}
     }
   ]
   }
