@@ -1,4 +1,0 @@
-depmod
-if [ -x "$(command -v weak-modules)" ]; then
-	ls "/lib/modules/${uname_r}/extra/iotrace.ko" | weak-modules --add-modules --no-initramfs
-fi
