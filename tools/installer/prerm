@@ -1,3 +1,0 @@
-if [ -x "$(command -v weak-modules)" ]; then
-	ls "/lib/modules/${uname_r}/extra/iotrace.ko" | weak-modules --remove-modules --no-initramfs
-fi
