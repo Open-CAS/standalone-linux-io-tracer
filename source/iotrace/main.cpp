@@ -10,6 +10,7 @@
 #include <octf/interface/InterfaceTraceParsingImpl.h>
 #include <octf/utils/Exception.h>
 #include "InterfaceKernelTraceCreatingImpl.h"
+#include "octf/trace/parser/extensions/LRUExtensionBuilderFactory.h"
 
 using namespace std;
 using namespace octf;
@@ -23,7 +24,7 @@ using namespace octf::cli;
 
 #ifdef IOTRACE_VERSION_LABEL
 #define IOTRACE_VERSION_STRING \
-TOSTR(IOTRACE_VERSION) " (" TOSTR(IOTRACE_VERSION_LABEL) ")"
+    TOSTR(IOTRACE_VERSION) " (" TOSTR(IOTRACE_VERSION_LABEL) ")"
 #else
 #define IOTRACE_VERSION_STRING TOSTR(IOTRACE_VERSION)
 #endif
@@ -50,8 +51,12 @@ int main(int argc, char *argv[]) {
                 std::make_shared<InterfaceKernelTraceCreatingImpl>();
 
         // Trace Parsing Interface
-        InterfaceShRef iTraceParsing =
-                std::make_shared<InterfaceTraceParsingImpl>();
+        auto iTraceParsing = std::make_shared<InterfaceTraceParsingImpl>();
+        // Add custom builders to Parsing interface
+        iTraceParsing->RegisterExtensionBuilder(
+                "lru", std::make_shared<octf::LRUExtensionBuilderFactory>());
+
+        InterfaceShRef iTraceParsingShRef = iTraceParsing;
 
         // Configuration Interface for setting trace repository path
         InterfaceShRef iConfiguration =
