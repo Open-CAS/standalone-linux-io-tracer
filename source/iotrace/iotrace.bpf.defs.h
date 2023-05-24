@@ -166,10 +166,6 @@ static __always_inline uint64_t iotrace_rq_to_id(const struct request *rq) {
     return (uint64_t) rq;
 }
 
-static __always_inline uint8_t iotrace_rq_write_hint(struct request *rq) {
-    return BPF_CORE_READ(rq, write_hint);
-}
-
 /*
  * Page definitions
  */
