@@ -33,7 +33,8 @@ set(generatedVmlinux ${CMAKE_CURRENT_BINARY_DIR}/vmlinux.h)
 set(configHeader ${CMAKE_CURRENT_BINARY_DIR}/iotrace.bpf.config.h)
 
 set(headerSources
-    "${CMAKE_CURRENT_LIST_DIR}/configure.d/1_write_hint.conf"
+    "${CMAKE_CURRENT_LIST_DIR}/configure.d/1_bio_write_hint.conf"
+    "${CMAKE_CURRENT_LIST_DIR}/configure.d/1_rq_write_hint.conf"
     "${CMAKE_CURRENT_LIST_DIR}/iotrace.bpf.defs.h"
     "${CMAKE_CURRENT_LIST_DIR}/iotrace.bpf.common.h"
 )
