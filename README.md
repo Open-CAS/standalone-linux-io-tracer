@@ -47,6 +47,7 @@ following OSes:
 | OS     | Version | Kernel Version |
 | ------ | ------- | -------------- |
 | Fedora | 36      | 5.18.10        |
+| Ubuntu | 22.04   | 5.15.0         |
 
 <a id="source"></a>
 

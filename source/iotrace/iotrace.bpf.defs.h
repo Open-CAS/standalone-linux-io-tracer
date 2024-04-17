@@ -1,5 +1,6 @@
 /*
- * Copyright(c) 2012-2020 Intel Corporation
+ * Copyright(c) 2012-2020 Intel
+ * Copyright 2024 Solidigm All Rights Reserved
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -170,6 +171,36 @@ static __always_inline uint64_t iotrace_rq_to_id(const struct request *rq) {
  * Page definitions
  */
 
+static __always_inline int iotrace_page_tail(struct page *page) {
+    return BPF_CORE_READ(page, compound_head) & 1;
+}
+
+static __always_inline bool iotrace_page_slab(struct page *page) {
+    if (BPF_CORE_READ(page, flags) & (1UL < PG_slab)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+static __always_inline uint64_t iotrace_page_index(struct page *page) {
+    return BPF_CORE_READ(page, index);
+}
+
+static __always_inline int iotrace_page_compound(struct page *page) {
+    if (BPF_CORE_READ(page, flags) & (1UL < PG_head)) {
+        return true;
+    }
+
+    if (iotrace_page_tail(page)) {
+        return true;
+    }
+
+    return false;
+}
+
+#if IOTRACE_PAGE_VERSION > 1
+
 static __always_inline unsigned long _compound_head(const struct page *page) {
     unsigned long head = BPF_CORE_READ(page, compound_head);
 
@@ -197,30 +228,6 @@ static __always_inline int iotrace_page_read_ahead(struct page *page) {
     return BPF_CORE_READ(page, flags) & (1UL < PG_readahead);
 }
 
-static __always_inline int iotrace_page_tail(struct page *page) {
-    return BPF_CORE_READ(page, compound_head) & 1;
-}
-
-static __always_inline int iotrace_page_compound(struct page *page) {
-    if (BPF_CORE_READ(page, flags) & (1UL < PG_head)) {
-        return true;
-    }
-
-    if (iotrace_page_tail(page)) {
-        return true;
-    }
-
-    return false;
-}
-
-static __always_inline bool iotrace_page_slab(struct page *page) {
-    if (BPF_CORE_READ(page, flags) & (1UL < PG_slab)) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
 static __always_inline bool iotrace_page_has_mapping(struct page *page) {
     struct folio *folio = page_folio(page);
 
@@ -234,9 +241,30 @@ static __always_inline struct inode *iotrace_page_inode(struct page *page) {
     return inode;
 }
 
-static __always_inline uint64_t iotrace_page_index(struct page *page) {
-    return BPF_CORE_READ(page, index);
+#else
+
+static __always_inline bool iotrace_page_anon(struct page *page) {
+#define PAGE_MAPPING_ANON 0x1
+    struct address_space *mapping = BPF_CORE_READ(page, mapping);
+
+    return ((unsigned long) mapping & PAGE_MAPPING_ANON) != 0;
 }
+
+static __always_inline int iotrace_page_read_ahead(struct page *page) {
+    return 0;
+}
+
+static __always_inline bool iotrace_page_has_mapping(struct page *page) {
+    return NULL != BPF_CORE_READ(page, mapping);
+}
+
+static __always_inline struct inode *iotrace_page_inode(struct page *page) {
+    struct inode *inode = BPF_CORE_READ(page, mapping, host);
+
+    return inode;
+}
+
+#endif
 
 /*
  * Inode definitions
