@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Copyright(c) 2012-2020 Intel Corporation
+# Copyright 2024 Solidigm All Rights Reserved
 # SPDX-License-Identifier: BSD-3-Clause
 
 IOTRACE_DIR="$(cd $(dirname ${BASH_SOURCE[0]}) && pwd)"
@@ -25,17 +26,14 @@ function iotrace_get_kernel_package () {
 }
 
 function iotrace_get_distribution_pkg_dependencies () {
-    local pkgs="zlib clang llvm libblkid-devel bpftool libbpf-devel"
+    local pkgs="clang llvm"
 
     case "${DISTRO}" in
-    "RHEL7"|"CENTOS7"|"FEDORA")
-        echo "${pkgs} rpm-build elfutils-libelf-devel"
-        ;;
-    "RHEL8"|"CENTOS8")
-        echo "${pkgs} rpm-build elfutils-libelf-devel"
+    "RHEL7"|"CENTOS7"|"RHEL8"|"CENTOS8"|"FEDORA")
+        echo "${pkgs} rpm-build elfutils-libelf-devel libblkid-devel libbpf-devel zlib bpftool"
         ;;
     "UBUNTU"|"DEBIAN")
-        echo "${pkgs} dpkg"
+        echo "${pkgs} dpkg libblkid-dev libbpf-dev zlib1g-dev linux-tools-common linux-tools-generic"
         ;;
     *)
         error "Unknown Linux distribution"
