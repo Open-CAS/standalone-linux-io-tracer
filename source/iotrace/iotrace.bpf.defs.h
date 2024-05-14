@@ -278,11 +278,6 @@ static __always_inline uint64_t iotrace_inode_no(struct inode *inode) {
     return BPF_CORE_READ(inode, i_ino);
 }
 
-static __always_inline void iotrace_inode_ctime(struct inode *inode,
-                                                struct timespec64 *cTime) {
-    *cTime = BPF_CORE_READ(inode, i_ctime);
-}
-
 static __always_inline uint64_t iotrace_inode_dev(struct inode *inode) {
     return BPF_CORE_READ(inode, i_sb, s_dev);
 }
