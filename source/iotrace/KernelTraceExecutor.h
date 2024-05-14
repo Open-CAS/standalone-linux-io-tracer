@@ -6,6 +6,7 @@
 #ifndef SOURCE_USERSPACE_KERNELTRACEEXECUTOR_H
 #define SOURCE_USERSPACE_KERNELTRACEEXECUTOR_H
 
+#include <bpf/libbpf.h>
 #include <stdint.h>
 #include <list>
 #include <string>
@@ -63,10 +64,13 @@ private:
 
     void initDeviceList(const std::vector<std::string> &devices);
 
+    void initPerfBuffer();
+
 private:
     const uint32_t m_traceQueueCount;
     struct iotrace_bpf *m_bpf;
     struct perf_buffer *m_bpfPerf;
+    struct perf_buffer_opts m_bpfPerfBufOpts;
     std::thread m_bpfThread;
     std::vector<std::shared_ptr<KernelRingTraceBuffer>> m_traceProducerRings;
     KernelRingDevListShRef m_devList;

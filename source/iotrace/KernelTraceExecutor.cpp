@@ -6,7 +6,6 @@
 #include "KernelTraceExecutor.h"
 
 #include <blkid/blkid.h>
-#include <bpf/libbpf.h>
 #include <fcntl.h>
 #include <linux/fs.h>
 #include <linux/perf_event.h>
@@ -56,6 +55,7 @@ KernelTraceExecutor::KernelTraceExecutor(
         : m_traceQueueCount(std::thread::hardware_concurrency())
         , m_bpf(nullptr)
         , m_bpfPerf(nullptr)
+        , m_bpfPerfBufOpts()
         , m_bpfThread()
         , m_traceProducerRings(m_traceQueueCount)
         , m_devList(std::make_shared<KernelRingDevList>())
@@ -77,6 +77,28 @@ KernelTraceExecutor::~KernelTraceExecutor() {
     destroyBpf();
 }
 
+void KernelTraceExecutor::initPerfBuffer() {
+#if LIBBPF_MAJOR_VERSION <= 1 && LIBBPF_MINOR_VERSION < 1
+    /*
+     * Set up ring buffer polling
+     * TODO(mbraczak) use the handler of lost trace event count
+     */
+    m_bpfPerfBufOpts.sample_cb = perfEventHandler;
+    m_bpfPerfBufOpts.lost_cb = perfEventLost;
+    m_bpfPerfBufOpts.ctx = this;
+
+    m_bpfPerf = perf_buffer__new(bpf_map__fd(m_bpf->maps.events),
+                                 256 /* 1MiB per CPU */, &m_bpfPerfBufOpts);
+#else
+    m_bpfPerfBufOpts = {};
+    m_bpfPerfBufOpts.sz = sizeof(m_bpfPerfBufOpts);
+
+    m_bpfPerf = perf_buffer__new(bpf_map__fd(m_bpf->maps.events),
+                                 256 /* 1MiB per CPU */, perfEventHandler,
+                                 perfEventLost, this, &m_bpfPerfBufOpts);
+#endif
+}
+
 bool KernelTraceExecutor::startTrace() {
     /* Load & verify BPF programs */
     int result = iotrace_bpf__load(m_bpf);
@@ -95,19 +117,7 @@ bool KernelTraceExecutor::startTrace() {
         m_bpf->bss->device[i] = iter->id;
     }
 
-    /* Set perf buffer */
-    struct perf_buffer_opts pb_opts = {};
-
-    /*
-     * Set up ring buffer polling
-     * TODO(mbraczak) use the handler of lost trace event count
-     */
-    pb_opts.sample_cb = perfEventHandler;
-    pb_opts.lost_cb = perfEventLost;
-    pb_opts.ctx = this;
-
-    m_bpfPerf = perf_buffer__new(bpf_map__fd(m_bpf->maps.events),
-                                 256 /* 1MiB per CPU */, &pb_opts);
+    initPerfBuffer();
     if (libbpf_get_error(m_bpfPerf)) {
         m_bpfPerf = nullptr;
         log::cerr << "Cannot setup perf buffer" << std::endl;
