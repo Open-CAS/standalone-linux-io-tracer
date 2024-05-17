@@ -1,6 +1,7 @@
 /*
  * Copyright(c) 2012-2020 Intel Corporation
  * SPDX-License-Identifier: BSD-3-Clause-Clear
+ * Copyright 2024 Solidigm All Rights Reserved
  */
 #include "vmlinux.h"
 
@@ -35,28 +36,45 @@ uint64_t ref_sid = 0;
 uint64_t device[32] = {0};
 uint64_t timebase; /* TODO(mbarczak) Make this per-cpu variable */
 
+struct inode_cache_map_key {
+    uint64_t ino;
+    struct timespec64 creation_time;
+    dev_t bid;
+};
+
+struct {
+    __uint(type, BPF_MAP_TYPE_LRU_PERCPU_HASH);
+    __uint(max_entries, 8912);
+    __type(key, struct inode_cache_map_key);
+    __type(value, char);
+} inode_cache_map SEC(".maps");
+
+static __always_inline void iotrace_inode_init_key(
+        struct inode *inode,
+        struct inode_cache_map_key *key) {
+    key->ino = iotrace_inode_no(inode);
+
+    struct block_device *bdev = iotrace_inode_bdev(inode);
+    key->bid = iotrace_bdev_id(bdev);
+
+    iotrace_inode_ctime(inode, &key->creation_time);
+}
+
 static __always_inline void iotrace_inode_set_traced(struct inode *inode) {
     if (inode) {
-        struct iotrace_inode_info *info =
-                bpf_inode_storage_get(&inode_storage_map, inode, NULL,
-                                      BPF_LOCAL_STORAGE_GET_F_CREATE);
+        struct inode_cache_map_key key;
+        char value = 0;
 
-        if (info) {
-            info->traced = true;
-        }
+        iotrace_inode_init_key(inode, &key);
+        bpf_map_update_elem(&inode_cache_map, &key, &value, BPF_NOEXIST);
     }
 }
 
 static __always_inline bool iotrace_inode_is_traced(struct inode *inode) {
-    struct iotrace_inode_info *info = NULL;
-    int value = 0;
+    struct inode_cache_map_key key;
 
-    info = bpf_inode_storage_get(&inode_storage_map, inode, 0, 0);
-    if (info) {
-        return info->traced;
-    }
-
-    return false;
+    iotrace_inode_init_key(inode, &key);
+    return NULL != bpf_map_lookup_elem(&inode_cache_map, &key);
 }
 
 static __always_inline uint64_t iotrace_ktime_get_ns(void) {
@@ -422,13 +440,12 @@ static __always_inline int iotrace_inode(void *ctx,
         return 1;
     }
 
-    struct block_device *whole = iotrace_bdev_whole(bdev);
+    /* Trace inode for any block device. This is because we can IO trace a
+     * backend devices, however a filesystem can be crated on top of logical
+     * device (e.g., lvol) which indirectly might points to the IO traced block
+     * device.
+     */
     dev_t part_id = iotrace_bdev_id(bdev);
-    dev_t whole_id = iotrace_bdev_id(whole);
-
-    if (!iotrace_dev_to_trace(whole_id)) {
-        return 1;
-    }
 
     struct iotrace_event_fs_file_name ev = {{0}};
 
@@ -474,20 +491,13 @@ static __always_inline void iotrace_inode_loop(void *ctx,
     }
 }
 
-SEC("lsm/file_open")
-int BPF_PROG(file_open, struct file *file) {
-    struct block_device *bdev =
-            iotrace_inode_bdev(BPF_CORE_READ(file, f_inode));
-    if (!bdev) {
-        /* No bdev for this inode */
-        return 0;
-    }
-
-    struct block_device *whole = iotrace_bdev_whole(bdev);
-    dev_t part_id = iotrace_bdev_id(bdev);
-    dev_t whole_id = iotrace_bdev_id(whole);
-
-    if (!iotrace_dev_to_trace(whole_id)) {
+SEC("fexit/do_dentry_open")
+int BPF_PROG(post_open,
+             struct file *file,
+             struct inode *inode,
+             int (*open)(struct inode *, struct file *),
+             long ret) {
+    if (ret) {
         return 0;
     }
 
